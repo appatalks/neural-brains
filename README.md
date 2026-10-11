@@ -1,5 +1,7 @@
 # neural-brains
 
+![neural-brains project splash](docs/neural-brains-splash.png)
+
 Building connectome-informed neural and embodied models across species.
 The fruit fly is the first active simulation: **127,400 neurons**, physical
 walking/flight and live neural inspection in one browser.
