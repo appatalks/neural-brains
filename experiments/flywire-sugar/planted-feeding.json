@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "source_position_mm": [9, 2, 1],
+  "source_radius_mm": 2,
+  "oral_probe_offset_mm": [0.6, 0, -0.35],
+  "contact_stimulation_Hz": 100,
+  "seed": 420,
+  "description": "Approximate fruit-associated sugar exposure in planted-habitat.json. Binary oral-probe overlap, not calibrated concentration, surface receptor contact or nutritional uptake.",
+  "readout": "Actual MN9 spike counts only; not physical proboscis actuation or neural locomotion."
+}

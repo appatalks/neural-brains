@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "source_position_mm": [9,4,1],
+  "source_radius_mm": 2,
+  "oral_probe_offset_mm": [0.6,0,-0.35],
+  "contact_stimulation_Hz": 100,
+  "seed": 420,
+  "description": "Approximate fruit-associated sugar exposure in grassland-habitat.json. Fruit sits beside the clear walking route. Binary oral-probe overlap, not calibrated receptors, proboscis actuation or nutrient uptake.",
+  "readout": "Actual MN9 spikes only; physical seed contacts and learned walking/flight are separate."
+}

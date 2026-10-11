@@ -1,0 +1,27 @@
+{
+  "id": "flywire-630-sugar-mn9",
+  "dataset_id": "flywire-model-630",
+  "upstream_commit": "91bdd1e7dcf193f3e7ca5a8933497fcef63b7960",
+  "paper_doi": "10.1038/s41586-024-07763-9",
+  "protocol": "Right labellar sugar GRN activation; 100 Hz condition of Fig. 1d and upstream tutorial; unstimulated network control.",
+  "seed": 420,
+  "trial_count": 30,
+  "duration_ms": 1000,
+  "time_step_ms": 0.1,
+  "stimulation_Hz": 100,
+  "input_ids": [
+    "720575940624963786", "720575940630233916", "720575940637568838",
+    "720575940638202345", "720575940617000768", "720575940630797113",
+    "720575940632889389", "720575940621754367", "720575940621502051",
+    "720575940640649691", "720575940639332736", "720575940616885538",
+    "720575940639198653", "720575940620900446", "720575940617937543",
+    "720575940632425919", "720575940633143833", "720575940612670570",
+    "720575940628853239", "720575940629176663", "720575940611875570"
+  ],
+  "readout_id": "720575940660219265",
+  "acceptance": {
+    "criterion": "MN9 spikes in every stimulated trial at 100 Hz; no spikes in unstimulated network",
+    "source": "Paper main text reports MN9 activation in 100% of simulations with 100 Hz sugar GRN stimulation; the no-input control checks the deterministic resting network.",
+    "scope": "Bounded computational reproduction, not full figure or biological validation."
+  }
+}

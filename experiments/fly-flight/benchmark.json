@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "description": "Local reference-tracking checks, not biological validation or comparison with every demo. References selected by available duration, not post-hoc performance.",
+  "cases": [
+    {"trajectory": 48, "seconds": 0.5, "seed": 0, "gust_uN": 0},
+    {"trajectory": 48, "seconds": 0.5, "seed": 1, "gust_uN": 0},
+    {"trajectory": 48, "seconds": 0.5, "seed": 2, "gust_uN": 0},
+    {"trajectory": 48, "seconds": 0.5, "seed": 3, "gust_uN": 0},
+    {"trajectory": 48, "seconds": 0.5, "seed": 4, "gust_uN": 0},
+    {"trajectory": 0, "seconds": 0.18, "seed": 0, "gust_uN": 0},
+    {"trajectory": 57, "seconds": 0.5, "seed": 0, "gust_uN": 0},
+    {"trajectory": 140, "seconds": 0.5, "seed": 0, "gust_uN": 0},
+    {"trajectory": 48, "seconds": 0.5, "seed": 0, "gust_uN": 2}
+  ]
+}

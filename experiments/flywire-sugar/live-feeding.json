@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "source_position_mm": [1, 0, 0.8],
+  "source_radius_mm": 2,
+  "oral_probe_offset_mm": [0.6, 0, -0.35],
+  "contact_stimulation_Hz": 100,
+  "seed": 420,
+  "description": "Engineered geometric sugar exposure at an approximate oral probe. Binary region overlap gates the published right sugar-GRN stimulus; not calibrated labellar contact or sugar concentration.",
+  "readout": "MN9 spikes/rate only; no proboscis mechanics, walking or flight decoding."
+}

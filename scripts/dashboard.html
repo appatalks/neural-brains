@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fly · live neural activity</title>
+<style>
+:root{color-scheme:dark;--bg:#080e18;--panel:#111c2c;--line:#283a51;--text:#e3edf9;--muted:#a6b7cd;--accent:#60e6c3}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px system-ui,sans-serif}
+main{max-width:1500px;margin:auto;padding:24px}header{display:flex;justify-content:space-between;gap:20px;align-items:center}
+h1{font-size:26px;margin:0}h2{font-size:18px;margin:0 0 12px}p{line-height:1.55}.muted{color:var(--muted)}
+.badge{padding:8px 12px;border:1px solid var(--line);border-radius:20px;color:var(--accent)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:18px}
+.eye-frame{height:220px;display:flex;align-items:center;justify-content:center;background:#050a11;border-radius:9px;overflow:hidden}
+#eyes{max-height:100%;max-width:100%;image-rendering:pixelated}.stats{display:flex;gap:24px;flex-wrap:wrap;margin-top:12px;font-variant-numeric:tabular-nums}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:18px}.toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+button,input,select{font:inherit;border:1px solid #415673;border-radius:7px;padding:8px;background:#0b1523;color:var(--text)}
+button{cursor:pointer}button:hover{border-color:var(--accent)}:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+input{min-width:0;flex:1}form{display:flex;gap:8px;width:100%}
+#map{width:100%;height:490px;display:block;background:#060d17;border-radius:8px;touch-action:none;cursor:grab}
+#map:active{cursor:grabbing}.legend{font-size:13px;color:var(--muted)}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#60e6c3}
+dl{display:grid;grid-template-columns:100px minmax(0,1fr);gap:10px;font-size:14px}dt{color:var(--muted)}dd{margin:0;overflow-wrap:anywhere}
+#history{max-height:230px;overflow:auto;padding-left:22px;font-size:13px;line-height:1.8}
+#history li{font-variant-numeric:tabular-nums}#search-status{font-size:13px;min-height:20px;color:var(--muted)}
+.connections{max-height:220px;overflow:auto;padding-left:20px;font-size:12px;overflow-wrap:anywhere}
+.connections button{font-size:12px;padding:4px;margin:3px 0;max-width:100%;overflow-wrap:anywhere}
+footer{font-size:13px;color:var(--muted);margin-top:18px}#backend-status{color:#ffc78a}#provenance{overflow-wrap:anywhere}
+.app-shell{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;align-items:start}
+.app-shell .layout{grid-template-columns:1fr}.world-panel{position:sticky;top:12px}
+#world-frame{aspect-ratio:4/3;background:#050a11;position:relative;touch-action:none;outline:none}
+#world{width:100%;height:100%;display:block;object-fit:fill;user-select:none}
+#world-message{position:absolute;top:12px;left:12px;background:#080e18cc;padding:8px;border-radius:8px}
+#input-status{min-height:22px;color:#ffc78a}
+@media(max-width:1100px){.app-shell{grid-template-columns:1fr}.world-panel{position:static}}
+@media(max-width:850px){main{padding:12px}.layout{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column;gap:10px}#map{height:360px}.eye-frame{height:160px}}
+</style>
+</head>
+<body>
+<main>
+<header><div><h1>Fly / simulation app</h1><p class="muted">One physical world · actual eye views · live neural inspection</p></div>
+<span class="badge" id="backend-status" role="status" aria-live="polite">Connecting to local backend…</span></header>
+<p class="muted" id="session-status">One dashboard contains both views. Session identity unavailable.</p>
+<div class="app-shell" id="app-shell">
+<section class="panel world-panel" id="world-panel" aria-labelledby="world-heading">
+<h2 id="world-heading">Ground world · authoritative physics</h2>
+<div id="world-frame" tabindex="0" aria-label="Interactive ground world. Left drag orbits, right drag pans, wheel zooms.">
+<img id="world" hidden draggable="false" alt="Live ground world rendered from the same physical simulation">
+<span id="world-message">Waiting for the physical world…</span>
+</div>
+<p id="world-clock" class="muted">World render clock: unavailable.</p>
+<p class="legend">Left drag: orbit · right drag: pan · wheel: zoom. Camera movement does not steer the fly. Enable the finger, then move over this ground view to interact.</p>
+<div class="toolbar">
+<button id="app-pause">Pause / resume (P)</button><button id="app-reset">Reset (R)</button>
+<button id="app-camera">Overview</button><button id="app-follow">Follow camera (C)</button>
+<button id="app-finger">Finger on / off (H)</button><button id="app-food">Sugar on / off (T)</button>
+<button id="app-box">Add cube (1)</button><button id="app-sphere">Add sphere (2)</button>
+<button id="app-remove">Remove object (3)</button><button id="app-friction">Friction (F)</button>
+<button id="app-push">External push (B)</button><button id="app-terrain">Terrain bars (O)</button>
+<button id="app-close">Save and stop (Q)</button>
+</div>
+<p id="input-status" role="status">Connecting to environment controls…</p>
+<p id="environment-status" class="muted">Environment state unavailable.</p>
+<p id="motor-status" class="legend">Motor backend: walking habitat; aerodynamic flight not connected.</p>
+<p id="object-status" class="legend">Physical loose-object interaction data unavailable.</p>
+<p class="legend">Walking and flight use engineered/learned control. Any enabled reduced neural leg pathway is labeled separately; it is not calibrated muscle physiology or touchdown. Reset is an explicit experiment restart.</p>
+</section>
+<div class="instruments">
+<section class="panel" aria-labelledby="eyes-heading">
+<h2 id="eyes-heading">Eye views · RGB composite</h2>
+<div class="eye-frame"><img id="eyes" hidden alt="Composite of the fly's two eye views"><span id="eyes-status" role="status">Eye images unavailable — awaiting a published frame.</span></div>
+<p id="eye-clock" class="muted">Eye source render clock: unavailable. Image and neural interval clocks are independent.</p>
+<div class="stats"><span>Brain <strong id="brain-time">unavailable</strong></span><span>Habitat <strong id="habitat-time">unavailable</strong></span>
+<span>Network interval spikes <strong id="network-count">unavailable</strong></span><span id="pause-status">Pause state unavailable</span></div>
+</section>
+<div class="layout">
+<section class="panel" aria-labelledby="map-heading">
+<h2 id="map-heading">Neuron activity · schematic index layout, NOT anatomy</h2>
+<p class="muted">Every dot is one neuron in ordered index space (400 columns). Color shows actual interval spike counts,
+not event times, voltages, spatial anatomy, or inferred activity. Inactive counts are zero only within a received interval.</p>
+<div class="toolbar">
+<label for="filter">Show</label><select id="filter"><option value="all">All neurons</option><option value="active">Active this interval</option><option value="circuit">Known circuit / inputs</option></select>
+<button id="zoom-in" aria-label="Zoom in">Zoom +</button><button id="zoom-out" aria-label="Zoom out">Zoom −</button><button id="reset-view">Fit / reset view</button>
+<button id="activity-live">Live interval</button><button id="activity-last" disabled>Inspect last firing interval</button>
+</div>
+<p id="activity-summary" class="muted">Waiting for recorded activity totals…</p>
+<p id="activity-display-status" role="status">Showing live interval counts.</p>
+<details id="sensorimotor-panel" hidden open>
+<summary>Steering and landing circuit readouts (observation only)</summary>
+<p class="legend">Counts from verified neurons, not motor commands. Ambiguous steering identities and unverified driver correspondence remain labeled. Click a cell to inspect its real connections.</p>
+<ol id="sensorimotor-cells" class="connections"></ol>
+</details>
+<canvas id="map" tabindex="0" aria-label="Schematic neuron map. Drag to pan, wheel to zoom. Use ID search to select a neuron; arrow keys pan, plus and minus zoom."></canvas>
+<p class="legend"><span class="dot"></span> Active: brighter / larger = more interval spikes · gray = no spikes · gold outline = selected.
+Drag to pan; wheel to zoom. These controls do not affect the ground-world camera.</p>
+<p id="count-scale" class="legend">Fixed logarithmic interval-count scale · maximum interval count unavailable.</p>
+<div id="interval-label" class="muted">No activity interval received.</div>
+<p class="legend">Latest interval only; 5 Hz polling may skip neural intervals. Complete counts are logged on disk by the native run, not recorded by this dashboard.</p>
+<div id="gap-status" class="muted" role="status">Skipped sequences: unavailable before first interval.</div>
+</section>
+<aside class="panel" aria-labelledby="selection-heading">
+<h2 id="selection-heading">Inspect a neuron</h2>
+<form id="search"><label for="neuron-id" class="muted" style="position:absolute;clip:rect(0,0,0,0)">Neuron ID</label>
+<input id="neuron-id" placeholder="Exact neuron ID" autocomplete="off" spellcheck="false"><button type="submit">Find</button></form>
+<div id="search-status" role="status" aria-live="polite">Pick a dot or search its string ID.</div>
+<dl><dt>Index</dt><dd id="selected-index">—</dd><dt>ID</dt><dd id="selected-id">—</dd><dt>Labels</dt><dd id="selected-labels">—</dd>
+<dt>Displayed count</dt><dd id="selected-count">unavailable</dd></dl>
+<h2>Recent interval counts</h2><p class="muted">Latest 40 received intervals only; gaps are labeled. This is not a complete spike rate or event history. No invented samples.</p>
+<ol id="history"><li>Select a neuron to inspect.</li></ol>
+<h2>Chemical connections</h2>
+<p class="legend">Verified contacts · teal = incoming, amber = outgoing. Signed contacts are the upstream model's assigned proxy, not measured conductance or electrical junctions.</p>
+<p id="connection-status" role="status">Select a neuron to inspect its connections.</p>
+<h3>Incoming</h3><div id="incoming-summary" class="muted"></div>
+<ol id="incoming-edges" class="connections"></ol>
+<div class="toolbar"><button id="incoming-prev" disabled>Previous incoming</button><button id="incoming-next" disabled>Next incoming</button></div>
+<h3>Outgoing</h3><div id="outgoing-summary" class="muted"></div>
+<ol id="outgoing-edges" class="connections"></ol>
+<div class="toolbar"><button id="outgoing-prev" disabled>Previous outgoing</button><button id="outgoing-next" disabled>Next outgoing</button></div>
+</aside>
+</div>
+</div>
+</div>
+<footer>Only bounded pages of verified selected-neuron chemical connections are shown; index-space lines are NOT anatomy.
+This dashboard is not a spike-event recorder. <span id="provenance">Metadata unavailable.</span></footer>
+</main>
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const canvas = $('map'), ctx = canvas.getContext('2d');
+const COLS = 400, MAX_HISTORY = 40, COUNT_LOG_SCALE = 5;
+let metadata = null, ids = [], idIndex = new Map(), circuit = new Set();
+let latest = null, history = [], episode = null, sequence = null, selected = null;
+let lastFiring=null, inspectLastFiring=false;
+let sensorimotorCandidates=[];
+function displayedActivity() {
+  return inspectLastFiring?lastFiring:latest;
+}
+function activitySummary(summary) {
+  if(summary.episode!==episode) return;
+  const a=summary.last_firing;
+  lastFiring=a?{episode:a.episode,sequence:a.sequence,start:a.start_ms,end:a.end_ms,
+    counts:new Map(a.indices.map((index,i)=>[index,a.counts[i]]))}:null;
+  $('activity-last').disabled=!lastFiring;
+  $('activity-summary').textContent=`Recorded this episode: ${summary.episode_spikes} network spikes in ${summary.active_intervals} firing intervals. These totals include intervals missed by display polling.`;
+  $('activity-display-status').textContent=inspectLastFiring&&lastFiring?
+    `HISTORICAL firing: episode ${lastFiring.episode}, interval ${formatMs(lastFiring.start)}–${formatMs(lastFiring.end)} ms. This is not current activity.`:
+    (latest && !latest.counts.size?'Live interval is silent. Use Inspect last firing interval to see the most recent recorded spikes.':'Showing live interval counts.');
+  selection();render();
+}
+$('activity-live').onclick=()=>{inspectLastFiring=false;$('activity-display-status').textContent='Showing live interval counts.';selection();render();};
+$('activity-last').onclick=()=>{
+  if(!lastFiring)return;
+  inspectLastFiring=true;
+  $('activity-display-status').textContent=`HISTORICAL firing: episode ${lastFiring.episode}, interval ${formatMs(lastFiring.start)}–${formatMs(lastFiring.end)} ms. This is not current activity.`;
+  selection();render();
+};
+let skipped = 0;
+let joinedAt = null;
+let eyeTime = null;
+let live = false, metadataReady = false, view = {scale:1,x:0,y:0}, sized = false, drag = null;
+let eyeURL = null, stopping = false;
+let loadedEyeRevision = null;
+let sessionID = null;
+let appInteractive=false, worldURL=null, worldRevision=null, worldDrag=null;
+let safetyPaused=false;
+let pendingPointer=null, pointerTimer=null, inputBusy=false;
+
+async function appInput(event) {
+  if(!appInteractive || !live) { $('input-status').textContent='Controls unavailable: simulation is not connected.';return; }
+  const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),4000);
+  try {
+    const response=await fetch('/api/input',{
+      method:'POST',headers:{'Content-Type':'application/json','X-Fly-Session':sessionID},
+      body:JSON.stringify(event),signal:controller.signal,
+    });
+    const reply=await response.json();
+    if(!response.ok) throw new Error(reply.error || `HTTP ${response.status}`);
+    $('input-status').textContent='Input queued for the authoritative simulation.';
+  } catch(error) {
+    $('input-status').textContent=`Input rejected/unavailable — ${error.name==='AbortError'?'request timed out':error.message}`;
+  } finally {clearTimeout(timer);}
+}
+for(const [id,key] of [
+  ['app-pause','P'],['app-reset','R'],['app-follow','C'],['app-finger','H'],['app-food','T'],
+  ['app-box','1'],['app-sphere','2'],['app-remove','3'],['app-friction','F'],
+  ['app-push','B'],['app-terrain','O'],['app-close','Q'],
+]) $(id).onclick=()=>appInput({kind:'key',key});
+$('app-camera').onclick=()=>appInput({kind:'camera_reset'});
+const ground=$('world-frame');
+ground.addEventListener('contextmenu',event=>event.preventDefault());
+ground.addEventListener('pointerdown',event=>{
+  ground.focus();ground.setPointerCapture(event.pointerId);
+  worldDrag={id:event.pointerId,x:event.clientX,y:event.clientY,button:event.button};
+});
+ground.addEventListener('pointerup',()=>{worldDrag=null;flushPointer();});
+ground.addEventListener('pointercancel',()=>{worldDrag=null;});
+ground.addEventListener('lostpointercapture',()=>{worldDrag=null;});
+async function flushPointer() {
+  pointerTimer=null;
+  if(inputBusy || !pendingPointer)return;
+  inputBusy=true;const event=pendingPointer;pendingPointer=null;
+  await appInput(event);inputBusy=false;
+  if(pendingPointer && !pointerTimer)pointerTimer=setTimeout(flushPointer,33);
+}
+ground.addEventListener('pointermove',event=>{
+  const rect=ground.getBoundingClientRect();
+  if(worldDrag) {
+    const dx=Math.max(-1,Math.min(1,(event.clientX-worldDrag.x)/rect.width));
+    const dy=Math.max(-1,Math.min(1,(event.clientY-worldDrag.y)/rect.height));
+    worldDrag.x=event.clientX;worldDrag.y=event.clientY;
+    const kind=worldDrag.button===2||worldDrag.button===1?'pan':'orbit';
+    const accumulated=pendingPointer?.kind===kind?pendingPointer:{dx:0,dy:0};
+    pendingPointer={kind,dx:Math.max(-1,Math.min(1,accumulated.dx+dx)),dy:Math.max(-1,Math.min(1,accumulated.dy+dy))};
+  } else {
+    const x=(event.clientX-rect.left)/rect.width,y=(event.clientY-rect.top)/rect.height;
+    if(x<0||x>1||y<0||y>1)return;
+    pendingPointer={kind:'pointer',x,y};
+  }
+  if(!pointerTimer && !inputBusy)pointerTimer=setTimeout(flushPointer,33);
+});
+ground.addEventListener('wheel',event=>{
+  event.preventDefault();appInput({kind:'zoom',delta:Math.max(-1,Math.min(1,event.deltaY*.002))});
+},{passive:false});
+ground.addEventListener('keydown',event=>{
+  const key=event.key.toUpperCase();
+  if('POFBRCTHQ123[]'.includes(key)&&key.length===1) {
+    event.preventDefault();appInput({kind:'key',key});
+  }
+});
+function clearWorld(message) {
+  $('world').hidden=true;$('world').removeAttribute('src');
+  $('world-message').hidden=false;$('world-message').textContent=message;
+  $('world-clock').textContent='World render clock: unavailable.';
+  if(worldURL)URL.revokeObjectURL(worldURL);
+  worldURL=null;worldRevision=null;
+}
+$('world').onerror=()=>clearWorld('Ground world frame could not be decoded; awaiting a new frame.');
+async function refreshWorld(status,signal) {
+  appInteractive=status.interactive===true;
+  $('world-panel').hidden=!appInteractive;
+  $('app-shell').style.display=appInteractive?'grid':'block';
+  if(!appInteractive)return;
+  if(!status.world_available){clearWorld('Waiting for the physical world…');return;}
+  if(worldRevision===status.world_revision)return;
+  const blob=await fetchBounded('/api/world',8*1024*1024,signal);
+  const old=worldURL;worldURL=URL.createObjectURL(blob);worldRevision=status.world_revision;
+  $('world').src=worldURL;$('world').hidden=false;$('world-message').hidden=!safetyPaused;
+  if(safetyPaused) $('world-message').textContent='BOUNDARY SAFETY PAUSE · app remains open · camera and neurons available · Reset starts a new experiment';
+  if(old)URL.revokeObjectURL(old);
+  $('world-clock').textContent=`World source render: ${formatMs(status.world_time_s*1000)} ms · same simulation, not an independent browser physics engine.`;
+}
+let connectionsAvailable = false, connectionController = null, connectionRequest = 0;
+let connectionPages = {incoming:null,outgoing:null};
+
+function clearConnections(message) {
+  if(connectionController) connectionController.abort();
+  connectionRequest++;
+  connectionPages={incoming:null,outgoing:null};
+  $('connection-status').textContent=message;
+  for(const direction of ['incoming','outgoing']) {
+    $(direction+'-edges').replaceChildren();$(direction+'-summary').textContent='';
+    $(direction+'-prev').disabled=true;$(direction+'-next').disabled=true;
+  }
+}
+
+async function inspectConnections(direction=null,offset=0) {
+  if(selected===null || !connectionsAvailable) {
+    clearConnections('Verified connection index unavailable for this session.');return;
+  }
+  if(connectionController) connectionController.abort();
+  const controller=new AbortController();connectionController=controller;
+  const request=++connectionRequest, id=ids[selected];
+  const timer=setTimeout(()=>controller.abort(),5000);
+  $('connection-status').textContent='Loading verified connections…';
+  try {
+    const directions=direction?[direction]:['incoming','outgoing'];
+    const pages=await Promise.all(directions.map(d=>json(
+      `/api/connections?id=${encodeURIComponent(id)}&direction=${d}&offset=${offset}&limit=25`,
+      1024*1024,controller.signal)));
+    if(request!==connectionRequest) return;
+    for(const page of pages) {
+      if(page.neuron_id!==id || page.upstream_commit!==metadata.upstream_commit)
+        throw new Error('Connection snapshot/selection mismatch');
+      connectionPages[page.direction]=page;
+      const list=$(page.direction+'-edges');list.replaceChildren();
+      for(const edge of page.edges) {
+        const partner=page.direction==='incoming'?edge.source_id:edge.target_id;
+        const item=document.createElement('li'), button=document.createElement('button');
+        button.textContent=`${partner} · ${edge.contacts} contacts · signed ${edge.signed_contacts}`;
+        button.onclick=()=>{if(idIndex.has(partner))choose(idIndex.get(partner),true);};
+        item.append(button);list.append(item);
+      }
+      $(page.direction+'-summary').textContent=`${page.total} partners · showing ${page.edges.length? page.offset+1:0}–${page.offset+page.edges.length}`;
+      $(page.direction+'-prev').disabled=page.offset===0;
+      $(page.direction+'-next').disabled=page.offset+page.edges.length>=page.total;
+    }
+    $('connection-status').textContent='Verified chemical-contact pages. Click a partner to inspect it.';
+    render();
+  } catch(error) {
+    if(request!==connectionRequest) return;
+    clearConnections(`Connections unavailable — ${error.name==='AbortError'?'request timed out':error.message}`);
+    render();
+  } finally {clearTimeout(timer);}
+}
+for(const direction of ['incoming','outgoing']) {
+  $(direction+'-prev').onclick=()=>inspectConnections(direction,Math.max(0,(connectionPages[direction]?.offset||0)-25));
+  $(direction+'-next').onclick=()=>inspectConnections(direction,(connectionPages[direction]?.offset||0)+25);
+}
+
+function adoptSession(id) {
+  if(typeof id!=='string' || !id) throw new Error('Invalid dashboard session identity');
+  if(sessionID===id) return;
+  sessionID=id;
+  safetyPaused=false;
+  appInteractive=false;clearWorld('Loading new simulation session…');pendingPointer=null;
+  metadataReady=false;metadata=null;ids=[];idIndex=new Map();circuit=new Set();
+  latest=null;history=[];episode=null;sequence=null;selected=null;skipped=0;joinedAt=null;eyeTime=null;
+  lastFiring=null;inspectLastFiring=false;$('activity-last').disabled=true;
+  sensorimotorCandidates=[];$('sensorimotor-panel').hidden=true;$('sensorimotor-cells').replaceChildren();
+  $('activity-summary').textContent='Waiting for recorded activity totals…';
+  connectionsAvailable=false;clearConnections('Select a neuron in the new session to inspect connections.');
+  $('neuron-id').value='';
+  unavailable('loading a new session at this address');
+  $('session-status').textContent=`One dashboard contains both views · session ${id}. A restart at this address clears old data.`;
+  $('provenance').textContent='Loading verified metadata for this session…';
+}
+
+function fit() {
+  const width = canvas.clientWidth, height = canvas.clientHeight;
+  const rows = Math.max(1, Math.ceil(ids.length / COLS));
+  view.scale = Math.min(width / COLS, height / rows) * .94;
+  view.x = (width - COLS * view.scale) / 2;
+  view.y = (height - rows * view.scale) / 2;
+  render();
+}
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(canvas.clientWidth * dpr);
+  canvas.height = Math.round(canvas.clientHeight * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (!sized) { sized = true; fit(); } else render();
+}
+function visible(index) {
+  const filter = $('filter').value;
+  return filter === 'all' || (filter === 'active' && live && displayedActivity()?.counts.has(index))
+    || (filter === 'circuit' && circuit.has(ids[index]));
+}
+function render() {
+  const activity=displayedActivity();
+  let maximum=0;
+  if(live && activity) for(const count of activity.counts.values()) maximum=Math.max(maximum,count);
+  countScale(live&&activity?maximum:null);
+  $('sensorimotor-cells').replaceChildren();
+  for(const cell of sensorimotorCandidates) {
+    const index=idIndex.get(cell.root_id), item=document.createElement('li'),button=document.createElement('button');
+    const count=live&&activity?String(activity.counts.get(index)||0):'unavailable';
+    button.textContent=`${cell.population} / ${cell.cell_type||cell.hemibrain_type} / ${cell.side} · ${count} displayed spikes${cell.ambiguous_type_correspondence?' · AMBIGUOUS identity':''}`;
+    button.onclick=()=>choose(index,true);item.append(button);$('sensorimotor-cells').append(item);
+  }
+  ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+  if (!metadataReady) return;
+  for(const direction of ['incoming','outgoing']) {
+    const page=connectionPages[direction];
+    if(!page) continue;
+    ctx.strokeStyle=direction==='incoming'?'#3e9d98':'#b88945';ctx.lineWidth=1;
+    for(const edge of page.edges) {
+      const from=idIndex.get(edge.source_id),to=idIndex.get(edge.target_id);
+      if(from===undefined || to===undefined || !visible(from) || !visible(to))continue;
+      ctx.beginPath();
+      ctx.moveTo(view.x+(from%COLS+.5)*view.scale,view.y+(Math.floor(from/COLS)+.5)*view.scale);
+      ctx.lineTo(view.x+(to%COLS+.5)*view.scale,view.y+(Math.floor(to/COLS)+.5)*view.scale);
+      ctx.stroke();
+    }
+  }
+  const s = view.scale, radius = Math.max(.45, Math.min(3.5, s * .3));
+  const x0 = Math.max(0, Math.floor(-view.x / s) - 1);
+  const x1 = Math.min(COLS - 1, Math.ceil((canvas.clientWidth - view.x) / s));
+  const y0 = Math.max(0, Math.floor(-view.y / s) - 1);
+  const y1 = Math.min(Math.ceil(ids.length / COLS) - 1, Math.ceil((canvas.clientHeight - view.y) / s));
+  // Batched inactive dots keep the full 127,400-neuron layout inexpensive.
+  ctx.fillStyle = live && activity ? '#34465c' : '#263344';
+  ctx.beginPath();
+  for (let row = y0; row <= y1; row++) {
+    for (let col = x0; col <= x1; col++) {
+      const i = row * COLS + col;
+      if (i >= ids.length || !visible(i) || (live && activity?.counts.has(i))) continue;
+      const x = view.x + (col + .5) * s, y = view.y + (row + .5) * s;
+      ctx.moveTo(x + radius, y); ctx.arc(x, y, radius, 0, Math.PI * 2);
+    }
+  }
+  ctx.fill();
+  if (live && activity) {
+    for (const [i, count] of activity.counts) {
+      if (!visible(i)) continue;
+      const x = view.x + (i % COLS + .5) * s, y = view.y + (Math.floor(i / COLS) + .5) * s;
+      if (x < 0 || y < 0 || x > canvas.clientWidth || y > canvas.clientHeight) continue;
+      const intensity = Math.min(1, Math.log2(count + 1) / COUNT_LOG_SCALE);
+      ctx.fillStyle = `hsl(${165 - intensity * 30} 85% ${48 + intensity * 30}%)`;
+      ctx.beginPath(); ctx.arc(x,y,Math.min(s * .46, radius * (1 + intensity)),0,Math.PI*2); ctx.fill();
+    }
+  }
+  if (selected !== null) {
+    const x = view.x + (selected % COLS + .5) * s, y = view.y + (Math.floor(selected / COLS) + .5) * s;
+    ctx.strokeStyle = '#ffd77c'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x,y,Math.max(5,s*.48),0,Math.PI*2); ctx.stroke();
+  }
+}
+function labels(id) {
+  const result = [];
+  if (metadata.mn9_id === id) result.push('MN9');
+  if ((metadata.gf_ids || []).includes(id)) result.push('GF');
+  if ((metadata.input_ids || []).includes(id)) result.push('input');
+  if ((metadata.visual_input_ids || []).includes(id)) result.push('visual input');
+  const cell=sensorimotorCandidates.find(row=>row.root_id===id);
+  if(cell) {
+    result.push(`${cell.population} candidate · cell_type ${cell.cell_type||'unassigned'} · hemibrain ${cell.hemibrain_type||'unassigned'} · ${cell.side}`);
+    result.push(cell.ambiguous_type_correspondence?'AMBIGUOUS cross-label identity':'No validated motor decoder');
+  }
+  return result.join(' · ') || 'No known circuit label';
+}
+function formatMs(value) {
+  return Number.isFinite(value) ? value.toFixed(1) : 'unavailable';
+}
+function countScale(maximum = null) {
+  $('count-scale').textContent=`Fixed logarithmic interval-count scale · 0 = gray / 1 = dim teal / 7 = medium mint / ${2**COUNT_LOG_SCALE-1}+ = brightest mint (saturated). Maximum interval count ${maximum===null?'unavailable':maximum}. Color and size use log₂(count + 1) / ${COUNT_LOG_SCALE}, clamped to 1; not normalized per frame.`;
+}
+function selection() {
+  $('history').replaceChildren();
+  if (selected === null) {
+    for (const id of ['selected-index','selected-id','selected-labels']) $(id).textContent = '—';
+    $('selected-count').textContent = 'unavailable';
+    const li = document.createElement('li'); li.textContent = 'Select a neuron to inspect.'; $('history').append(li);
+    return;
+  }
+  $('selected-index').textContent = String(selected);
+  $('selected-id').textContent = ids[selected];
+  $('selected-labels').textContent = labels(ids[selected]);
+  const activity=displayedActivity();
+  $('selected-count').textContent = live && activity ? String(activity.counts.get(selected) || 0) : 'unavailable';
+  for (const item of [...history].reverse()) {
+    const li = document.createElement('li');
+    const gap = item.gap ? ` · GAP: ${item.gap} preceding interval sequence(s) not received` : '';
+    li.textContent = `E${item.episode} #${item.sequence} · ${formatMs(item.start)}–${formatMs(item.end)} ms: ${item.counts.get(selected) || 0}${gap}`;
+    $('history').append(li);
+  }
+  if (!history.length) {
+    const li = document.createElement('li'); li.textContent = 'No received intervals in this episode.'; $('history').append(li);
+  }
+}
+function choose(index, center = false) {
+  if(!visible(index)) $('filter').value='all';
+  clearConnections('Loading selected-neuron connections…');
+  selected = index;
+  $('search-status').textContent = `Selected index ${index}.`;
+  if (center) {
+    view.scale = Math.max(view.scale, 8);
+    view.x = canvas.clientWidth / 2 - (index % COLS + .5) * view.scale;
+    view.y = canvas.clientHeight / 2 - (Math.floor(index / COLS) + .5) * view.scale;
+  }
+  selection(); render();
+  inspectConnections();
+}
+function zoom(factor, x = canvas.clientWidth/2, y = canvas.clientHeight/2) {
+  const next = Math.max(.25, Math.min(60, view.scale * factor));
+  const ratio = next / view.scale;
+  view.x = x - (x-view.x) * ratio; view.y = y - (y-view.y) * ratio; view.scale = next;
+  render();
+}
+canvas.addEventListener('wheel', event => {
+  event.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  zoom(Math.exp(-Math.max(-200,Math.min(200,event.deltaY))*.004),event.clientX-rect.left,event.clientY-rect.top);
+}, {passive:false});
+canvas.addEventListener('pointerdown', event => {
+  if (event.button !== 0 || drag) return;
+  canvas.focus(); canvas.setPointerCapture(event.pointerId);
+  drag = {id:event.pointerId,x:event.clientX,y:event.clientY,vx:view.x,vy:view.y,moved:false};
+});
+canvas.addEventListener('pointermove', event => {
+  if (!drag || event.pointerId !== drag.id) return;
+  const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
+  if (Math.hypot(dx,dy)>4) drag.moved=true;
+  view.x=drag.vx+dx; view.y=drag.vy+dy; render();
+});
+canvas.addEventListener('pointerup', event => {
+  if (!drag || event.pointerId !== drag.id) return;
+  if (!drag.moved && metadataReady) {
+    const rect=canvas.getBoundingClientRect();
+    const col=Math.floor((event.clientX-rect.left-view.x)/view.scale);
+    const row=Math.floor((event.clientY-rect.top-view.y)/view.scale), index=row*COLS+col;
+    if(col>=0 && col<COLS && row>=0 && index<ids.length && visible(index)) choose(index);
+  }
+  drag=null;
+});
+canvas.addEventListener('pointercancel', () => {drag=null;});
+canvas.addEventListener('lostpointercapture', () => {drag=null;});
+canvas.addEventListener('keydown', event => {
+  const moves={ArrowLeft:[30,0],ArrowRight:[-30,0],ArrowUp:[0,30],ArrowDown:[0,-30]};
+  if(moves[event.key]) {event.preventDefault();view.x+=moves[event.key][0];view.y+=moves[event.key][1];render();}
+  else if(event.key==='+' || event.key==='=') {event.preventDefault();zoom(1.3);}
+  else if(event.key==='-') {event.preventDefault();zoom(1/1.3);}
+  else if(event.key==='Home') {event.preventDefault();fit();}
+});
+$('zoom-in').onclick=()=>zoom(1.3); $('zoom-out').onclick=()=>zoom(1/1.3);
+$('reset-view').onclick=fit; $('filter').onchange=render;
+$('search').onsubmit=event=>{
+  event.preventDefault();
+  const id=$('neuron-id').value.trim();
+  if(!metadataReady) {$('search-status').textContent='Metadata unavailable; cannot search.';return;}
+  if(!idIndex.has(id)) {$('search-status').textContent='No neuron with that exact ID.';return;}
+  // Exact IDs stay strings; never parse FlyWire IDs as JavaScript numbers.
+  $('filter').value='all'; choose(idIndex.get(id),true);
+};
+
+async function fetchBounded(path, maximum, signal) {
+  const response=await fetch(path,{cache:'no-store',signal});
+  if(!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
+  if(path!=='/api/status' && sessionID!==null &&
+    response.headers.get('X-Fly-Session')!==sessionID)
+    throw new Error('Session changed during request; waiting for the new session identity');
+  const declared=Number(response.headers.get('Content-Length'));
+  if(declared>maximum) throw new Error('Response exceeds size limit');
+  const reader=response.body.getReader(), chunks=[]; let size=0;
+  while(true) {
+    const {done,value}=await reader.read(); if(done) break;
+    size+=value.byteLength;
+    if(size>maximum) {await reader.cancel();throw new Error('Response exceeds size limit');}
+    chunks.push(value);
+  }
+  return new Blob(chunks,{type:response.headers.get('Content-Type') || 'application/octet-stream'});
+}
+async function json(path, limit, signal) {
+  return JSON.parse(await (await fetchBounded(path,limit,signal)).text());
+}
+function loadMetadata(data) {
+  if(!Array.isArray(data.neuron_ids) || !data.neuron_ids.length ||
+    data.neuron_ids.some(id=>typeof id!=='string')) throw new Error('Invalid neuron ID metadata');
+  metadata=data; ids=data.neuron_ids; idIndex=new Map(ids.map((id,index)=>[id,index]));
+  circuit=new Set([...(data.input_ids||[]),...(data.visual_input_ids||[]),...(data.gf_ids||[]),data.mn9_id].filter(id=>typeof id==='string'));
+  sensorimotorCandidates=data.sensorimotor_candidates||[];
+  if(!Array.isArray(sensorimotorCandidates)||sensorimotorCandidates.some(row=>!idIndex.has(row.root_id)))
+    throw new Error('Invalid sensorimotor candidate metadata');
+  for(const row of sensorimotorCandidates)circuit.add(row.root_id);
+  $('sensorimotor-panel').hidden=sensorimotorCandidates.length===0;
+  metadataReady=true;
+  const commit=data.snapshot?.upstream_commit ?? data.upstream_commit;
+  $('provenance').textContent=`${ids.length.toLocaleString()} ordered neuron IDs · upstream commit: ${typeof commit==='string'?commit:'unavailable'}`;
+  fit();
+}
+function receive(packet) {
+  const wasLive=live;
+  const a=packet.neuron_activity;
+  if(!a || a.schema_version!==1 || !Number.isSafeInteger(a.episode) || !Number.isSafeInteger(a.sequence) ||
+    !Array.isArray(a.indices) || !Array.isArray(a.counts) || a.indices.length!==a.counts.length)
+    throw new Error('Invalid activity packet');
+  const changed=episode!==a.episode;
+  if(changed) {
+    history=[];latest=null;episode=a.episode;sequence=null;skipped=0;joinedAt=null;
+    lastFiring=null;inspectLastFiring=false;$('activity-last').disabled=true;
+  }
+  // Duplicate polls do not append history; a reset sentinel is not an interval.
+  if(sequence===null || a.sequence>sequence) {
+    const counts=new Map(a.indices.map((index,i)=>[index,a.counts[i]]));
+    const gap=sequence===null?0:Math.max(0,a.sequence-sequence-1);
+    if(joinedAt===null) joinedAt=a.sequence;
+    skipped+=gap;
+    latest={episode:a.episode,sequence:a.sequence,start:a.start_ms,end:a.end_ms,counts,gap};
+    sequence=a.sequence;
+    if(packet.op==='reset') {history=[];skipped=0;}
+    else {history.push(latest);if(history.length>MAX_HISTORY)history.shift();}
+  }
+  live=true;
+  safetyPaused=packet.status==='safety stopped';
+  if(packet.motor_phase) {
+    const extension=packet.leg_extension;
+    const extensionText=extension?` Reduced leg-pathway activation: ${extension.activation.toFixed(3)}; ${extension.dnp10_spikes} actual DNp10 spikes this episode. Applied during flight only.`:'';
+    const rates=packet.visual_rates_Hz;
+    const rateText=rates?` Assumed continuous sensory drive: LC4 ${rates.LC4.toFixed(2)} Hz; LPLC2 ${rates.LPLC2.toFixed(2)} Hz.`:'';
+    const landing=packet.brain_linked_landing;
+    const landingText=landing
+      ? ` Reduced landing: ${landing.neural_request?`requested by ${landing.neural_request.interval_spikes} actual DNp10 spikes at ${landing.neural_request.time_s.toFixed(2)} s`:'awaiting actual flight DNp10 response'}. ${landing.assistance_release_time_s!==null?`Assistance release at ${landing.assistance_release_time_s.toFixed(2)} s; ${landing.stable_unassisted_walking_steps} stable unassisted walking steps.`:'Brake/descent assistance is explicitly assumed, not biological muscle physiology.'}`
+      : ' Stable touchdown/recovery on this experimental backend are not implemented.';
+    $('motor-status').textContent=`Physical phase: ${packet.motor_phase}. ${packet.controller_scope||''}. ${packet.eye_scope||''}.${extensionText}${rateText}${landingText}`;
+    const loose=packet.movable_objects||[];
+    $('object-status').textContent=loose.length
+      ? `Loose physical objects: ${loose.map(obj=>`${obj.name.replaceAll('_',' ')} (${obj.mass_mg.toFixed(3)} mg; ${obj.fly_contact_steps} fly-contact steps)`).join(' · ')}. Grass/leaves/fruit are contact surfaces; seed masses and friction are model assumptions. Sugar is a neural exposure proxy, not physical feeding.`
+      : 'This scene has no free-body loose objects. Placed cubes/spheres are fixed contact obstacles.';
+  } else {
+    $('motor-status').textContent='Motor backend: FlyGym engineered walking/recovery. Aerodynamic flight is not connected.';
+  }
+  if(packet.environment_controls) {
+    const controls=packet.environment_controls;
+    $('environment-status').textContent=`${controls.paused?'Paused':'Running'} · finger ${controls.finger_enabled?'on':'off'} · sugar ${controls.sugar_enabled?'on':'off'} · friction ${controls.slippery?'low':'normal'} · objects ${packet.editable_objects}/6`;
+    $('app-pause').textContent=controls.paused?'Resume (P)':'Pause (P)';
+    if(packet.status==='safety stopped') {
+      $('app-pause').textContent='Safety paused — use Reset';
+      $('app-pause').disabled=true;
+      $('world-message').hidden=false;
+      $('world-message').textContent='BOUNDARY SAFETY PAUSE · app remains open · camera and neurons available · Reset starts a new experiment';
+    } else {
+      $('app-pause').disabled=false;
+    }
+    for(const id of ['app-finger','app-box','app-sphere','app-remove']) $(id).disabled=packet.virtual_finger_available!==true;
+  }
+  if(packet.safety_notice || packet.status==='safety stopped') {
+    $('input-status').textContent=`Simulation safety stop — ${packet.safety_notice || packet.interaction_error || 'Reset to restart.'}`;
+  } else if(packet.interaction_error) $('input-status').textContent=`Edit rejected — ${packet.interaction_error}`;
+  if(typeof packet.pointer_lag_mm==='number') {
+    $('environment-status').textContent+=` · finger lag ${packet.pointer_lag_mm.toFixed(1)} mm · ${packet.finger_motion_clock}`;
+  }
+  if(selected===null) $('connection-status').textContent='Select a neuron to inspect its verified connections.';
+  else if(!wasLive && connectionsAvailable) inspectConnections();
+  $('backend-status').textContent=typeof packet.status==='string'?`Local backend · ${packet.status}`:'Local backend connected';
+  $('brain-time').textContent=typeof packet.brain_time_ms==='number'?`${packet.brain_time_ms.toFixed(1)} ms`:'unavailable';
+  $('habitat-time').textContent=typeof packet.habitat_time_s==='number'?`${packet.habitat_time_s.toFixed(2)} s`:'unavailable';
+  $('network-count').textContent=latest?String([...latest.counts.values()].reduce((sum,n)=>sum+n,0)):'unavailable';
+  let maximum=0;
+  if(latest) for(const count of latest.counts.values()) maximum=Math.max(maximum,count);
+  countScale(latest?maximum:null);
+  $('pause-status').textContent=typeof packet.status==='string'?`Habitat status: ${packet.status}${typeof packet.paused==='boolean'?` · ${packet.paused?'paused':'not paused'}`:''}`:
+    (typeof packet.paused==='boolean'?(packet.paused?'Habitat paused':'Habitat running'):'Pause state unavailable');
+  if(typeof packet.eye_time_s==='number') eyeTime=packet.eye_time_s;
+  $('eye-clock').textContent=eyeTime!==null?`Eye source render clock: ${eyeTime.toFixed(3)} s (publisher supplied; retained frame may precede a reset). Image and neural interval clocks are independent.`:
+    'Eye source render clock: unavailable. Image and neural interval clocks are independent.';
+  $('interval-label').textContent=latest?`Episode ${latest.episode} · sequence ${latest.sequence} · interval ${formatMs(latest.start)}–${formatMs(latest.end)} ms`:'No activity interval received.';
+  $('gap-status').textContent=`Skipped sequences since joining this episode at #${joinedAt}: ${skipped}. ${latest?.gap?`Latest gap: ${latest.gap} interval sequence(s).`:'Only received intervals are shown.'}`;
+  selection(); render();
+}
+function unavailable(message) {
+  $('environment-status').textContent='Environment state unavailable.';
+  appInteractive=false;clearWorld('Simulation closed/disconnected — waiting at this same address.');
+  live=false; $('backend-status').textContent=`Backend unavailable — ${message}`;
+  for(const id of ['brain-time','habitat-time','network-count']) $(id).textContent='unavailable';
+  countScale();
+  $('pause-status').textContent='Pause state unavailable';
+  $('session-status').textContent=sessionID?
+    `Session ${sessionID} is disconnected or closed. These are not additional live simulations. Waiting for a restart at this same address.`:
+    'No live session at this address. Start the habitat with --neural-dashboard.';
+  $('eye-clock').textContent='Eye source render clock: unavailable.';
+  $('interval-label').textContent='Live activity unavailable. History below is previously received data, not current values.';
+  clearEyes('Eye images unavailable — backend not responding.');
+  clearConnections('Connection inspection unavailable — backend not responding.');
+  selection();render();
+}
+function clearEyes(message) {
+  $('eyes').hidden=true; $('eyes').removeAttribute('src');
+  $('eyes-status').hidden=false; $('eyes-status').textContent=message;
+  if(eyeURL) {URL.revokeObjectURL(eyeURL);eyeURL=null;}
+  loadedEyeRevision=null;
+}
+$('eyes').onerror=()=>clearEyes('Eye images unavailable — frame could not be decoded.');
+async function refreshEyes(signal, suppliedStatus=null) {
+  try {
+    const status=suppliedStatus || await json('/api/status',4096,signal);
+    if(!status.eyes_available) {
+      clearEyes('Eye images unavailable — awaiting a published frame.');
+      return;
+    }
+    if(!Number.isSafeInteger(status.eyes_revision) || status.eyes_revision<0)
+      throw new Error('Invalid eye revision');
+    if(eyeURL && loadedEyeRevision===status.eyes_revision) return;
+    const blob=await fetchBounded('/api/eyes',8*1024*1024,signal);
+    if(blob.type!=='image/png') throw new Error('not a PNG');
+    const old=eyeURL; eyeURL=URL.createObjectURL(blob);
+    $('eyes').src=eyeURL; $('eyes').hidden=false; $('eyes-status').hidden=true;
+    loadedEyeRevision=status.eyes_revision;
+    if(old) URL.revokeObjectURL(old);
+  } catch(error) {clearEyes('Eye images unavailable — image endpoint unavailable.');}
+}
+async function poll() {
+  if(stopping) return;
+  const started=performance.now(), controller=new AbortController();
+  let timeout=setTimeout(()=>controller.abort(),metadataReady?2500:10000);
+  try {
+    const status=await json('/api/status',4096,controller.signal);
+    const previousSession=sessionID;
+    adoptSession(status.session_id);
+    if(previousSession!==sessionID) {
+      clearTimeout(timeout);timeout=setTimeout(()=>controller.abort(),10000);
+    }
+    connectionsAvailable=status.connections_available===true;
+    if(status.status!=='running') throw new Error('session closed');
+    if(!metadataReady) loadMetadata(await json('/api/metadata',32*1024*1024,controller.signal));
+    receive(await json('/api/state',8*1024*1024,controller.signal));
+    activitySummary(await json('/api/activity-summary',8*1024*1024,controller.signal));
+    $('session-status').textContent=`One dashboard contains both views · session ${sessionID}. Restarting reuses this address.`;
+    await refreshEyes(controller.signal,status);
+  } catch(error) {unavailable(error.name==='AbortError'?'request timed out':error.message);}
+  finally {
+    clearTimeout(timeout);
+    // Schedule after completion: at most 5 Hz and never overlapping polls.
+    if(!stopping) setTimeout(poll,Math.max(0,200-(performance.now()-started)));
+  }
+}
+async function pollWorld() {
+    if(stopping)return;
+    const start=performance.now(),controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),2500);
+    try {
+      const status=await json('/api/status',4096,controller.signal);
+      if(sessionID!==status.session_id)return;
+      await refreshWorld(status,controller.signal);
+    } catch(error) {
+      clearWorld(`World unavailable — ${error.name==='AbortError'?'request timed out':error.message}`);
+    } finally {
+      clearTimeout(timeout);
+      if(!stopping)setTimeout(pollWorld,Math.max(0,33-(performance.now()-start)));
+    }
+}
+window.addEventListener('pagehide',()=>{stopping=true;if(eyeURL)URL.revokeObjectURL(eyeURL);if(worldURL)URL.revokeObjectURL(worldURL);});
+new ResizeObserver(resize).observe(canvas);
+poll();
+pollWorld();
+</script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+flybody @ git+https://github.com/TuragaLab/flybody.git@d015e9bfe441bd90ae431bac24c55cb74bdbce26
+dm-control==1.0.27
+mujoco==3.2.7
+tensorflow-cpu==2.8.0
+tensorflow-probability==0.16.0
+tensorflow-io-gcs-filesystem==0.24.0
+protobuf==3.20.3

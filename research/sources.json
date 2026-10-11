@@ -1,0 +1,886 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-10-10",
+  "scope": "Cross-species connectomics catalog; original FlyWire-630 model inputs acquired and a bounded 30-trial sugar-to-MN9 computational baseline completed.",
+  "species": [
+    {"id": "caenorhabditis-elegans", "scientific_name": "Caenorhabditis elegans", "common_name": "nematode worm"},
+    {"id": "drosophila-melanogaster", "scientific_name": "Drosophila melanogaster", "common_name": "fruit fly"},
+    {"id": "mus-musculus", "scientific_name": "Mus musculus", "common_name": "house mouse"},
+    {"id": "homo-sapiens", "scientific_name": "Homo sapiens", "common_name": "human"},
+    {"id": "ciona-intestinalis", "scientific_name": "Ciona intestinalis", "common_name": "sea squirt / tunicate", "notes": "Name as reported in the 2016 publication; verify specimen taxonomy before combining later Ciona datasets."},
+    {"id": "platynereis-dumerilii", "scientific_name": "Platynereis dumerilii", "common_name": "marine annelid worm"},
+    {"id": "danio-rerio", "scientific_name": "Danio rerio", "common_name": "zebrafish"}
+  ],
+  "review_status_definitions": {
+    "article_reviewed": "Article content reviewed; not a verification of every underlying scientific claim.",
+    "documentation_reviewed": "Official documentation or repository description reviewed; services/data not executed.",
+    "abstract_reviewed": "Indexed primary-paper abstract reviewed; full methods and supplements not reviewed.",
+    "metadata_checked": "Metadata or access response checked; scientific content not reviewed.",
+    "follow_up": "Identified through a reviewed source; content not reviewed."
+  },
+  "sources": [
+    {
+      "id": "S52",
+      "title": "Cheong et al. primary supplemental DN typing, tracts and light-level matching table, version 2",
+      "url": "https://cdn.elifesciences.org/articles/96084/elife-96084-supp1-v2.csv",
+      "kind": "primary_supplement",
+      "review_status": "documentation_reviewed",
+      "checked_on": "2026-10-10",
+      "notes": "CC-BY-4.0 parent article; 152740 bytes,1328 rows,Windows-1252 text. SHA256 e559a0e6759044c6a969dab53c56a843e3c1d8d957fbb3881b78488774dfb687. MANC DNa04/DNa05 map to DNut001/DNut002 with published matching confidence3/5; DNp07/DNp10 map to DNxn027/DNxl018 with confidence5/5. Male VNC body IDs are not female FlyWire630 root IDs; conflicting historical brain type correspondence remains unresolved."
+    },
+    {
+      "id": "S47",
+      "title": "State-dependent decoupling of sensory and motor circuits underlies behavioral flexibility in Drosophila",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7444277/",
+      "kind": "primary_paper",
+      "review_status": "article_reviewed",
+      "checked_on": "2026-10-10",
+      "notes": "Published Nature Neuroscience 2019, DOI 10.1038/s41593-019-0413-4. Accessible primary results/methods reviewed: DNp07/DNp10 causally drive landing leg extension with state-dependent visual gating. DNp07 but not DNp10 is gated by octopamine. Tethered leg responses do not establish a complete physical touchdown controller."
+    },
+    {
+      "id": "S48",
+      "title": "Organization of circuits linking descending input to motor output in the Drosophila Male Adult Nerve Cord connectome",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13384506/",
+      "kind": "primary_paper",
+      "review_status": "article_reviewed",
+      "checked_on": "2026-10-10",
+      "notes": "Published eLife record DOI 10.7554/eLife.96084, accessible primary wing-circuit sections reviewed. DNa04/DNa05 steering candidates target w-cHIN premotor paths; electrical connectivity inferred from close membrane contact is putative, not measured conductance. MANC male specimen is not interchangeable with female FlyWire630 IDs."
+    },
+    {
+      "id": "S49",
+      "title": "A population of descending neurons that regulates the flight motor of Drosophila",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9206711/",
+      "kind": "primary_paper",
+      "review_status": "article_reviewed",
+      "checked_on": "2026-10-10",
+      "notes": "Verified final Current Biology 2022 publication DOI 10.1016/j.cub.2022.01.008; primary DNg02 population/amplitude results reviewed. Supersedes describing only the 2021 preprint; does not supply a full flight-navigation decoder."
+    },
+    {
+      "id": "S50",
+      "title": "The role of a population of descending neurons in the optomotor response in flying Drosophila",
+      "url": "https://authors.library.caltech.edu/records/drvbj-nkj15",
+      "kind": "primary_preprint",
+      "review_status": "abstract_reviewed",
+      "checked_on": "2026-10-10",
+      "notes": "Caltech submitted/preprint record. Unilateral DNg02 activation produces bilateral wing-amplitude increases rather than the expected asymmetric optomotor steering; additional descending/motor circuitry is needed."
+    },
+    {
+      "id": "S51",
+      "title": "Analysis code for Cheong et al. eLife, version 1.0",
+      "url": "https://zenodo.org/records/20532930",
+      "kind": "analysis_archive",
+      "review_status": "metadata_checked",
+      "checked_on": "2026-10-10",
+      "notes": "CC-BY-4.0 archive, 59149 bytes, supplied MD5 40b2de1a88a82362cef5f0adef9c8560 verified. Selected putative-electrical contact-area CSV inspected: five w-cHIN groups, no measured conductance values. Pinned GitHub analysis commit 56723c657797601fe692d8e6c89610ecc2c97cf5."
+    },
+    {
+      "id": "S46",
+      "title": "Historical FlyWire annotations v1.1.0 and version-630 column definitions",
+      "url": "https://github.com/flyconnectome/flywire_annotations/tree/df6bb136f5b3d91c3992df4e8de2642329e2a384",
+      "kind": "annotation_repository",
+      "review_status": "documentation_reviewed",
+      "checked_on": "2026-10-10",
+      "notes": "Tag v1.1.0 is principally based on 630; pinned Supplemental_files_columns.md explicitly states root_id uses 630. No asset-specific license located in inspected repository metadata."
+    },
+    {
+      "id": "S42",
+      "title": "A spike-timing mechanism for action selection",
+      "url": "https://doi.org/10.1038/nn.3741",
+      "kind": "primary_paper",
+      "review_status": "abstract_reviewed",
+      "checked_on": "2026-10-10",
+      "notes": "Europe PMC abstract: relative giant-fiber spike timing selects short vs long looming escape. Not a full sustained-flight controller."
+    },
+    {
+      "id": "S43",
+      "title": "Neural Basis for Looming Size and Velocity Encoding in the Drosophila Giant Fiber Escape Pathway",
+      "url": "https://doi.org/10.1016/j.cub.2019.01.079",
+      "kind": "primary_paper",
+      "review_status": "abstract_reviewed",
+      "checked_on": "2026-10-10",
+      "notes": "Primary abstract supports LC4 velocity and LPLC2 size components feeding GF, with LPLC2 intervention evidence. Exact live-model IDs and full methods not verified."
+    },
+    {
+      "id": "S44",
+      "title": "The functional organization of descending sensory-motor pathways in Drosophila",
+      "url": "https://doi.org/10.7554/eLife.34272",
+      "kind": "primary_paper",
+      "review_status": "abstract_reviewed",
+      "checked_on": "2026-10-10",
+      "notes": "Primary abstract maps descending neuron anatomy and walking/flight neuropil organization. Does not validate arbitrary DN activation as takeoff."
+    },
+    {
+      "id": "S45",
+      "title": "Newly Identified Electrically Coupled Neurons Support Development of the Drosophila Giant Fiber Model Circuit",
+      "url": "https://www.eneuro.org/content/5/6/ENEURO.0346-18.2018",
+      "kind": "primary_paper",
+      "review_status": "article_reviewed",
+      "checked_on": "2026-10-10",
+      "notes": "Abstract/introduction reviewed: mixed chemical/electrical GF escape network, TTMn jump and PSI/DLM motor pathways. Full methods and conductance parameters not reviewed."
+    },
+    {
+      "id": "S01",
+      "title": "Complete wiring map of an adult fruit fly brain",
+      "url": "https://www.nih.gov/news-events/nih-research-matters/complete-wiring-map-adult-fruit-fly-brain",
+      "kind": "institutional_article",
+      "published_on": "2024-10-22",
+      "review_status": "article_reviewed",
+      "user_supplied": true
+    },
+    {
+      "id": "S02",
+      "title": "A connectomics milestone: Mapping the complete male fruit fly brain",
+      "url": "https://research.google/blog/a-connectomics-milestone-mapping-the-complete-male-fruit-fly-brain/",
+      "kind": "institutional_article",
+      "published_on": "2026-09-03",
+      "review_status": "article_reviewed",
+      "user_supplied": true,
+      "notes": "Full HTML parsed because simplified extraction omitted core sections."
+    },
+    {
+      "id": "S03",
+      "title": "Smithsonian coverage of the MICrONS mouse cortical map",
+      "url": "https://www.smithsonianmag.com/smart-news/in-a-world-first-researchers-mapped-part-of-a-mouses-brain-in-incredible-detail-its-a-leap-forward-for-neuroscience-180986406/",
+      "kind": "news_article",
+      "review_status": "article_reviewed",
+      "user_supplied": true
+    },
+    {
+      "id": "S04",
+      "title": "BRAIN Initiative researchers complete groundbreaking map of fly brain",
+      "url": "https://www.ninds.nih.gov/news-events/directors-messages/all-directors-messages/brain-initiative-researchers-complete-groundbreaking-map-fly-brain",
+      "kind": "institutional_article",
+      "review_status": "article_reviewed",
+      "user_supplied": true
+    },
+    {
+      "id": "S05",
+      "title": "36kr account of MaleCNS-to-Minecraft demonstration",
+      "url": "https://eu.36kr.com/en/p/3971642393686535",
+      "kind": "news_article",
+      "review_status": "article_reviewed",
+      "user_supplied": true,
+      "notes": "Attributes Minecraft demo to Evan Smith; says code/mod not yet public at publication. Demo implementation not independently reviewed."
+    },
+    {
+      "id": "S06",
+      "title": "Neuronal wiring diagram of an adult brain",
+      "url": "https://doi.org/10.1038/s41586-024-07558-y",
+      "kind": "primary_paper",
+      "doi": "10.1038/s41586-024-07558-y",
+      "first_publication_date_indexed": "2024-10-02",
+      "review_status": "abstract_reviewed",
+      "metadata_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:39358518%20AND%20SRC:MED&format=json&resultType=core",
+      "pmcid": "PMC11446842"
+    },
+    {
+      "id": "S07",
+      "title": "Sexual dimorphism in the complete Drosophila male central nervous system connectome",
+      "url": "https://doi.org/10.1016/j.cell.2026.08.015",
+      "kind": "primary_paper",
+      "doi": "10.1016/j.cell.2026.08.015",
+      "first_publication_date_indexed": "2026-09-01",
+      "review_status": "abstract_reviewed",
+      "metadata_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=EXT_ID:42691995%20AND%20SRC:MED&format=json&resultType=core",
+      "notes": "Indexed date differs from Google announcement date. Cell-type counts differ from project page."
+    },
+    {
+      "id": "S08",
+      "title": "Janelia Male CNS Connectome",
+      "url": "https://www.janelia.org/project-team/flyem/male-cns-connectome",
+      "kind": "official_project",
+      "review_status": "documentation_reviewed"
+    },
+    {
+      "id": "S09",
+      "title": "MaleCNS downloads and programmatic access",
+      "url": "https://male-cns.janelia.org/download/",
+      "kind": "official_data_documentation",
+      "review_status": "documentation_reviewed",
+      "notes": "Full HTML also parsed for bulk-file URLs, volume resolutions, and CC BY 4.0 statement."
+    },
+    {
+      "id": "S10",
+      "title": "MaleCNS release notes",
+      "url": "https://male-cns.janelia.org/release/",
+      "kind": "official_release_notes",
+      "review_status": "documentation_reviewed"
+    },
+    {
+      "id": "S11",
+      "title": "Male CNS Connectome Project Page",
+      "url": "https://male-cns.janelia.org/",
+      "kind": "official_project",
+      "review_status": "documentation_reviewed"
+    },
+    {
+      "id": "S12",
+      "title": "FlyWire Whole-brain Connectome Connectivity Data",
+      "url": "https://zenodo.org/records/10676866",
+      "kind": "versioned_dataset",
+      "doi": "10.5281/zenodo.10676866",
+      "review_status": "documentation_reviewed",
+      "metadata_url": "https://zenodo.org/api/records/10676866",
+      "notes": "Metadata checked for sizes, checksums, and license; transient API failure retried successfully."
+    },
+    {
+      "id": "S13",
+      "title": "FlyWire systematic neuron annotations",
+      "url": "https://github.com/flyconnectome/flywire_annotations",
+      "kind": "annotation_repository",
+      "review_status": "documentation_reviewed",
+      "notes": "Repository warns about post-publication updates and differences from Codex annotations."
+    },
+    {
+      "id": "S14",
+      "title": "A Drosophila computational brain model reveals sensorimotor processing",
+      "url": "https://doi.org/10.1038/s41586-024-07763-9",
+      "kind": "primary_paper",
+      "doi": "10.1038/s41586-024-07763-9",
+      "first_publication_date_indexed": "2024-10-02",
+      "review_status": "abstract_reviewed",
+      "metadata_url": "https://www.ebi.ac.uk/europepmc/webservices/rest/search?query=DOI:10.1038/s41586-024-07763-9&format=json&resultType=core",
+      "pmcid": "PMC11446845",
+      "notes": "Nature page returned HTTP 406. Later, Europe PMC full-text XML was consulted for Fig. 1 and 100 Hz sugar-to-MN9 acceptance statements; not all methods/supplements reviewed."
+    },
+    {
+      "id": "S15",
+      "title": "Drosophila brain model reference code",
+      "url": "https://github.com/philshiu/Drosophila_brain_model",
+      "kind": "model_repository",
+      "review_status": "documentation_reviewed",
+      "notes": "Pinned source and original processed inputs acquired. Upstream create_model/poi used for 30-trial sugar-to-MN9 baseline; original run_trial parity checked for seed 420.",
+      "inspected_commit": "91bdd1e7dcf193f3e7ca5a8933497fcef63b7960",
+      "license_from_github_metadata": "MIT"
+    },
+    {
+      "id": "S16",
+      "title": "neuprint-python query API",
+      "url": "https://connectome-neuprint.github.io/neuprint-python/docs/queries.html",
+      "kind": "api_documentation",
+      "review_status": "documentation_reviewed",
+      "notes": "fetch_adjacencies return order and overlapping ROI cautions; API not executed."
+    },
+    {
+      "id": "S17",
+      "title": "fafbseg FlyWire connectivity access",
+      "url": "https://fafbseg-py.readthedocs.io/en/latest/source/tutorials/flywire_connectivity.html",
+      "kind": "api_documentation",
+      "review_status": "documentation_reviewed"
+    },
+    {
+      "id": "S18",
+      "title": "MICrONS cubic millimeter data portal",
+      "url": "https://www.microns-explorer.org/cortical-mm3",
+      "kind": "official_data_documentation",
+      "review_status": "documentation_reviewed",
+      "notes": "Full HTML parsed to recover dataset description and access links omitted by simplified extraction."
+    },
+    {
+      "id": "S19",
+      "title": "Scientists map unprecedented detail of connections and visual perception in the mouse brain",
+      "url": "https://www.nih.gov/news-events/news-releases/scientists-map-unprecedented-detail-connections-visual-perception-mouse-brain",
+      "kind": "institutional_article",
+      "published_on": "2025-04-09",
+      "review_status": "article_reviewed"
+    },
+    {
+      "id": "S20",
+      "title": "MICrONS tutorial ecosystem",
+      "url": "https://tutorial.microns-explorer.org/",
+      "kind": "official_tutorial",
+      "review_status": "documentation_reviewed"
+    },
+    {
+      "id": "S21",
+      "title": "MICrONS Python and data access tools",
+      "url": "https://tutorial.microns-explorer.org/python-tools.html",
+      "kind": "official_tutorial",
+      "review_status": "documentation_reviewed"
+    },
+    {
+      "id": "S22",
+      "title": "MICrONS tutorial source repository",
+      "url": "https://github.com/AllenInstitute/microns_tutorial",
+      "kind": "tutorial_repository",
+      "review_status": "documentation_reviewed"
+    },
+    {
+      "id": "S23",
+      "title": "MICrONS functional database access",
+      "url": "https://github.com/cajal/microns-nda-access",
+      "kind": "official_data_documentation",
+      "review_status": "documentation_reviewed",
+      "notes": "v8 DataJoint/MySQL access and disk requirements reviewed; database not installed."
+    },
+    {
+      "id": "S24",
+      "title": "MICrONS Two Photon Functional Imaging, DANDI 000402",
+      "url": "https://dandiarchive.org/dandiset/000402",
+      "kind": "dataset_archive",
+      "review_status": "metadata_checked",
+      "metadata_url": "https://api.dandiarchive.org/api/dandisets/000402/versions/draft/",
+      "notes": "Official MICrONS tools guide links this archive. Draft summary queried; asset contents and license not verified."
+    },
+    {
+      "id": "S25",
+      "title": "Newer female brain-and-nerve-cord resource linked by Google",
+      "url": "https://www.nature.com/articles/s41586-026-10735-w",
+      "kind": "primary_paper",
+      "review_status": "follow_up",
+      "notes": "Linked by S02; publisher returned HTTP 406. No counts or methods independently reviewed."
+    },
+    {
+      "id": "S26",
+      "title": "Codex download access and sign-in requirements",
+      "url": "https://codex.flywire.ai/api/download",
+      "kind": "access_documentation",
+      "review_status": "documentation_reviewed",
+      "notes": "Redirected to sign-in explanation; computed features require Google account."
+    },
+    {
+      "id": "S27",
+      "title": "FlyWire project provenance",
+      "url": "https://flywire.ai/",
+      "kind": "official_project",
+      "review_status": "documentation_reviewed"
+    },
+    {
+      "id": "S28",
+      "title": "Functional connectomics spanning multiple areas of mouse visual cortex",
+      "url": "https://doi.org/10.1038/s41586-025-08790-w",
+      "kind": "primary_paper",
+      "review_status": "follow_up",
+      "doi": "10.1038/s41586-025-08790-w",
+      "notes": "Citation verified in S18; publisher returned HTTP 406. Full paper not reviewed."
+    },
+    {
+      "id": "S29",
+      "title": "WormWiring connectome datasets and historical reconstructions",
+      "url": "https://www.wormwiring.org/",
+      "kind": "official_data_documentation",
+      "review_status": "documentation_reviewed"
+    },
+    {
+      "id": "S30",
+      "title": "WormWiring adjacency matrices and data tables",
+      "url": "https://www.wormwiring.org/pages/adjacency.html",
+      "kind": "official_data_documentation",
+      "review_status": "documentation_reviewed",
+      "notes": "Lists corrected July 2020 adult hermaphrodite/male workbook. Anonymous HEAD verified 200 and 4,188,190 bytes; no upstream checksum or data license established."
+    },
+    {
+      "id": "S31",
+      "title": "Whole-animal connectomes of both Caenorhabditis elegans sexes",
+      "url": "https://doi.org/10.1038/s41586-019-1352-7",
+      "kind": "primary_paper",
+      "doi": "10.1038/s41586-019-1352-7",
+      "first_publication_date_indexed": "2019-07-03",
+      "review_status": "abstract_reviewed"
+    },
+    {
+      "id": "S32",
+      "title": "H01 human cortical tissue release",
+      "url": "https://h01-release.storage.googleapis.com/landing.html",
+      "kind": "official_project",
+      "review_status": "documentation_reviewed"
+    },
+    {
+      "id": "S33",
+      "title": "H01 data access and license",
+      "url": "https://h01-release.storage.googleapis.com/data.html",
+      "kind": "official_data_documentation",
+      "review_status": "documentation_reviewed",
+      "notes": "CC BY 4.0 statement and versioned cloud prefixes reviewed; landing page and detailed data page differ in proofread-cell counts."
+    },
+    {
+      "id": "S34",
+      "title": "The CNS connectome of a tadpole larva of Ciona intestinalis",
+      "url": "https://doi.org/10.7554/eLife.16962",
+      "kind": "primary_paper",
+      "doi": "10.7554/eLife.16962",
+      "first_publication_date_indexed": "2016-12-06",
+      "review_status": "abstract_reviewed",
+      "notes": "Europe PMC abstract reviewed; eLife page did not render article content. Supplementary asset/version/license still to verify."
+    },
+    {
+      "id": "S35",
+      "title": "Platynereis three-day-old larva connectome research compendium",
+      "url": "https://github.com/JekelyLab/Platynereis_3D_connectome_2024",
+      "kind": "data_repository",
+      "review_status": "documentation_reviewed",
+      "inspected_commit": "ab75029040b8dba768d4c2cbdb26423aec59ae4a",
+      "notes": "README describes analysis data/code and CC BY 4.0 for text, figures, code, data. Archive DOI 10.5281/zenodo.10825370 linked, but archive metadata retrieval failed."
+    },
+    {
+      "id": "S36",
+      "title": "Fish Fire&Wire",
+      "url": "https://www.janelia.org/fish-firewire",
+      "kind": "official_project",
+      "review_status": "documentation_reviewed",
+      "notes": "Whole-brain draft resource with activity/behavior in same larval specimen. Page says work/proofreading is not complete and access is under developer terms. No immutable downloadable snapshot verified."
+    },
+    {
+      "id": "S37",
+      "title": "MaleCNS v1.0 flat-connectome public object metadata",
+      "url": "https://storage.googleapis.com/storage/v1/b/flyem-male-cns/o?prefix=v1.0%2Fconnectome-data%2Fflat-connectome%2F&fields=items(name,size,md5Hash),nextPageToken",
+      "kind": "provider_asset_metadata",
+      "review_status": "metadata_checked",
+      "checked_on": "2026-10-10",
+      "notes": "Eleven objects, no next-page token; total declared bytes 31,318,683,398. Seven selected original files total 24,377,419,334 bytes. MD5 decoded from provider md5Hash, not inferred from ETag. No biological file contents downloaded."
+    },
+    {
+      "id": "S38",
+      "title": "FlyGym / NeuroMechFly biomechanical framework",
+      "url": "https://github.com/NeLy-EPFL/flygym",
+      "kind": "biomechanical_model_repository",
+      "review_status": "documentation_reviewed",
+      "inspected_commit": "38c8ec61034cd59bc5ba0de20688d4a3c0000d60",
+      "notes": "Pinned framework installed in separate environment. Hybrid walking controller and native viewer tested; not connectome-driven. CPU/controller measured around 0.30x realtime. Apache-2.0 reported by upstream metadata."
+    },
+    {
+      "id": "S39",
+      "title": "NeuroMechFly installation and current API",
+      "url": "https://neuromechfly.org/installation/",
+      "kind": "official_tutorial",
+      "review_status": "documentation_reviewed"
+    },
+    {
+      "id": "S40",
+      "title": "FlyBody whole-body walking/flight framework",
+      "url": "https://github.com/TuragaLab/flybody",
+      "kind": "biomechanical_model_repository",
+      "review_status": "documentation_reviewed",
+      "notes": "Pinned at d015e9bfe441bd90ae431bac24c55cb74bdbce26. Published policy executed with TF CPU 2.8.0 / TFP 0.16.0. Measured-reference benchmark passes 7/9 with failures preserved; one-second explicit synthetic navigation goal passes. Not connectome-driven. Apache-2.0 for source differs from GPL-3.0+ supplementary data."
+    },
+    {
+      "id": "S41",
+      "title": "FlyBody supplementary scientific datasets",
+      "url": "https://api.figshare.com/v2/articles/25309105",
+      "kind": "provider_asset_metadata",
+      "review_status": "metadata_checked",
+      "checked_on": "2026-10-10",
+      "notes": "Provider reports GPL 3.0+ for data, distinct from Apache-2.0 source code. Flight imitation archive is 12,880,076 bytes. Trained-policy archive is 6,537,720 bytes; computed_md5 is empty but provider supplied_md5 is 12934d5a1c60631a710bc2b6d297d3ce."
+    }
+  ],
+  "datasets": [
+    {
+      "id": "flywire-annotations-630-v1.1.0",
+      "species_id": "drosophila-melanogaster",
+      "species": "Drosophila melanogaster",
+      "scope": "Historical cell annotations for the version-630 female brain",
+      "coverage": "whole_brain_annotations",
+      "modality": ["cell_annotations"],
+      "catalog_status": "downloadable",
+      "version": "v1.1.0; commit df6bb136f5b3d91c3992df4e8de2642329e2a384",
+      "source_ids": ["S13", "S46"],
+      "license": {"spdx_id": null, "status": "Public supplementary research data; asset-specific reuse/redistribution terms not established"},
+      "selected_assets": [
+        {
+          "filename": "Supplemental_file1_annotations.tsv",
+          "url": "https://raw.githubusercontent.com/flyconnectome/flywire_annotations/df6bb136f5b3d91c3992df4e8de2642329e2a384/supplemental_files/Supplemental_file1_annotations.tsv",
+          "size_bytes": 21714061,
+          "checksum": "git-blob-sha1:2e57ec034285096a0efab0cc39450d5a03054baa",
+          "verification": "pinned_git_tree_metadata"
+        }
+      ],
+      "notes": "Exact root_id matching to the model must still be tested; historical annotation does not include VNC/electrical/muscle data."
+    },
+    {
+      "id": "flybody-flight-imitation",
+      "species_id": "drosophila-melanogaster",
+      "species": "Drosophila melanogaster",
+      "scope": "flight kinematics/reference data supporting biomechanical model, not a brain map",
+      "coverage": "biomechanical_reference",
+      "modality": ["flight_reference", "wing_kinematics"],
+      "catalog_status": "downloadable",
+      "version": "Figshare file 51196859",
+      "source_ids": ["S40", "S41"],
+      "license": {"spdx_id": "GPL-3.0-or-later", "status": "provider metadata reports GPL 3.0+; not the source-code license", "source_id": "S41"},
+      "selected_assets": [
+        {
+          "filename": "datasets_flight-imitation.zip",
+          "url": "https://ndownloader.figshare.com/files/51196859",
+          "size_bytes": 12880076,
+          "checksum": "md5:bb35ce27e07c4ffbd3d56ff6dec90905",
+          "verification": "provider_metadata"
+        },
+        {
+          "filename": "trained-fly-policies.zip",
+          "url": "https://ndownloader.figshare.com/files/44815195",
+          "size_bytes": 6537720,
+          "checksum": "md5:12934d5a1c60631a710bc2b6d297d3ce",
+          "verification": "provider_supplied_md5",
+          "metadata_checked_on": "2026-10-10"
+        }
+      ],
+      "notes": "Includes separately named scientific reference and pretrained-policy archives. Published flight policy has been executed; bounded tracking checks pass in several cases, but robustness benchmark retains two failures."
+    },
+    {
+      "id": "flywire-model-630",
+      "species_id": "drosophila-melanogaster",
+      "species": "Drosophila melanogaster",
+      "sex": "female",
+      "scope": "processed whole-brain model inputs for original publication",
+      "coverage": "whole_brain",
+      "modality": ["processed_signed_connectivity"],
+      "catalog_status": "downloadable",
+      "version": "FlyWire 630; upstream commit 91bdd1e7dcf193f3e7ca5a8933497fcef63b7960",
+      "source_ids": ["S14", "S15"],
+      "license": {"spdx_id": "MIT", "status": "upstream_model_repository_license; underlying FlyWire attribution still applies", "source_id": "S15"},
+      "selected_assets": [
+        {
+          "filename": "2023_03_23_completeness_630_final.csv",
+          "url": "https://raw.githubusercontent.com/philshiu/Drosophila_brain_model/91bdd1e7dcf193f3e7ca5a8933497fcef63b7960/2023_03_23_completeness_630_final.csv",
+          "size_bytes": 3057611,
+          "checksum": "git-blob-sha1:be745f0ce054308df21accc5c4b3883aa38498f9",
+          "verification": "pinned_git_tree_metadata"
+        },
+        {
+          "filename": "2023_03_23_connectivity_630_final.parquet",
+          "url": "https://raw.githubusercontent.com/philshiu/Drosophila_brain_model/91bdd1e7dcf193f3e7ca5a8933497fcef63b7960/2023_03_23_connectivity_630_final.parquet",
+          "size_bytes": 86630944,
+          "checksum": "git-blob-sha1:8b4d9531bc0acbda7c2074ae577e6ac9e2fca166",
+          "verification": "pinned_git_tree_metadata"
+        },
+        {
+          "filename": "model.py",
+          "url": "https://raw.githubusercontent.com/philshiu/Drosophila_brain_model/91bdd1e7dcf193f3e7ca5a8933497fcef63b7960/model.py",
+          "size_bytes": 11900,
+          "checksum": "git-blob-sha1:5ba7083cf55bf6092967f8d9065e86cd677efed1",
+          "verification": "pinned_git_tree_metadata"
+        },
+        {
+          "filename": "LICENSE",
+          "url": "https://raw.githubusercontent.com/philshiu/Drosophila_brain_model/91bdd1e7dcf193f3e7ca5a8933497fcef63b7960/LICENSE",
+          "size_bytes": 1085,
+          "checksum": "git-blob-sha1:deca2d0f1e82e910d8248b0d27398eb9450976ee",
+          "verification": "pinned_git_tree_metadata"
+        }
+      ],
+      "notes": "Processed indices/sign rules belong to this snapshot, not arbitrary FlyWire versions. Model source is downloaded unchanged outside Git and verified before execution."
+    },
+    {
+      "id": "flywire-female-brain-783",
+      "species_id": "drosophila-melanogaster",
+      "species": "Drosophila melanogaster",
+      "coverage": "whole_brain",
+      "modality": ["synaptic_connectivity", "electron_microscopy", "cell_annotations"],
+      "catalog_status": "downloadable",
+      "sex": "female",
+      "scope": "adult brain",
+      "version": "783",
+      "source_ids": ["S06", "S12", "S13", "S17"],
+      "metrics": [
+        {"name": "reconstructed_neurons", "value": 139255, "source_id": "S06"},
+        {"name": "chemical_synapses_between_reconstructed_neurons", "value_approximate": 50000000, "source_id": "S06"},
+        {"name": "all_released_synapse_records_including_unproofread_partners", "value_approximate": 130000000, "source_id": "S12"}
+      ],
+      "license": {"spdx_id": "CC-BY-4.0", "status": "verified_for_connectivity_record", "source_id": "S12"},
+      "access": {"static_download": "public", "computed_codex_features": "Google sign-in", "programmatic_tools": ["fafbseg", "CAVEclient"]},
+      "selected_assets": [
+        {
+          "filename": "proofread_root_ids_783.npy",
+          "url": "https://zenodo.org/records/10676866/files/proofread_root_ids_783.npy?download=1",
+          "size_bytes": 1114168,
+          "checksum": "md5:e0e6c19732fd8c7a4e39a2d170105421",
+          "verification": "record_metadata_only"
+        },
+        {
+          "filename": "proofread_connections_783.feather",
+          "url": "https://zenodo.org/records/10676866/files/proofread_connections_783.feather?download=1",
+          "size_bytes": 852022274,
+          "checksum": "md5:f48f972d262323a102aed49af1396b8a",
+          "verification": "record_metadata_only"
+        },
+        {
+          "filename": "flywire_synapses_783.feather",
+          "url": "https://zenodo.org/records/10676866/files/flywire_synapses_783.feather?download=1",
+          "size_bytes": 9492998242,
+          "checksum": "md5:f8f1b97c9d4b0ea9b4c8b287f6b99091",
+          "verification": "record_metadata_only"
+        },
+        {
+          "filename": "per_neuron_neuropil_count_post_783.feather",
+          "size_bytes": 233843050,
+          "checksum": "md5:bb5999f10920ade803d9f37097a43a56",
+          "verification": "record_metadata_only"
+        },
+        {
+          "filename": "per_neuron_neuropil_count_pre_783.feather",
+          "size_bytes": 16853770,
+          "checksum": "md5:90fcdb42c1ba05ed92820840fa1e6ba0",
+          "verification": "record_metadata_only"
+        }
+      ],
+      "coordinate_units_for_synapse_export": "nanometers",
+      "notes": "Connection export is per neuron pair and neuropil, not a unique pair-only table. Root IDs must retain exact integer precision."
+    },
+    {
+      "id": "male-cns-v1.0",
+      "species_id": "drosophila-melanogaster",
+      "species": "Drosophila melanogaster",
+      "coverage": "whole_cns",
+      "modality": ["synaptic_connectivity", "electron_microscopy", "cell_annotations"],
+      "catalog_status": "downloadable",
+      "sex": "male",
+      "scope": "central brain, optic lobes, ventral nerve cord, intact neck connective",
+      "version": "v1.0",
+      "neuprint_dataset": "male-cns:v1.0",
+      "released_on": "2026-06-08",
+      "initial_v0_9_release": "2025-10-05",
+      "source_ids": ["S02", "S07", "S08", "S09", "S10", "S11", "S16", "S37"],
+      "metrics": [
+        {"name": "neurons", "value": 166700, "source_id": "S07"},
+        {"name": "neuron_types_across_cns", "value": 11710, "source_id": "S07"},
+        {"name": "synaptic_connections", "value_approximate": 125000000, "source_id": "S02"},
+        {"name": "isomorphic_types_in_paper_comparison", "value": 8069, "source_id": "S07"},
+        {"name": "dimorphic_types_in_paper_comparison", "value": 138, "source_id": "S07"},
+        {"name": "male_specific_types_in_paper_comparison", "value": 289, "source_id": "S07"},
+        {"name": "female_specific_types_in_paper_comparison", "value": 71, "source_id": "S07"},
+        {"name": "sex_specific_types_on_project_page", "value": 262, "source_id": "S08"},
+        {"name": "dimorphic_types_on_project_page", "value": 114, "source_id": "S08"}
+      ],
+      "license": {"spdx_id": "CC-BY-4.0", "status": "verified_on_project_download_page", "source_id": "S09"},
+      "access": {"bulk_files": "public cloud storage", "neuprint_api": "account and token", "tools": ["neuprint-python", "neuprintr", "navis"]},
+      "bulk_prefix": "gs://flyem-male-cns/v1.0/connectome-data/flat-connectome/",
+      "selected_assets": [
+        {
+          "filename": "body-annotations-male-cns-v1.0-minconf-0.5.feather",
+          "url": "https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/body-annotations-male-cns-v1.0-minconf-0.5.feather",
+          "size_bytes": 14483314,
+          "checksum": "md5:50a7718770c57220f160ba4f431ab89e",
+          "metadata_checked_on": "2026-10-10",
+          "verification": "public_bucket_metadata"
+        },
+        {
+          "filename": "body-neurotransmitters-male-cns-v1.0.feather",
+          "url": "https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/body-neurotransmitters-male-cns-v1.0.feather",
+          "size_bytes": 43282834,
+          "checksum": "md5:3d842b12fe5c49eefade528d7dd24a1f",
+          "metadata_checked_on": "2026-10-10",
+          "verification": "public_bucket_metadata"
+        },
+        {
+          "filename": "body-stats-male-cns-v1.0-minconf-0.5.feather",
+          "url": "https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/body-stats-male-cns-v1.0-minconf-0.5.feather",
+          "size_bytes": 778062826,
+          "checksum": "md5:404c3349c28580148e16815eb99f382a",
+          "metadata_checked_on": "2026-10-10",
+          "verification": "public_bucket_metadata"
+        },
+        {
+          "filename": "connectome-weights-male-cns-v1.0-minconf-0.5.feather",
+          "url": "https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/connectome-weights-male-cns-v1.0-minconf-0.5.feather",
+          "size_bytes": 1051241946,
+          "checksum": "md5:f30e9dcca25cfd021bf1e7b3d975599e",
+          "etag": "f30e9dcca25cfd021bf1e7b3d975599e",
+          "http_status_checked": 200,
+          "metadata_checked_on": "2026-10-10",
+          "verification": "public_bucket_metadata_and_anonymous_head"
+        },
+        {
+          "filename": "syn-points-male-cns-v1.0-minconf-0.5.feather",
+          "url": "https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/syn-points-male-cns-v1.0-minconf-0.5.feather",
+          "size_bytes": 13061489098,
+          "checksum": "md5:c69d08758de07582035cc8843574493a",
+          "metadata_checked_on": "2026-10-10",
+          "verification": "public_bucket_metadata"
+        },
+        {
+          "filename": "syn-partners-male-cns-v1.0-minconf-0.5.feather",
+          "url": "https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/syn-partners-male-cns-v1.0-minconf-0.5.feather",
+          "size_bytes": 6777179098,
+          "checksum": "md5:58efcf712f8c4d4de5f2ad51e97def76",
+          "metadata_checked_on": "2026-10-10",
+          "verification": "public_bucket_metadata"
+        },
+        {
+          "filename": "tbar-neurotransmitters-male-cns-v1.0.feather",
+          "url": "https://storage.googleapis.com/flyem-male-cns/v1.0/connectome-data/flat-connectome/tbar-neurotransmitters-male-cns-v1.0.feather",
+          "size_bytes": 2651680218,
+          "checksum": "md5:51b02c11690662aedef28f86d394ff0d",
+          "metadata_checked_on": "2026-10-10",
+          "verification": "public_bucket_metadata"
+        }
+      ],
+      "notes": "Published abstract and project page have differing type counts. Exact filter semantics, table contents, and neuron-pair edge count require acquisition/methods review."
+    },
+    {
+      "id": "microns-cortical-mm3",
+      "species_id": "mus-musculus",
+      "species": "Mus musculus",
+      "coverage": "brain_volume",
+      "modality": ["synaptic_connectivity", "electron_microscopy", "calcium_imaging"],
+      "catalog_status": "portal_access",
+      "scope": "P87 mouse visual cortical volume, V1/LM/AL/RL",
+      "version": null,
+      "functional_database_version_documented": "v8",
+      "source_ids": ["S18", "S19", "S20", "S21", "S22", "S23", "S24", "S28"],
+      "metrics": [
+        {"name": "volume_dimensions_mm", "value": [1.4, 0.87, 0.84], "source_id": "S18"},
+        {"name": "anatomical_cells", "value_approximate": 200000, "source_id": "S18"},
+        {"name": "anatomical_neurons", "value_approximate": 120000, "source_id": "S18"},
+        {"name": "estimated_functional_neurons", "value": 75902, "source_id": "S18"},
+        {"name": "functional_rois", "value": 115372, "source_id": "S18"},
+        {"name": "synapses_portal", "value_approximate": 523000000, "source_id": "S18"},
+        {"name": "synapses_nih_announcement", "value_approximate": 524000000, "source_id": "S19"}
+      ],
+      "license": {"spdx_id": null, "status": "verify_per_asset_before_redistribution"},
+      "access": {
+        "structural_annotations": "CAVEclient with registration/token",
+        "imagery_and_meshes": "cloud-volume and MeshParty",
+        "functional_data": "DataJoint database or selected NWB assets through DANDI 000402"
+      },
+      "notes": "No CAVE materialization selected; functional/anatomical correspondence exists for a subset only. Draft DANDI summary did not establish asset licensing."
+    },
+    {
+      "id": "wormwiring-cook2019-corrected2020",
+      "species_id": "caenorhabditis-elegans",
+      "species": "Caenorhabditis elegans",
+      "sex": "adult hermaphrodite and male",
+      "scope": "whole-animal nervous system including end-organ connections",
+      "coverage": "whole_nervous_system",
+      "modality": ["chemical_synapses", "gap_junctions", "neuromuscular_connections"],
+      "catalog_status": "downloadable",
+      "version": "adjacency workbook corrected July 2020",
+      "source_ids": ["S29", "S30", "S31"],
+      "license": {"spdx_id": null, "status": "verify_asset_terms_before_reuse_or_redistribution"},
+      "access": {"static_download": "public XLSX workbook"},
+      "selected_assets": [
+        {
+          "filename": "SI 5 Connectome adjacency matrices, corrected July 2020.xlsx",
+          "url": "https://www.wormwiring.org/si/SI%205%20Connectome%20adjacency%20matrices%2C%20corrected%20July%202020.xlsx",
+          "size_bytes": 4188190,
+          "http_status_checked": 200,
+          "verification": "anonymous_head_only"
+        }
+      ],
+      "notes": "Extends historical 1986 mapping. XLSX is a workbook with multiple matrices, not a ready-made uniform directed chemical graph. Keep electrical and neuromuscular edges distinct. No upstream checksum established."
+    },
+    {
+      "id": "human-h01",
+      "species_id": "homo-sapiens",
+      "species": "Homo sapiens",
+      "scope": "approximately one cubic millimeter of human cortical tissue",
+      "coverage": "brain_volume",
+      "modality": ["synaptic_connectivity", "electron_microscopy", "cell_annotations"],
+      "catalog_status": "portal_access",
+      "version": "volume prefix 20210601; c3 synapse prefix 20210729",
+      "source_ids": ["S32", "S33"],
+      "license": {"spdx_id": "CC-BY-4.0", "status": "verified_on_official_data_page", "source_id": "S33"},
+      "access": {
+        "portal": "https://h01-release.storage.googleapis.com/landing.html",
+        "tools": ["Neuroglancer", "TensorStore", "CAVE"],
+        "connectivity_prefix": "gs://h01-release/data/20210729/c3/synapses/exported/"
+      },
+      "notes": "Not a whole human brain. Automated reconstructions include fragments and errors; proofread subset is much smaller. Page reports 183 million synapses, but counts vary by release. No single connectivity asset pinned here."
+    },
+    {
+      "id": "ciona-larval-cns-2016",
+      "species_id": "ciona-intestinalis",
+      "species": "Ciona intestinalis",
+      "scope": "tadpole larval CNS and neuromuscular connections",
+      "coverage": "whole_cns",
+      "modality": ["chemical_synapses", "gap_junctions", "neuromuscular_connections"],
+      "catalog_status": "needs_asset_review",
+      "version": null,
+      "source_ids": ["S34"],
+      "metrics": [{"name": "cns_neurons", "value": 177, "source_id": "S34"}],
+      "license": {"spdx_id": null, "status": "verify_supplementary_asset_license"},
+      "access": {"paper": "https://doi.org/10.7554/eLife.16962"},
+      "notes": "Primary abstract verified; exact supplementary connectivity file and specimen taxonomy must be reviewed before ingestion."
+    },
+    {
+      "id": "platynereis-larval-connectome",
+      "species_id": "platynereis-dumerilii",
+      "species": "Platynereis dumerilii",
+      "scope": "three-day-old larva whole-body connectome",
+      "coverage": "whole_body",
+      "modality": ["synaptic_connectivity", "cell_annotations"],
+      "catalog_status": "needs_asset_review",
+      "version": "repository commit ab75029040b8dba768d4c2cbdb26423aec59ae4a",
+      "source_ids": ["S35"],
+      "license": {"spdx_id": "CC-BY-4.0", "status": "verified_in_repository_readme", "source_id": "S35"},
+      "access": {
+        "repository": "https://github.com/JekelyLab/Platynereis_3D_connectome_2024",
+        "archive_doi": "10.5281/zenodo.10825370"
+      },
+      "notes": "Repository contains analysis data and code; select and validate original connectivity assets before enabling automatic downloads."
+    },
+    {
+      "id": "zebrafish-fire-and-wire",
+      "species_id": "danio-rerio",
+      "species": "Danio rerio",
+      "scope": "six-day-old larval whole brain, including peripheral sensory/motor structures",
+      "coverage": "whole_brain_draft",
+      "modality": ["synaptic_connectivity", "electron_microscopy", "light_sheet_activity", "behavior"],
+      "catalog_status": "developer_terms_access",
+      "version": null,
+      "source_ids": ["S36"],
+      "license": {"spdx_id": null, "status": "developer_terms_and_release_to_verify"},
+      "access": {"portal": "https://www.janelia.org/fish-firewire"},
+      "notes": "Official page describes a draft with ongoing proofreading and access under developer terms. Not cataloged as a fully proofread public immutable download."
+    }
+  ],
+  "reference_model": {
+    "source_ids": ["S14", "S15"],
+    "repository": "https://github.com/philshiu/Drosophila_brain_model",
+    "inspected_commit": "91bdd1e7dcf193f3e7ca5a8933497fcef63b7960",
+    "simulator": "Brian 2",
+    "original_flywire_version_documented": "630",
+    "alternative_public_version_documented": "783",
+    "license_from_github_metadata": "MIT",
+    "executed": true,
+    "bounded_reproduction": {
+      "protocol": "experiments/flywire-sugar/experiment.json",
+      "runner": "scripts/run_flywire_sugar.py",
+      "dataset_id": "flywire-model-630",
+      "checked_on": "2026-10-10",
+      "mn9_activated_trials": 30,
+      "stimulated_trials": 30,
+      "stimulation_Hz": 100,
+      "mn9_mean_rate_Hz": 66.56666666666666,
+      "mn9_std_rate_Hz": 4.862669591444144,
+      "resting_control_spikes": 0,
+      "original_trial_parity_seed": 420,
+      "independent_full_seeded_replay": "All spike events, per-neuron rates, and non-timing trial summaries matched exactly.",
+      "scope": "One Fig. 1d frequency condition plus resting control, not entire paper or whole-animal behavior."
+    },
+    "processed_input_sizes_from_github_metadata": {
+      "checked_on": "2026-10-10",
+      "version_630": {
+        "2023_03_23_completeness_630_final.csv": 3057611,
+        "2023_03_23_connectivity_630_final.parquet": 86630944
+      },
+      "version_783": {
+        "Completeness_783.csv": 3327347,
+        "Connectivity_783.parquet": 100804642
+      }
+    },
+    "parameters_observed_in_source": {
+      "resting_voltage_mV": -52,
+      "reset_voltage_mV": -52,
+      "threshold_voltage_mV": -45,
+      "membrane_time_constant_ms": 20,
+      "synaptic_decay_ms": 5,
+      "refractory_period_ms": 2.2,
+      "transmission_delay_ms": 1.8,
+      "signed_synapse_scale_mV": 0.275,
+      "first_activation_rate_Hz": 150,
+      "second_activation_rate_Hz": 0,
+      "poisson_scaling_factor": 250,
+      "trial_duration_ms": 1000,
+      "trial_count": 30
+    },
+    "notes": "Values are model defaults, not individual-neuron measurements. Processed upstream connectivity is not interchangeable with raw exports. First bounded reproduction used unmodified upstream core helpers with serial state restoration and explicit trial seeds."
+  },
+  "open_questions": [
+    "Resolve MaleCNS sex-specific/dimorphic type-count differences between published abstract and project page using full methods and final annotations.",
+    "Review full connectome and modeling methods, confidence filters, transmitter/sign rules, and exact benchmark targets.",
+    "Evaluate newer female CNS dataset scope, access, and correspondence with the older FlyWire female brain.",
+    "Verify MICrONS structural/functional asset licenses and select pinned materialization, functional version, and matching tables.",
+    "Locate any subsequently released Minecraft or Eon implementation; verify neural dynamics, closed-loop interfaces, and validation.",
+    "Choose first biological experiment and explicit storage/compute limits before installing dependencies or downloading datasets."
+  ]
+}
