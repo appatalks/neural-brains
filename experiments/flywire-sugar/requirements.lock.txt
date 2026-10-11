@@ -23,7 +23,7 @@ numpy==1.24.4
     #   scipy
 pandas==1.5.3
     # via -r experiments/flywire-sugar/requirements.txt
-pyarrow==11.0.0
+pyarrow==14.0.1
     # via -r experiments/flywire-sugar/requirements.txt
 pyparsing==3.3.3
     # via brian2
