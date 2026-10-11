@@ -33,7 +33,7 @@ pytz==2026.5
     # via pandas
 scipy==1.10.1
     # via -r experiments/flywire-sugar/requirements.txt
-setuptools==69.5.1
+setuptools==83.0.0
     # via
     #   -r experiments/flywire-sugar/requirements.txt
     #   brian2
