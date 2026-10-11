@@ -159,7 +159,7 @@ pluggy==1.6.0
     # via pytest
 prompt-toolkit==3.0.53
     # via ipython
-protobuf==3.20.3
+protobuf==5.29.6
     # via
     #   -r experiments/fly-flight/requirements.txt
     #   dm-control
