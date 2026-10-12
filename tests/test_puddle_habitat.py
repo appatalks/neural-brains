@@ -18,6 +18,17 @@ SCENE=ROOT/"experiments/fly-walking/puddle-habitat.json"
 
 
 class PuddleTests(unittest.TestCase):
+    def test_half_area_scene_preserves_body_object_sizes_and_matches_food(self):
+        original=Environment.load(SCENE)
+        compact=Environment.load(ROOT/"experiments/fly-walking/puddle-compact-habitat.json")
+        self.assertAlmostEqual((compact.half_size_mm/original.half_size_mm)**2,.5)
+        for old,new in zip(original.objects,compact.objects):
+            self.assertEqual(old.size_mm,new.size_mm)
+            self.assertAlmostEqual(new.position_mm[0],old.position_mm[0]/math.sqrt(2))
+            self.assertEqual(new.position_mm[2],old.position_mm[2])
+        food=FeedingConfig.load(ROOT/"experiments/flywire-sugar/puddle-compact-feeding.json")
+        fruit=next(obj for obj in compact.objects if obj.name=="fruit_food_surface")
+        self.assertEqual(fruit.position_mm[:2],food.regions[1][1][:2])
     def test_versioned_scene_and_food_match(self):
         scene=Environment.load(SCENE)
         self.assertEqual(scene.schema_version,4)

@@ -14,12 +14,17 @@ def validate_input(value):
         "key": {"kind", "key"}, "pointer": {"kind", "x", "y"},
         "orbit": {"kind", "dx", "dy"}, "pan": {"kind", "dx", "dy"},
         "zoom": {"kind", "delta"}, "camera_reset": {"kind"},
+        "fly_count": {"kind","count"}, "inspect_fly": {"kind","fly"},
     }
     if not isinstance(kind, str) or kind not in fields or set(value) != fields[kind]:
         raise ValueError("Unknown app input or fields")
     if kind == "key":
         if not isinstance(value["key"], str) or value["key"] not in ENVIRONMENT_KEYS:
             raise ValueError("Only documented environment controls are allowed; no direct fly steering")
+    elif kind in {"fly_count","inspect_fly"}:
+        field="count" if kind=="fly_count" else "fly"
+        if type(value[field]) is not int or not 1 <= value[field] <= 3:
+            raise ValueError("Independent fly count/inspection must be an integer in1..3")
     else:
         for field in fields[kind] - {"kind"}:
             number = value[field]

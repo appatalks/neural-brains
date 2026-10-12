@@ -76,6 +76,41 @@
 
 ## Current state (2026-10-10)
 
+- Multi-fly milestone: user explicitly chose INDEPENDENTbrain+body and1–3 slider,
+  Apply startsnew episode/preserveshabitat+placedobjects; chosefinalstart1fly.
+  AddedrealsharedMuJoCo world with1..3 namespacedFlyBodyentities,195disjoint
+  actuatorchannels for3, ownphysobservations, statelesspolicyweightsreused but
+  separatedecoder/wingbeat/GF/landing state and127400-neuronworker perFly,
+  seeds420/421/422. [Evidence/scope](../docs/multiple-flies.md):
+  actual3body/brain1.5s completes, network15759/15626/375906spikes, upright
+  minima.9922/.9912/.9935, mass/inertiaunchanged; explicitsharedcrosscontacts
+  unitpass. Actual1->3->2->1 live lifecycle passesunique sessions, closesold
+  workers, preservesplacements, Fly2eye/neuralhistory/summarydomain and
+  pairedreset. Not broadmultiflight/landing/socialvision/realtimeproof.
+  Allflygeoms hiddeneyes; nosocialbrainpathway. Count1legacyresearch path
+  retained, multi rejectsunsupportedartificial/gradedresearchflags explicitly.
+  User priorcompactapp closednormally; latestsaved sphere30.07,-57.84mm
+  mustpreserveonupdatedsingle-flysliderlaunch. Onlyone8840server; slider
+  rebuildsphysics+brains, notseamlessinsertion or3mirroredavatars.
+
+- Fullscreen/compact milestone: user askededge-to-edge ground with organized
+  eye/neural views, approved restart, then explicitly chose HALF FLOOR AREA
+  (not halfwidth/depth). Main scene now immutablecompact variant159.099mm wide/
+  depth, XY placements/puddle radius x1/sqrt2; body/object sizes/heights/mass
+  unchanged, matched foodconfig. Saved sphere latest(42.52,-81.79mm) falls
+  outsidecompactbounds; userapproved scaledplacement(30.07,-57.84mm),
+  original retained. Prioractualwalkingboundarypause7.78s retained; assumed
+  neural boundarycue25->45mm, no directbodyturn or disabledsafetyguard.
+  [Evidence](../docs/puddle-habitat.md): compactnormal10s completes,
+  minclearance22.16mm/groundupright.919; compact3s flightpasses11950ticks,
+  nofloorcontacts,minclearance12.07mm, learnedflightreference10.6066cm/s.
+  Fullscreen covercrop with correctpointermapping; righteye/mapfixed docks,
+  optionalscrollinspector, truthfulcompact/HISTORICAL counts, auto-fitwhile
+  userzoompreserved. Realbrowserbounds pass1024x576/720x480/344x624.
+ 312tests9skips. No unlimitednavigation/biologyclaim; emergencystopremains.
+  Priorpausedlive closed cleanlybyQ withuserapproval. Newrestart must preserve
+  scaled latestsphere, one8840 only; check actuallive status before edits.
+
 - 2026-10-11 user approved auto-enabled hybrid + fullscreen/overlays + central
   puddle/leaf habitat and experimental fluid forces, then commit/push.
   Main defaults unified/BGwalking/DNp10landing/surfacevision, explicit --no-*

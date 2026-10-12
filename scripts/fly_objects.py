@@ -47,6 +47,9 @@ class Objects:
             raise ValueError("No placed object to remove")
         return self.placements.pop()
 
+    def save(self,path: Path):
+        path.write_text(json.dumps(self.placements,indent=2)+"\n")
+
     def load(self, path: Path):
         entries = json.loads(path.read_text())
         if not isinstance(entries, list):

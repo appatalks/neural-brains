@@ -1,4 +1,5 @@
 import sys
+import math
 import tempfile
 import unittest
 from pathlib import Path
@@ -74,9 +75,9 @@ class FlightAppTests(unittest.TestCase):
         self.assertEqual(command[:2],[str(ROOT/".venv-flight/bin/python"),str(ROOT/"scripts/fly_flight_app.py")])
         self.assertIn("--objects",command)
         self.assertIn("--seconds",command)
-        self.assertEqual(command[command.index("--arena-half-size-mm")+1],"112.5")
-        self.assertEqual(command[command.index("--scene")+1],str(ROOT/"experiments/fly-walking/puddle-habitat.json"))
-        self.assertEqual(command[command.index("--feeding-config")+1],str(ROOT/"experiments/flywire-sugar/puddle-feeding.json"))
+        self.assertAlmostEqual(float(command[command.index("--arena-half-size-mm")+1]),112.5/math.sqrt(2))
+        self.assertEqual(command[command.index("--scene")+1],str(ROOT/"experiments/fly-walking/puddle-compact-habitat.json"))
+        self.assertEqual(command[command.index("--feeding-config")+1],str(ROOT/"experiments/flywire-sugar/puddle-compact-feeding.json"))
         for flag in ("--brain-guided-walking","--brain-linked-landing","--landing-surface-vision"):
             self.assertIn(flag,command)
         self.assertNotIn("--test-stimulus",command)

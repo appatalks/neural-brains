@@ -382,11 +382,14 @@ class Dashboard:
             self._state = state
             activity = frozen["neuron_activity"]
             summary = self._activity_summary
-            if summary["episode"] != activity["episode"]:
+            if (summary["episode"] != activity["episode"]
+                    or summary.get("observed_fly_id") != frozen.get("observed_fly_id")):
                 summary = {
                     "episode": activity["episode"], "sequence": None,
                     "episode_spikes": 0, "active_intervals": 0, "last_firing": None,
                 }
+                if "observed_fly_id" in frozen:
+                    summary["observed_fly_id"]=frozen["observed_fly_id"]
                 self._activity_summary = summary
             if summary["sequence"] is None or activity["sequence"] > summary["sequence"]:
                 summary["sequence"] = activity["sequence"]

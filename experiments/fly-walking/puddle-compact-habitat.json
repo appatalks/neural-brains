@@ -1,0 +1,1668 @@
+{
+  "schema_version": 4,
+  "spawn_position_mm": [
+    -31.819805153394636,
+    -45.961940777125584,
+    1.278
+  ],
+  "half_size_mm": 79.54951288348659,
+  "walls_height_mm": 3,
+  "ground_friction": [
+    0.9,
+    0.005,
+    0.0001
+  ],
+  "ground_material": "soil_material",
+  "terrain": [],
+  "materials": [
+    {
+      "name": "soil_material",
+      "rgba": [
+        0.85,
+        0.76,
+        0.61,
+        1
+      ],
+      "friction": [
+        0.9,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.03,
+      "shininess": 0.06
+    },
+    {
+      "name": "stem_material",
+      "rgba": [
+        0.24,
+        0.38,
+        0.08,
+        1
+      ],
+      "friction": [
+        1.0,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.08,
+      "shininess": 0.1
+    },
+    {
+      "name": "leaf_material",
+      "rgba": [
+        0.15,
+        0.42,
+        0.09,
+        1
+      ],
+      "friction": [
+        0.8,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.18,
+      "shininess": 0.2
+    },
+    {
+      "name": "grass_material",
+      "rgba": [
+        0.28,
+        0.46,
+        0.1,
+        1
+      ],
+      "friction": [
+        0.85,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.12,
+      "shininess": 0.16
+    },
+    {
+      "name": "grass_tip_material",
+      "rgba": [
+        0.4,
+        0.54,
+        0.16,
+        1
+      ],
+      "friction": [
+        0.8,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.1,
+      "shininess": 0.12
+    },
+    {
+      "name": "dry_leaf_material",
+      "rgba": [
+        0.45,
+        0.27,
+        0.08,
+        1
+      ],
+      "friction": [
+        0.75,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.04,
+      "shininess": 0.06
+    },
+    {
+      "name": "moss_material",
+      "rgba": [
+        0.22,
+        0.31,
+        0.06,
+        1
+      ],
+      "friction": [
+        1.1,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.02,
+      "shininess": 0.04
+    },
+    {
+      "name": "petal_material",
+      "rgba": [
+        0.93,
+        0.72,
+        0.26,
+        1
+      ],
+      "friction": [
+        0.7,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.12,
+      "shininess": 0.2
+    },
+    {
+      "name": "bark_material",
+      "rgba": [
+        0.3,
+        0.17,
+        0.07,
+        1
+      ],
+      "friction": [
+        1.2,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.03,
+      "shininess": 0.05
+    },
+    {
+      "name": "stone_material",
+      "rgba": [
+        0.48,
+        0.46,
+        0.4,
+        1
+      ],
+      "friction": [
+        0.6,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.1,
+      "shininess": 0.15
+    },
+    {
+      "name": "wet_soil_material",
+      "rgba": [
+        0.26,
+        0.21,
+        0.14,
+        1
+      ],
+      "friction": [
+        0.25,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.65,
+      "shininess": 0.7
+    },
+    {
+      "name": "fruit_material",
+      "rgba": [
+        0.85,
+        0.36,
+        0.08,
+        1
+      ],
+      "friction": [
+        0.9,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.25,
+      "shininess": 0.3
+    },
+    {
+      "name": "peel_material",
+      "rgba": [
+        0.88,
+        0.72,
+        0.16,
+        1
+      ],
+      "friction": [
+        0.75,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.18,
+      "shininess": 0.18
+    },
+    {
+      "name": "seed_material",
+      "rgba": [
+        0.62,
+        0.43,
+        0.2,
+        1
+      ],
+      "friction": [
+        0.55,
+        0.003,
+        0.0001
+      ],
+      "specular": 0.05,
+      "shininess": 0.08
+    },
+    {
+      "name": "water_material",
+      "rgba": [
+        0.15,
+        0.46,
+        0.65,
+        0.85
+      ],
+      "friction": [
+        0.9,
+        0.002,
+        0.0001
+      ],
+      "specular": 0.9,
+      "shininess": 0.95
+    },
+    {
+      "name": "sugar_material",
+      "rgba": [
+        0.96,
+        0.94,
+        0.82,
+        1
+      ],
+      "friction": [
+        0.8,
+        0.005,
+        0.0001
+      ],
+      "specular": 0.35,
+      "shininess": 0.3
+    }
+  ],
+  "objects": [
+    {
+      "name": "plant_a_stem",
+      "kind": "capsule",
+      "position_mm": [
+        -24.041630560342615,
+        21.213203435596423,
+        4
+      ],
+      "size_mm": [
+        0.35,
+        3.65
+      ],
+      "pitch_rad": 0,
+      "material": "stem_material"
+    },
+    {
+      "name": "plant_a_leaf_left",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -25.809397513308983,
+        21.213203435596423,
+        4.5
+      ],
+      "size_mm": [
+        3.2,
+        1.6,
+        0.22
+      ],
+      "pitch_rad": 0.2,
+      "material": "leaf_material"
+    },
+    {
+      "name": "plant_a_leaf_right",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -22.273863607376246,
+        21.213203435596423,
+        6
+      ],
+      "size_mm": [
+        3.2,
+        1.6,
+        0.22
+      ],
+      "pitch_rad": -0.15,
+      "material": "leaf_material"
+    },
+    {
+      "name": "flower_center",
+      "kind": "sphere",
+      "position_mm": [
+        -24.041630560342615,
+        21.213203435596423,
+        8.1
+      ],
+      "size_mm": [
+        0.65
+      ],
+      "pitch_rad": 0,
+      "material": "fruit_material"
+    },
+    {
+      "name": "flower_petal_x",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -24.041630560342615,
+        21.213203435596423,
+        8
+      ],
+      "size_mm": [
+        2.2,
+        0.8,
+        0.2
+      ],
+      "pitch_rad": 0,
+      "material": "petal_material"
+    },
+    {
+      "name": "flower_petal_y",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -24.041630560342615,
+        21.213203435596423,
+        8
+      ],
+      "size_mm": [
+        0.8,
+        2.2,
+        0.2
+      ],
+      "pitch_rad": 0,
+      "material": "petal_material"
+    },
+    {
+      "name": "plant_b_stem",
+      "kind": "capsule",
+      "position_mm": [
+        24.041630560342615,
+        -21.213203435596423,
+        3
+      ],
+      "size_mm": [
+        0.3,
+        2.7
+      ],
+      "pitch_rad": 0,
+      "material": "stem_material"
+    },
+    {
+      "name": "plant_b_leaf_low",
+      "kind": "ellipsoid",
+      "position_mm": [
+        22.48599564173221,
+        -21.213203435596423,
+        2.5
+      ],
+      "size_mm": [
+        2.8,
+        1.4,
+        0.22
+      ],
+      "pitch_rad": 0.12,
+      "material": "leaf_material"
+    },
+    {
+      "name": "plant_b_leaf_high",
+      "kind": "ellipsoid",
+      "position_mm": [
+        25.45584412271571,
+        -21.213203435596423,
+        5.2
+      ],
+      "size_mm": [
+        2.8,
+        1.4,
+        0.22
+      ],
+      "pitch_rad": -0.18,
+      "material": "leaf_material"
+    },
+    {
+      "name": "bark_landing_patch",
+      "kind": "box",
+      "position_mm": [
+        -25.02254720951604,
+        -9.791431516767146,
+        0.15
+      ],
+      "size_mm": [
+        4,
+        3,
+        0.15
+      ],
+      "pitch_rad": 0,
+      "material": "bark_material"
+    },
+    {
+      "name": "wet_soil_patch",
+      "kind": "ellipsoid",
+      "position_mm": [
+        26.201876085741908,
+        -5.954971837668615,
+        0.06
+      ],
+      "size_mm": [
+        4,
+        3,
+        0.06
+      ],
+      "pitch_rad": 0,
+      "material": "wet_soil_material"
+    },
+    {
+      "name": "stone_landing_surface",
+      "kind": "ellipsoid",
+      "position_mm": [
+        24.03331021727968,
+        12.01665510863984,
+        1.2
+      ],
+      "size_mm": [
+        3.2,
+        2.4,
+        1.2
+      ],
+      "pitch_rad": 0,
+      "material": "stone_material"
+    },
+    {
+      "name": "fruit_food_surface",
+      "kind": "ellipsoid",
+      "position_mm": [
+        24.283487863266874,
+        11.502704777336941,
+        0.65
+      ],
+      "size_mm": [
+        3,
+        2.2,
+        0.65
+      ],
+      "pitch_rad": 0,
+      "material": "fruit_material"
+    },
+    {
+      "name": "banana_peel_left",
+      "kind": "ellipsoid",
+      "position_mm": [
+        26.727425879003892,
+        -2.764906125414196,
+        0.28
+      ],
+      "size_mm": [
+        4,
+        0.9,
+        0.28
+      ],
+      "pitch_rad": 0,
+      "material": "peel_material"
+    },
+    {
+      "name": "banana_peel_right",
+      "kind": "ellipsoid",
+      "position_mm": [
+        25.975425237115743,
+        -6.8758478568835795,
+        0.24
+      ],
+      "size_mm": [
+        2.5,
+        1.1,
+        0.24
+      ],
+      "pitch_rad": 0,
+      "material": "peel_material"
+    },
+    {
+      "name": "fallen_leaf_a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -25.73684753618666,
+        -7.721054260855997,
+        0.18
+      ],
+      "size_mm": [
+        3.5,
+        1.7,
+        0.18
+      ],
+      "pitch_rad": 0,
+      "material": "dry_leaf_material"
+    },
+    {
+      "name": "fallen_leaf_b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        25.836203938703225,
+        7.381772553915207,
+        0.22
+      ],
+      "size_mm": [
+        4.5,
+        2.1,
+        0.22
+      ],
+      "pitch_rad": 0,
+      "material": "dry_leaf_material"
+    },
+    {
+      "name": "fallen_leaf_c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -26.777242009870477,
+        2.2314368341558732,
+        0.2
+      ],
+      "size_mm": [
+        4,
+        1.8,
+        0.2
+      ],
+      "pitch_rad": 0,
+      "material": "dry_leaf_material"
+    },
+    {
+      "name": "moss_patch_a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -20.305409246554248,
+        -17.59802134701368,
+        0.2
+      ],
+      "size_mm": [
+        4,
+        3,
+        0.2
+      ],
+      "pitch_rad": 0,
+      "material": "moss_material"
+    },
+    {
+      "name": "moss_patch_b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        22.631881122275356,
+        14.484403918256227,
+        0.25
+      ],
+      "size_mm": [
+        5,
+        3,
+        0.25
+      ],
+      "pitch_rad": 0,
+      "material": "moss_material"
+    },
+    {
+      "name": "stone_cluster_a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -21.213203435596423,
+        -12.727922061357855,
+        1
+      ],
+      "size_mm": [
+        2,
+        1.5,
+        1
+      ],
+      "pitch_rad": 0,
+      "material": "stone_material"
+    },
+    {
+      "name": "stone_cluster_b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -24.041630560342615,
+        -12.020815280171307,
+        0.7
+      ],
+      "size_mm": [
+        1.2,
+        1,
+        0.7
+      ],
+      "pitch_rad": 0,
+      "material": "stone_material"
+    },
+    {
+      "name": "grass_00a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        24.55416902472664,
+        10.912964010989619,
+        2.8
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.6
+      ],
+      "pitch_rad": 0.18,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_00b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        24.575457277129484,
+        10.864939006730928,
+        2.1
+      ],
+      "size_mm": [
+        0.16,
+        0.65,
+        1.9
+      ],
+      "pitch_rad": -0.25,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_00c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        23.81037467063601,
+        12.452552270275158,
+        2.4
+      ],
+      "size_mm": [
+        0.18,
+        0.6,
+        2.2
+      ],
+      "pitch_rad": 0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_01a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        24.948222243347285,
+        -9.979288897338915,
+        2.7
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.5
+      ],
+      "pitch_rad": -0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_01b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        24.907114342315502,
+        -10.081451043318179,
+        2.2
+      ],
+      "size_mm": [
+        0.18,
+        0.65,
+        2
+      ],
+      "pitch_rad": 0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_01c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        24.329733840693923,
+        -11.404562737825277,
+        2.5
+      ],
+      "size_mm": [
+        0.16,
+        0.65,
+        2.3
+      ],
+      "pitch_rad": -0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_02a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -21.209939614754646,
+        16.496619700364725,
+        3.1
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.9
+      ],
+      "pitch_rad": 0.18,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_02b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -20.443652177914718,
+        17.437232739986083,
+        2.6
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.4
+      ],
+      "pitch_rad": -0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_02c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -21.00377171156672,
+        16.758328493271318,
+        2.8
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.6
+      ],
+      "pitch_rad": 0.36,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_03a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        22.357239405752978,
+        -14.904826270501985,
+        2.8
+      ],
+      "size_mm": [
+        0.2,
+        0.8,
+        2.6
+      ],
+      "pitch_rad": -0.22,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_03b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        22.42600289883129,
+        -14.80116191322865,
+        2.4
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.2
+      ],
+      "pitch_rad": 0.32,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_03c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        21.563360418953142,
+        -16.031889702786902,
+        2.7
+      ],
+      "size_mm": [
+        0.18,
+        0.65,
+        2.5
+      ],
+      "pitch_rad": -0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_04a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -26.870057685088803,
+        17.677669529663685,
+        3
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.8
+      ],
+      "pitch_rad": 0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_04b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -26.162950903902257,
+        18.031222920256962,
+        2.5
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.3
+      ],
+      "pitch_rad": -0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_04c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -27.577164466275352,
+        18.384776310850235,
+        2.7
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.5
+      ],
+      "pitch_rad": 0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_05a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        28.2842712474619,
+        17.677669529663685,
+        2.9
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.7
+      ],
+      "pitch_rad": -0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_05b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        28.991378028648445,
+        18.031222920256962,
+        2.4
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.2
+      ],
+      "pitch_rad": 0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_05c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        27.577164466275352,
+        18.384776310850235,
+        2.6
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.4
+      ],
+      "pitch_rad": -0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_06a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -31.819805153394636,
+        -21.213203435596423,
+        3.1
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.9
+      ],
+      "pitch_rad": 0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_06b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -31.112698372208087,
+        -21.566756826189696,
+        2.6
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.4
+      ],
+      "pitch_rad": -0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_06c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -32.526911934581186,
+        -21.920310216782973,
+        2.8
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.6
+      ],
+      "pitch_rad": 0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_07a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        31.819805153394636,
+        -26.870057685088803,
+        2.8
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.6
+      ],
+      "pitch_rad": -0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_07b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        32.526911934581186,
+        -27.223611075682076,
+        2.3
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.1
+      ],
+      "pitch_rad": 0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_07c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        31.112698372208087,
+        -27.577164466275352,
+        2.5
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.3
+      ],
+      "pitch_rad": -0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_08a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -43.840620433565945,
+        33.94112549695428,
+        3
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.8
+      ],
+      "pitch_rad": 0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_08b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -43.13351365237939,
+        34.294678887547555,
+        2.5
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.3
+      ],
+      "pitch_rad": -0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_08c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -44.54772721475249,
+        34.648232278140824,
+        2.7
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.5
+      ],
+      "pitch_rad": 0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_09a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        45.961940777125584,
+        31.819805153394636,
+        2.9
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.7
+      ],
+      "pitch_rad": -0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_09b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        46.66904755831213,
+        32.17335854398791,
+        2.4
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.2
+      ],
+      "pitch_rad": 0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_09c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        45.25483399593904,
+        32.526911934581186,
+        2.6
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.4
+      ],
+      "pitch_rad": -0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_10a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -50.91168824543142,
+        -42.426406871192846,
+        3.1
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.9
+      ],
+      "pitch_rad": 0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_10b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -50.20458146424487,
+        -42.77996026178612,
+        2.6
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.4
+      ],
+      "pitch_rad": -0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_10c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -51.61879502661797,
+        -43.13351365237939,
+        2.8
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.6
+      ],
+      "pitch_rad": 0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_11a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        55.154328932550705,
+        -43.840620433565945,
+        2.8
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.6
+      ],
+      "pitch_rad": -0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_11b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        55.86143571373725,
+        -44.194173824159215,
+        2.3
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.1
+      ],
+      "pitch_rad": 0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_11c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        54.44722215136415,
+        -44.54772721475249,
+        2.5
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.3
+      ],
+      "pitch_rad": -0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_12a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -60.104076400856535,
+        53.03300858899106,
+        3
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.8
+      ],
+      "pitch_rad": 0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_12b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -59.39696961966999,
+        53.386561979584336,
+        2.5
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.3
+      ],
+      "pitch_rad": -0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_12c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -60.81118318204308,
+        53.740115370177605,
+        2.7
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.5
+      ],
+      "pitch_rad": 0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_13a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        60.104076400856535,
+        55.154328932550705,
+        2.9
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.7
+      ],
+      "pitch_rad": -0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_13b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        60.81118318204308,
+        55.507882323143974,
+        2.4
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.2
+      ],
+      "pitch_rad": 0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_13c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        59.39696961966999,
+        55.86143571373725,
+        2.6
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.4
+      ],
+      "pitch_rad": -0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_14a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -14.14213562373095,
+        -29.698484809834994,
+        3
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.8
+      ],
+      "pitch_rad": 0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_14b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -13.435028842544401,
+        -30.052038200428267,
+        2.5
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.3
+      ],
+      "pitch_rad": -0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_14c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -14.849242404917497,
+        -30.40559159102154,
+        2.7
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.5
+      ],
+      "pitch_rad": 0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_15a",
+      "kind": "ellipsoid",
+      "position_mm": [
+        12.727922061357855,
+        29.698484809834994,
+        2.9
+      ],
+      "size_mm": [
+        0.2,
+        0.85,
+        2.7
+      ],
+      "pitch_rad": -0.2,
+      "material": "grass_material"
+    },
+    {
+      "name": "grass_15b",
+      "kind": "ellipsoid",
+      "position_mm": [
+        13.435028842544401,
+        30.052038200428267,
+        2.4
+      ],
+      "size_mm": [
+        0.18,
+        0.8,
+        2.2
+      ],
+      "pitch_rad": 0.3,
+      "material": "grass_tip_material"
+    },
+    {
+      "name": "grass_15c",
+      "kind": "ellipsoid",
+      "position_mm": [
+        12.020815280171307,
+        30.40559159102154,
+        2.6
+      ],
+      "size_mm": [
+        0.18,
+        0.7,
+        2.4
+      ],
+      "pitch_rad": -0.35,
+      "material": "grass_material"
+    },
+    {
+      "name": "leaf_island",
+      "kind": "ellipsoid",
+      "position_mm": [
+        0.0,
+        0.0,
+        0.1
+      ],
+      "size_mm": [
+        5,
+        4,
+        0.1
+      ],
+      "pitch_rad": 0,
+      "material": "leaf_material"
+    },
+    {
+      "name": "island_leaf_vein",
+      "kind": "box",
+      "position_mm": [
+        0.0,
+        0.0,
+        0.2
+      ],
+      "size_mm": [
+        4,
+        0.06,
+        0.015
+      ],
+      "pitch_rad": 0,
+      "material": "stem_material"
+    },
+    {
+      "name": "island_sugar_a",
+      "kind": "sphere",
+      "position_mm": [
+        2.474873734152916,
+        1.5556349186104046,
+        0.35
+      ],
+      "size_mm": [
+        0.15
+      ],
+      "pitch_rad": 0,
+      "material": "sugar_material"
+    },
+    {
+      "name": "island_sugar_b",
+      "kind": "sphere",
+      "position_mm": [
+        2.192031021678297,
+        1.7677669529663687,
+        0.32
+      ],
+      "size_mm": [
+        0.12
+      ],
+      "pitch_rad": 0,
+      "material": "sugar_material"
+    },
+    {
+      "name": "shore_sugar_a",
+      "kind": "box",
+      "position_mm": [
+        -24.503383448328115,
+        -11.026522551747652,
+        0.25
+      ],
+      "size_mm": [
+        0.25,
+        0.22,
+        0.25
+      ],
+      "pitch_rad": 0,
+      "material": "sugar_material"
+    },
+    {
+      "name": "shore_sugar_b",
+      "kind": "sphere",
+      "position_mm": [
+        -24.82100387781562,
+        -10.291635754216232,
+        0.18
+      ],
+      "size_mm": [
+        0.18
+      ],
+      "pitch_rad": 0,
+      "material": "sugar_material"
+    },
+    {
+      "name": "berry_food_surface",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -21.92662487964613,
+        15.531359289749343,
+        0.7
+      ],
+      "size_mm": [
+        1.7,
+        1.5,
+        0.7
+      ],
+      "pitch_rad": 0,
+      "material": "fruit_material"
+    },
+    {
+      "name": "shore_pebble",
+      "kind": "ellipsoid",
+      "position_mm": [
+        23.708874428019534,
+        -12.644733028277084,
+        0.4
+      ],
+      "size_mm": [
+        1.4,
+        0.9,
+        0.4
+      ],
+      "pitch_rad": 0,
+      "material": "stone_material"
+    }
+  ],
+  "movable_objects": [
+    {
+      "name": "loose_seed_a",
+      "kind": "sphere",
+      "position_mm": [
+        15.556349186104043,
+        0.565685424949238,
+        0.5
+      ],
+      "size_mm": [
+        0.45
+      ],
+      "pitch_rad": 0,
+      "material": "seed_material",
+      "mass_mg": 0.02
+    },
+    {
+      "name": "loose_seed_b",
+      "kind": "sphere",
+      "position_mm": [
+        18.384776310850235,
+        -0.565685424949238,
+        0.55
+      ],
+      "size_mm": [
+        0.5
+      ],
+      "pitch_rad": 0,
+      "material": "seed_material",
+      "mass_mg": 0.04
+    },
+    {
+      "name": "loose_leaf_chaff",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -13.435028842544401,
+        -2.82842712474619,
+        0.12
+      ],
+      "size_mm": [
+        0.9,
+        0.5,
+        0.1
+      ],
+      "pitch_rad": 0,
+      "material": "dry_leaf_material",
+      "mass_mg": 0.02
+    },
+    {
+      "name": "floating_leaf",
+      "kind": "ellipsoid",
+      "position_mm": [
+        -6.363961030678928,
+        -2.82842712474619,
+        0.23
+      ],
+      "size_mm": [
+        2.5,
+        1.2,
+        0.06
+      ],
+      "pitch_rad": 0,
+      "material": "dry_leaf_material",
+      "mass_mg": 0.02
+    }
+  ],
+  "odors": [
+    {
+      "name": "fruit_odor_proxy",
+      "position_mm": [
+        6.363961030678928,
+        2.82842712474619,
+        1
+      ],
+      "strength": 1,
+      "spread_mm": 7
+    },
+    {
+      "name": "flower_odor_proxy",
+      "position_mm": [
+        -24.041630560342615,
+        21.213203435596423,
+        8.1
+      ],
+      "strength": 0.4,
+      "spread_mm": 5
+    },
+    {
+      "name": "shore_fruit_odor",
+      "position_mm": [
+        24.283487863266874,
+        11.502704777336941,
+        1
+      ],
+      "strength": 0.8,
+      "spread_mm": 12
+    },
+    {
+      "name": "berry_odor",
+      "position_mm": [
+        -21.92662487964613,
+        15.531359289749343,
+        1
+      ],
+      "strength": 0.5,
+      "spread_mm": 10
+    }
+  ],
+  "lights": [
+    {
+      "name": "warm_light_source",
+      "position_mm": [
+        3.5355339059327373,
+        -10.606601717798211,
+        18
+      ],
+      "strength": 0.8,
+      "spread_mm": 15
+    },
+    {
+      "name": "puddle_light_patch",
+      "position_mm": [
+        0.0,
+        0.0,
+        25
+      ],
+      "strength": 0.3,
+      "spread_mm": 25
+    }
+  ],
+  "wind_mm_s": [
+    0,
+    5,
+    0
+  ],
+  "drag_uN_per_mm_s": 0.02,
+  "drag_limit_uN": 2,
+  "range_limit_mm": 12,
+  "water_regions": [
+    {
+      "name": "central_puddle",
+      "position_mm": [
+        0.0,
+        0.0,
+        0.15
+      ],
+      "radius_mm": 9.899494936611664,
+      "depth_mm": 0.15,
+      "density_mg_mm3": 1,
+      "drag_rate_s": 30,
+      "material": "water_material"
+    }
+  ]
+}

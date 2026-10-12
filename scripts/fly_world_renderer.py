@@ -97,6 +97,13 @@ class WorldRenderer:
                 "scope": "Accepted camera input to encoded frame publication, latest 120 samples; excludes browser decode/display.",
             }
 
+    def select_body(self,body_id):
+        if type(body_id) is not int or not 0 <= body_id < self.model.nbody:
+            raise ValueError("World observer requires a valid physical body index")
+        with self.lock:
+            self.body=body_id
+        self.wake.set()
+
     def _run(self):
         mj, np = self.mj, self.np
         try:

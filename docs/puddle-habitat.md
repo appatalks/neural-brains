@@ -2,6 +2,14 @@
 
 ## Current defaults
 
+The current scene is the preserved [half-area variant](../experiments/fly-walking/puddle-compact-habitat.json):
+**159.099 ×159.099 mm**, exactly half the previous225×225 mm floor area.
+Only XY placements and the puddle radius are scaled by1/sqrt(2); the fly,
+objects, heights, masses and force units are unchanged. Food exposure regions
+are matched in [the compact feeding file](../experiments/flywire-sugar/puddle-compact-feeding.json).
+The earlier full-area files below remain reproducible historical versions.
+User-edited placements are scaled only with explicit approval.
+
 The main launcher now defaults to the unified backend with brain-guided
 walking, brain-linked assisted landing and binary landing-surface input enabled.
 These are the explicitly assumed hybrid interfaces, not complete biological
@@ -62,17 +70,30 @@ visible in telemetry; none are hidden landing assistance.
 ## Fullscreen and overlays
 
 Click **Fullscreen ground**. The ground image fills the viewport without
-stretching; eye/neural views overlay the right side. Toggle **Eye overlay** and
+stretching or black bars: edge cropping is reflected in pointer coordinates.
+Eye views and the neural map have separate fixed docks on the right. **Neuron
+details** opens the scrollable inspector without burying the map. Toggle **Eye overlay** and
 **Neural overlay** to clear the view. Controls stay overlaid at the bottom.
 Exit with **Exit fullscreen** or the browser's Escape key.
 
-Letterbox bars cannot move the physical pointer. Projection uses the displayed
-image rectangle; camera controls remain independent of physics and brain clocks.
+Projection uses the covered source-image rectangle; camera controls remain
+independent of physics and brain clocks.
 Fullscreen API failures are shown explicitly. All views still come from the
 same one server/physics instance, port 8840.
 
 ## Validation and retained negative results
 
+- Latest fullscreen layout passes actual viewport/eye/map bounds checks at
+  1024×576,720×480 and344×624. Both eye images and the whole fitted map remain
+  visible; no panel scrolling is needed to find them.
+- User walking boundary pause at7.78s is retained in the stopped interactive
+  log. The assumed neural boundary lookahead changes from25 to45mm, without
+  direct geometric body steering or removal of the emergency stop.
+  `compact-boundary-001` completes10s with minimum boundary clearance22.16mm
+  and ground upright0.9190. This is a bounded check, not unlimited navigation.
+- `compact-flight-001` passes actual3s flight gates:11,950 unassisted ticks,
+  no floor contacts and12.07mm minimum clearance. The smaller arena's existing
+  size-proportional learned-wing reference is10.6066cm/s rather than15cm/s.
 - Actual native fullscreen entered at 1874×754; both overlays were visible and
   eye-overlay hiding was verified. Deterministic browser tests cover contained
   image coordinates, letterbox rejection, overlay state and fullscreen exit.
@@ -100,5 +121,5 @@ same one server/physics instance, port 8840.
 
 Results remain outside Git under `results/puddle-habitat`. No live app is
 automatically left running, and historical failures are not overwritten.
-Full regression: 310 tests, 9 environment-dependent skips; browser JavaScript
+Full regression: 312 tests, 9 environment-dependent skips; browser JavaScript
 syntax and actual floating-body equilibrium/replay checks pass.

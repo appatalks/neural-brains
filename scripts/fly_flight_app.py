@@ -22,7 +22,7 @@ from fly_objects import Objects, set_flight_object_position
 from fly_policy import PublishedMotorPolicy, prepare_policy
 from fly_pointer_motion import capped_motion
 from fly_navigation import FlightNavigation, landing_assistance
-from fly_flight_avoidance import FlightAvoidance, obstacle_samples, SCOPE as AVOIDANCE_SCOPE
+from fly_flight_avoidance import FlightAvoidance, obstacle_samples, SCOPE as AVOIDANCE_SCOPE, MIN_HALF_SIZE_CM
 from fly_takeoff import assisted_force
 from fly_leg_extension import DNP10_IDS, LegExtension, SCOPE as LEG_EXTENSION_SCOPE
 from fly_neural_landing import NeuralLanding, SCOPE as LANDING_SCOPE
@@ -90,8 +90,8 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
         raise ValueError("DNp10 research intervention requires bounded brain-linked landing experiment")
     if test_brain_landing and (not brain_linked_landing or not test_stimulus or seconds is None or seconds<6):
         raise ValueError("Brain-linked cycle test requires upstream launch test, enabled landing and >=6s")
-    if flight_avoidance and arena_half_size_mm < 112.5:
-        raise ValueError("Flight avoidance requires arena half-size >=112.5 mm")
+    if flight_avoidance and arena_half_size_mm*.1 < MIN_HALF_SIZE_CM-1e-9:
+        raise ValueError("Flight avoidance requires arena half-size >=79.55 mm")
     if test_leg_extension and (
         not test_stimulus or seconds is None or seconds < 1.2 or engineered_navigation
     ):
@@ -128,6 +128,7 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
         "slippery": False, "follow_camera": True,
     }
     closed = False
+    requested_fly_count=None
     safety_stopped = False
     error_message = None
     phase = "walking"
@@ -240,7 +241,9 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
             connections = ConnectionIndex(brain.metadata["connection_index_dir"], brain.metadata["neuron_ids"],
                                           brain.metadata["upstream_commit"])
             inputs = BrowserInputs()
-            app = resources.enter_context(Dashboard(output, brain.metadata, port=port, connections=connections, inputs=inputs))
+            dashboard_metadata={**brain.metadata,"fly_count":1,
+                                "independent_brains":[{"id":1,"seed":food.seed,"neurons":brain.metadata["neurons"]}]}
+            app = resources.enter_context(Dashboard(output, dashboard_metadata, port=port, connections=connections, inputs=inputs))
             world = resources.enter_context(WorldRenderer(model, data, habitat.half_size_mm*.1, body, inputs,
                                                          app.publish_world, unit_scale=.1, initial_distance=1.2))
             eyes = resources.enter_context(mj.Renderer(model, height=256, width=256))
@@ -272,7 +275,15 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                     events.write(json.dumps({"time_s":total_steps*CONTROL_DT,"episode":episode,"input":event})+"\n")
                     events.flush()
                     error_message = None if not safety_stopped else safety_reason or "Boundary safety stop. Reset to restart."
-                    if event["kind"] == "pointer":
+                    if event["kind"]=="fly_count":
+                        if controlled_test or seconds is not None:
+                            error_message="Bounded validation locks fly population changes."
+                        elif event["count"]!=1:
+                            requested_fly_count=event["count"]
+                            closed=True
+                    elif event["kind"]=="inspect_fly":
+                        if event["fly"]!=1:error_message="This episode contains only Fly1."
+                    elif event["kind"] == "pointer":
                         position = world.target(event["x"]*1280, (1-event["y"])*960, plane_z=.15)
                         cursor_valid = position is not None
                         if cursor_valid:
@@ -774,7 +785,8 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
             unchanged=np.array_equal(initial_mass,model.body_mass) and np.array_equal(initial_inertia,model.body_inertia)
             if not unchanged:
                 raise RuntimeError("Unified app body mass/inertia changed during a controller transition")
-            summary={"status":"closed_by_user" if closed else "safety_stopped" if safety_stopped else "completed","backend":"single-body FlyBody",
+            summary={"status":"reconfigure_requested" if requested_fly_count is not None else "closed_by_user" if closed else "safety_stopped" if safety_stopped else "completed","backend":"single-body FlyBody",
+                     "fly_count":1,"requested_fly_count":requested_fly_count,
                      "same_body_mass_inertia_unchanged":bool(unchanged),"seconds":total_steps*CONTROL_DT,
                      "handoffs":handoffs,"flight_steps":flight_steps,"flight_floor_contact_steps":floor_contact_steps,
                      "safety_stopped":safety_stopped,"eye_frames":eye_count,"test_stimulus":test_stimulus,
@@ -873,13 +885,13 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir",type=Path,required=True)
     parser.add_argument("--output-dir",type=Path,required=True)
-    parser.add_argument("--scene",type=Path,default=ROOT/"experiments/fly-walking/puddle-habitat.json")
+    parser.add_argument("--scene",type=Path,default=ROOT/"experiments/fly-walking/puddle-compact-habitat.json")
     parser.add_argument("--feeding-config",type=Path)
     parser.add_argument("--objects",type=Path)
     parser.add_argument("--seconds",type=float)
     parser.add_argument("--dashboard-port",type=int,choices=[DEFAULT_PORT],default=DEFAULT_PORT,
                         help="Single fixed browser-app port; no alternate-port or ephemeral fallback")
-    parser.add_argument("--arena-half-size-mm",type=float,default=112.5)
+    parser.add_argument("--arena-half-size-mm",type=float,default=112.5/math.sqrt(2))
     parser.add_argument("--test-stimulus",action="store_true",help="Explicit bounded Poisson input test, not an environmental approach")
     parser.add_argument("--test-approach",action="store_true",help="Explicit bounded physical approaching-finger test through eye visibility")
     parser.add_argument("--engineered-navigation",action="store_true",help="Explicitly approved orbit navigation and force-assisted landing; not neural decoding")
@@ -911,16 +923,45 @@ def main():
                         help="Bounded causal control, never a normal browser control")
     parser.add_argument("--fluid-physics",action="store_true",
                         help="Experimental bounded buoyancy/drag; replaces rigid water collision, not CFD or swimming")
+    parser.add_argument("--fly-count",type=int,choices=(1,2,3),default=1,
+                        help="Independent brains/bodies; changing through browser starts a new episode")
+    parser.add_argument("--actuator-recovery",action=argparse.BooleanOptionalAction,default=False,
+                        help="Experimental leg-only righting; failed fly becomes passive without stopping peers")
     args=parser.parse_args()
     if args.feeding_config is None:
         args.feeding_config=default_feeding_config(args.scene)
     try:
-        summary=run(args.data_dir,args.output_dir,args.scene,args.feeding_config,args.objects,args.seconds,
-                    args.dashboard_port,args.arena_half_size_mm,args.test_stimulus,args.test_approach,args.engineered_navigation,
-                    args.neural_leg_extension,args.test_leg_extension,args.graded_vision,args.flight_avoidance,
-                    args.brain_linked_landing,args.test_brain_landing,args.landing_surface_vision,args.research_dnp10,
-                    args.controlled_test,args.walking_readouts,args.brain_guided_walking,
-                    args.test_walking_control,args.research_walking_control,args.fluid_physics)
+        count=args.fly_count
+        output=args.output_dir
+        objects=args.objects
+        reconfiguration=0
+        while True:
+            if count==1 and not args.actuator_recovery:
+                summary=run(args.data_dir,output,args.scene,args.feeding_config,objects,args.seconds,
+                            args.dashboard_port,args.arena_half_size_mm,args.test_stimulus,args.test_approach,args.engineered_navigation,
+                            args.neural_leg_extension,args.test_leg_extension,args.graded_vision,args.flight_avoidance,
+                            args.brain_linked_landing,args.test_brain_landing,args.landing_surface_vision,args.research_dnp10,
+                            args.controlled_test,args.walking_readouts,args.brain_guided_walking,
+                            args.test_walking_control,args.research_walking_control,args.fluid_physics)
+            else:
+                if any((args.graded_vision,args.test_stimulus,args.test_approach,args.engineered_navigation,
+                        args.test_leg_extension,args.test_brain_landing,args.research_dnp10,
+                        args.test_walking_control,args.research_walking_control)):
+                    raise ValueError("Multi-fly mode does not support single-fly graded/research probes; use physical sensory inputs")
+                from fly_multi_app import run as run_multi
+                summary=run_multi(args.data_dir,output,args.scene,args.feeding_config,objects,args.seconds,
+                    args.dashboard_port,args.arena_half_size_mm,count,args.brain_guided_walking,args.flight_avoidance,
+                    args.neural_leg_extension,args.brain_linked_landing,args.landing_surface_vision,args.fluid_physics,
+                    args.controlled_test,actuator_recovery=args.actuator_recovery)
+            requested=summary.get("requested_fly_count")
+            if requested is None:break
+            if args.seconds is not None:
+                raise ValueError("Bounded runs cannot restart through population controls")
+            reconfiguration+=1
+            objects=output/"objects.json"
+            output=args.output_dir/f"fly-count-episode-{reconfiguration:03d}"
+            count=requested
+            print(f"Starting explicit new episode with{count} independent flies; preserved objects:{objects}",flush=True)
     except (OSError,ValueError,RuntimeError,ImportError) as error:
         print(f"ERROR: experimental flight app failed: {error}",file=sys.stderr)
         return 1

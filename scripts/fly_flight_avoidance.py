@@ -13,6 +13,7 @@ MAX_TURN_RAD_S = 3.
 MAX_TURN_ACCEL_RAD_S2 = 12.
 LOOKAHEAD_S = 1.2
 OBSTACLE_BUFFER_CM = .8
+MIN_HALF_SIZE_CM = 11.25/math.sqrt(2)
 
 
 def obstacle_samples(model, data, body_id, known_ids=()):
@@ -49,8 +50,8 @@ def obstacle_samples(model, data, body_id, known_ids=()):
 
 class FlightAvoidance:
     def __init__(self, half_size_cm):
-        if not math.isfinite(half_size_cm) or half_size_cm < 11.25:
-            raise ValueError("Predictive flight avoidance requires arena half-size >=112.5 mm")
+        if not math.isfinite(half_size_cm) or half_size_cm < MIN_HALF_SIZE_CM-1e-9:
+            raise ValueError("Predictive flight avoidance requires arena half-size >=79.55 mm")
         self.half = half_size_cm
         self.speed = SPEED_CM_S*min(1.,half_size_cm/15.)
         self.cruise_speed=self.speed

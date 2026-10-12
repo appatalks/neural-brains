@@ -27,13 +27,16 @@ and the output directory must not already exist.
 
 Open **http://127.0.0.1:8840/** — one instance only. Use **Fullscreen ground**
 and toggle eye/neural overlays.
+Use the **Flies** slider for1–3 [independent brain/body pairs](docs/multiple-flies.md).
+**Apply fly count** starts a new episode and preserves habitat/placed objects.
+Select a fly to inspect its eyes and neural activity.
 
 **Brain-guided hybrid walking and assisted landing are enabled by default.**
 [Evidence and limitations](docs/brain-guided-walking.md): real neural outputs
 request walking speed/turns, but sensory drive, learned legs/wing control and
 transition assistance are not complete biological autonomy.
 
-The [puddle/leaf habitat](docs/puddle-habitat.md) includes food, sugar and sensory
+The [159 mm square, half-area puddle/leaf habitat](docs/puddle-habitat.md) includes food, sugar and sensory
 proxies, with a dry-soil spawn. Water is a rigid collision prototype by default;
 `--fluid-physics` enables experimental buoyancy/drag, not CFD or swimming.
 Island traversal remains experimental. Use

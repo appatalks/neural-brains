@@ -106,13 +106,13 @@ def make_arena(environment: Environment, fluid_physics=False):
 class FlyContactReader:
     """Separate fly contacts from loose-object/floor contacts in one physical world."""
 
-    def __init__(self, model, environment):
+    def __init__(self, model, environment, fly_prefix="walker"):
         import mujoco as mj
 
         self.model = model
         self.fly_geoms = {
             geom for geom in range(model.ngeom)
-            if (mj.mj_id2name(model, mj.mjtObj.mjOBJ_GEOM, geom) or "").startswith("walker/")
+            if (mj.mj_id2name(model, mj.mjtObj.mjOBJ_GEOM, geom) or "").startswith(fly_prefix+"/")
         }
         if not self.fly_geoms:
             raise ValueError("Contact reader requires the compiled FlyBody geometry")

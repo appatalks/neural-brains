@@ -6,10 +6,19 @@ authoritative MuJoCo physics state; browser images are not a second simulation.
 On wide screens the ground world is on the left and eye/neural instruments
 on the right. Narrow screens stack these panels.
 
-**Fullscreen ground** now enters native browser fullscreen with eye/neural
-overlays, individual visibility toggles and bottom controls. Escape or
-**Exit fullscreen** restores the split layout. Letterbox margins are excluded
-from physical pointer projection. See [the current environment and scope](puddle-habitat.md).
+**Fullscreen ground** fills the viewport edge-to-edge using an undistorted
+center crop. Eye views dock above the neural map on the right; both remain
+visible without scrolling through candidate-cell lists. **Neuron details**
+opens the detailed inspector separately. Controls stay at bottom-left.
+Escape or **Exit fullscreen** restores the split layout. Physical pointer
+projection accounts for the cropped source-image rectangle; the camera still
+pans/zooms normally. The map refits as its dock resizes until explicitly
+zoomed/panned by the user. See [the current environment and scope](puddle-habitat.md).
+
+The [Flies slider](multiple-flies.md) supports1–3 independent brain/body pairs.
+Apply count saves placements and explicitly starts a new episode; the observer
+selector shows only the chosen fly's eyes/neural activity and clears cross-fly
+history. There is still one physical world and one server at8840.
 
 ## Start
 

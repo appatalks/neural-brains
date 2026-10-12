@@ -20,6 +20,20 @@ import fly_dashboard
 
 
 class DashboardTests(unittest.TestCase):
+    def test_observed_fly_change_resets_activity_totals_not_brain_episode(self):
+        packet=self.packet()
+        packet["observed_fly_id"]=1
+        self.dashboard.publish(packet)
+        other=self.packet()
+        other["observed_fly_id"]=2
+        other["neuron_activity"].update(counts=[1,1],network_spikes=2)
+        other.update(network_spikes=2,mn9_spikes=1)
+        self.dashboard.publish(other)
+        summary=json.loads(self.request("/api/activity-summary")[2])
+        self.assertEqual(summary["observed_fly_id"],2)
+        self.assertEqual(summary["episode"],0)
+        self.assertEqual(summary["episode_spikes"],2)
+        self.assertEqual(summary["active_intervals"],1)
     def setUp(self):
         self.output = Path(__file__).resolve().parent / (".dashboard-test-" + uuid.uuid4().hex)
         self.metadata = {
@@ -420,7 +434,7 @@ function node(id) {
     clientWidth:800,clientHeight:490,
     attributes:{},setAttribute(name,value){this.attributes[name]=value;},
     classList:{values:new Set(),contains(name){return this.values.has(name);},
-      add(name){this.values.add(name);},remove(name){this.values.delete(name);},
+      add(name){this.values.add(name);},remove(...names){for(const name of names)this.values.delete(name);},
       toggle(name,force){const enabled=force===undefined?!this.values.has(name):force;
         if(enabled)this.values.add(name);else this.values.delete(name);return enabled;}},
     replaceChildren(){this.children=[];},append(child){this.children.push(child);},
@@ -523,20 +537,43 @@ assert.equal(pointerSchedules,1,'Continuous motion must not postpone the schedul
 assert.equal(pendingPointer.x,99/800);
 shell.classList.add('immersive');
 $('world').naturalWidth=1280;$('world').naturalHeight=960;
-const contained=groundImageRect();
-assert.ok(Math.abs(contained.width-490*4/3)<1e-6);
+const covered=groundImageRect();
+assert.equal(covered.width,800);assert.equal(covered.height,600);
+assert.equal(covered.left,0);assert.equal(covered.top,-55);
 pendingPointer=null;
-ground.listeners.pointermove({clientX:0,clientY:100});
-assert.equal(pendingPointer,null,'Letterbox bars cannot move the physical pointer');
-ground.listeners.pointermove({clientX:contained.left+contained.width/2,clientY:245});
+ground.listeners.pointermove({clientX:-10,clientY:100});
+assert.equal(pendingPointer,null,'Outside-image coordinates cannot move the physical pointer');
+ground.listeners.pointermove({clientX:0,clientY:0});
+assert.equal(pendingPointer.x,0);assert.equal(pendingPointer.y,55/600,'Crop must preserve source-image coordinates');
+ground.listeners.pointermove({clientX:covered.left+covered.width/2,clientY:245});
 assert.equal(pendingPointer.x,.5);assert.equal(pendingPointer.y,.5);
 document.fullscreenElement=shell;document.listeners.fullscreenchange();
 assert.equal($('app-fullscreen').textContent,'Exit fullscreen');
+assert.equal($('overlay-eyes').attributes['aria-pressed'],'true');
+assert.equal($('overlay-neural').attributes['aria-pressed'],'true');
+$('overlay-inspect').onclick();assert.ok(shell.classList.contains('inspect-neural'));
+assert.equal($('overlay-inspect').attributes['aria-pressed'],'true');
+fit();assert.equal(autoFit,true);
+canvas.clientHeight=240;resize();
+assert.ok(Math.abs(view.scale-Math.min(800/400,240/319)*.94)<1e-9,'Fitted map follows panel resizing');
+zoom(2);const userScale=view.scale;
+canvas.clientHeight=300;resize();assert.equal(view.scale,userScale,'User zoom is preserved across resizes');
+canvas.clientHeight=0;resize();assert.equal(view.scale,userScale,'Hidden map cannot reset a valid view');
+canvas.clientHeight=490;
 $('overlay-eyes').onclick();assert.ok(shell.classList.contains('hide-eyes'));
 assert.equal($('overlay-eyes').attributes['aria-pressed'],'false');
 $('overlay-eyes').onclick();assert.ok(!shell.classList.contains('hide-eyes'));
 document.fullscreenElement=null;document.listeners.fullscreenchange();
 assert.ok(!shell.classList.contains('immersive'));
+loadMetadata({neuron_ids:neuronIDs,mn9_id:neuronIDs[0],gf_ids:[],input_ids:[],visual_input_ids:[],upstream_commit:'real-commit',fly_count:3});
+assert.equal($('fly-count').value,'3');assert.equal($('observed-fly').children.length,3);
+assert.equal($('fly-observer').hidden,false);
+receive({...packet(10),observed_fly_id:1});receive({...packet(10),observed_fly_id:2});
+assert.equal(observedFly,2);assert.equal(history.length,1,'Switching fly cannot mix histories');
+assert.match($('eyes-heading').textContent,/Fly 2/);
+activitySummary({episode:0,observed_fly_id:1,episode_spikes:999,active_intervals:1,last_firing:null});
+assert.equal(lastFiring,null,'Other fly summaries cannot appear in selected fly');
+loadMetadata({neuron_ids:neuronIDs,mn9_id:neuronIDs[0],gf_ids:[],input_ids:[],visual_input_ids:[],upstream_commit:'real-commit'});
 receive({...packet(1),status:'safety stopped',interaction_error:'Boundary safety stop. Reset to restart.'});
 assert.match($('input-status').textContent,/Simulation safety stop/);
 assert.ok(!$('input-status').textContent.includes('Edit rejected'));

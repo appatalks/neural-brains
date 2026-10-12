@@ -17,7 +17,8 @@ from fly_activity import ActivityReader
 
 def default_feeding_config(scene):
     known = {ROOT/"experiments/fly-walking"/name:food for name,food in
-             (("puddle-habitat.json","puddle-feeding.json"),("grassland-habitat.json","grassland-feeding.json"))}
+             (("puddle-compact-habitat.json","puddle-compact-feeding.json"),
+              ("puddle-habitat.json","puddle-feeding.json"),("grassland-habitat.json","grassland-feeding.json"))}
     return ROOT/"experiments/flywire-sugar"/known.get(Path(scene).resolve(),"live-feeding.json")
 
 

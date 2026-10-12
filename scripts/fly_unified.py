@@ -73,7 +73,8 @@ def evaluate_motor(records, initial, final, upright, seconds, speed, airborne,
 
 
 def create_environment(habitat, seconds, airborne=False, wing_pattern=None, interactive=False,
-                       initial_heading=0., initial_wing_phase=.5, initial_position=None, fluid_physics=False):
+                       initial_heading=0., initial_wing_phase=.5, initial_position=None, fluid_physics=False,
+                       fly_count=1):
     import numpy as np
     from dm_control import composer
     from flybody.fruitfly.fruitfly import FruitFly
@@ -81,10 +82,13 @@ def create_environment(habitat, seconds, airborne=False, wing_pattern=None, inte
     from flybody.tasks.constants import _WING_PARAMS
     if not math.isfinite(initial_heading) or not math.isfinite(initial_wing_phase) or not 0 <= initial_wing_phase < 1:
         raise ValueError("Diagnostic heading and wing phase must be finite; phase in [0,1)")
+    if type(fly_count) is not int or not 1 <= fly_count <= 3 or fly_count>1 and airborne:
+        raise ValueError("Shared habitat supports1..3 grounded-start fly bodies")
 
     class UnifiedTask(Walking):
         def __init__(self):
             arena=make_arena(habitat,fluid_physics=fluid_physics)
+            self.habitat=habitat
             if interactive:
                 from fly_objects import SLOTS
                 finger=arena.mjcf_model.worldbody.add("body",name="virtual_finger",mocap=True,pos=[0,0,-10])
@@ -107,6 +111,24 @@ def create_environment(habitat, seconds, airborne=False, wing_pattern=None, inte
                 disable_wings=False, joint_filter=0.01, future_steps=64,
                 body_pitch_angle=47.5,
             )
+            self.walkers=[self.walker]
+            for index in range(1,fly_count):
+                extra=FruitFly(name=f"walker_{index}",use_legs=True,use_wings=True,
+                               use_mouth=False,use_antennae=False,joint_filter=.01,
+                               physics_timestep=.00005,control_timestep=CONTROL_DT,
+                               body_pitch_angle=47.5)
+                extra.create_root_joints(arena.attach(extra))
+                for sensor in extra.observables.vestibular+extra.observables.proprioception:
+                    sensor.enabled=True
+                for sensor in (extra.observables.appendages_pos,extra.observables.force,extra.observables.touch):
+                    sensor.enabled=True
+                extra.observables.self_contact.enabled=False
+                for part in extra.mjcf_model.find_all("body"):
+                    if any(name in part.name for name in ("coxa","femur","tibia","tarsus","claw")):
+                        for wing in ("wing_left","wing_right"):
+                            extra.mjcf_model.contact.add("exclude",name=f"{part.name}_{wing}",
+                                                        body1=part.name,body2=wing)
+                self.walkers.append(extra)
             self.set_timesteps(physics_timestep=0.00005, control_timestep=CONTROL_DT)
             for axis, gain in zip(["yaw", "roll", "pitch"], _WING_PARAMS["gainprm"]):
                 self.walker.mjcf_model.find("default", axis).general.gainprm[0] = gain
@@ -121,15 +143,57 @@ def create_environment(habitat, seconds, airborne=False, wing_pattern=None, inte
                 if "fluid" in geom.name:
                     geom.fluidshape = "ellipsoid"
                     geom.fluidcoef = _WING_PARAMS["fluidcoef"]
+            for extra in self.walkers[1:]:
+                for axis,gain in zip(("yaw","roll","pitch"),_WING_PARAMS["gainprm"]):
+                    extra.mjcf_model.find("default",axis).general.gainprm[0]=gain
+                extra.mjcf_model.find("default","wing").joint.stiffness=_WING_PARAMS["stiffness"]
+                extra.mjcf_model.find("default","wing").joint.damping=_WING_PARAMS["damping"]
+                for joint in extra.mjcf_model.find_all("joint"):
+                    if any(axis in joint.name for axis in ("yaw","roll","pitch")):
+                        actuator=extra.mjcf_model.find("actuator",joint.name)
+                        actuator.dyntype="none";actuator.dynprm=(1,)
+                for geom in extra.mjcf_model.find_all("geom"):
+                    if "fluid" in geom.name:
+                        geom.fluidshape="ellipsoid";geom.fluidcoef=_WING_PARAMS["fluidcoef"]
+
+        def action_spec(self,physics):
+            if fly_count==1:
+                return super().action_spec(physics)
+            from fly_multibody import actor_specifications
+            from dm_env import specs
+            specifications=actor_specifications(self.walkers,physics)
+            return specs.BoundedArray((sum(spec.shape[0] for spec,_ in specifications),),float,
+                np.concatenate([spec.minimum for spec,_ in specifications]),
+                np.concatenate([spec.maximum for spec,_ in specifications]),
+                name="\t".join(f"{walker.name}/{name}" for walker,(spec,_) in zip(self.walkers,specifications)
+                               for name in spec.name.split("\t")))
+
+        def before_step(self,physics,action,random_state):
+            if fly_count==1:
+                return super().before_step(physics,action,random_state)
+            from fly_multibody import apply_actor_actions
+            self._step_counter+=1
+            apply_actor_actions(self.walkers,physics,action,self.actor_control_specs)
 
         def initialize_episode(self, physics, random_state):
             super().initialize_episode(physics, random_state)
+            if fly_count>1:
+                from fly_multibody import actor_specifications
+                self.actor_control_specs=actor_specifications(self.walkers,physics)
             if not airborne and initial_position is not None:
                 if len(initial_position)!=3 or any(not math.isfinite(v) for v in initial_position):
                     raise ValueError("Diagnostic initial position must be a finite vector")
                 self.walker.set_pose(physics,initial_position,
                                      [math.cos(initial_heading/2),0,0,math.sin(initial_heading/2)])
             physics.bind(self._wing_joints).qpos = self._wing_springrefs
+            from fly_multibody import spawn_layout
+            separated=spawn_layout(habitat,fly_count) if fly_count>1 else None
+            for index,extra in enumerate(self.walkers[1:],1):
+                position,yaw=separated[index]
+                extra.set_pose(physics,position,[math.cos(yaw/2),0,0,math.sin(yaw/2)])
+                joints=[joint for joint in extra.mjcf_model.find_all("joint")
+                        if any(axis in joint.name for axis in ("yaw","roll","pitch"))]
+                physics.bind(joints).qpos=[float(j.springref or j.dclass.joint.springref or 0) for j in joints]
             self.launch_time = None
             self.launch_origin = None
             self.landing_time = None

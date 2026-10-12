@@ -10,6 +10,7 @@ OUTPUT_IDS = {
     "DNa11": {"left": "720575940611735514", "right": "720575940623019544"},
 }
 DRIVE_KEYS = ("BPN", "P9_left", "P9_right", "FG")
+BOUNDARY_LEAD_CM = 4.5
 SCOPE = (
     "Genuine FlyWire BDN2/oDN1 rates request forward speed and DNa02 plus primary "
     "DNa11 (historical community DNa01) left/right "
@@ -244,7 +245,8 @@ def scene_drive(model, data, body, half_size_cm, walking):
                     best, best_hit = float(distance), int(hit[0])
         ranges.append(best)
         hits.append(best_hit)
-    predicted = [position[0]+2.5*math.cos(yaw), position[1]+2.5*math.sin(yaw)]
+    lead = min(BOUNDARY_LEAD_CM,half_size_cm*.8)
+    predicted = [position[0]+lead*math.cos(yaw), position[1]+lead*math.sin(yaw)]
     boundary = bool(max(abs(value) for value in predicted) >= half_size_cm-.6)
     if boundary:
         error = math.atan2(math.sin(math.atan2(-position[1], -position[0])-yaw),
@@ -255,7 +257,7 @@ def scene_drive(model, data, body, half_size_cm, walking):
     if ranges[1] < .4:
         drive["FG"] = 150.
     return drive, {"scope": DRIVE_SCOPE, "active": True, "ranges_cm": ranges,
-                   "ray_geom_ids": hits, "boundary_cue": boundary}
+                   "ray_geom_ids": hits, "boundary_cue": boundary,"boundary_lookahead_cm":lead}
 
 
 def support_height(model,data,body):

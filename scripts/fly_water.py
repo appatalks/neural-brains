@@ -30,7 +30,7 @@ class FluidPhysics:
         for geom in range(model.ngeom):
             body = int(model.geom_bodyid[geom])
             name = mj.mj_id2name(model,mj.mjtObj.mjOBJ_BODY,body) or ""
-            if (model.body_mass[body] <= 0 or not (name.startswith("walker/") or name in allowed)
+            if (model.body_mass[body] <= 0 or not (name.startswith(("walker/","walker_")) or name in allowed)
                     or not (model.geom_contype[geom] or model.geom_conaffinity[geom])):
                 continue
             kind, size = int(model.geom_type[geom]),model.geom_size[geom]

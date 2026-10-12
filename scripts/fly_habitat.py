@@ -3,6 +3,7 @@
 import argparse
 import sys
 import subprocess
+import math
 from pathlib import Path
 
 from datasets import ROOT
@@ -29,7 +30,7 @@ def main(argv=None):
                         help="Single browser-app port; alternate and ephemeral ports are disabled")
     parser.add_argument("--backend",choices=["walking","unified"],default="unified",
                         help="walking preserves the current habitat; unified explicitly selects experimental assisted flight")
-    parser.add_argument("--flight-arena-half-size-mm",type=float,default=112.5,
+    parser.add_argument("--flight-arena-half-size-mm",type=float,default=112.5/math.sqrt(2),
                         help="Explicit arena half-size for the experimental unified backend")
     parser.add_argument("--neural-leg-extension",action="store_true",
                         help="Opt-in DNp10 reduced VNC/leg-actuator surrogate on the unified backend")
@@ -47,13 +48,19 @@ def main(argv=None):
                         help="Enabled by default on unified; --no-brain-guided-walking restores learned-only comparison")
     parser.add_argument("--fluid-physics",action="store_true",
                         help="Experimental buoyancy/drag instead of rigid-water collision; unified backend only")
+    parser.add_argument("--fly-count",type=int,choices=(1,2,3),default=1,
+                        help="Independent brain/body pairs on unified backend; browser slider starts a new episode")
+    parser.add_argument("--actuator-recovery",action=argparse.BooleanOptionalAction,default=None,
+                        help="Unified default: leg-only righting; no pose reset or root-force recovery")
     args = parser.parse_args(argv)
     if args.scene is None:
-        args.scene = ROOT/"experiments/fly-walking"/("puddle-habitat.json" if args.backend=="unified" else "habitat.json")
+        args.scene = ROOT/"experiments/fly-walking"/("puddle-compact-habitat.json" if args.backend=="unified" else "habitat.json")
     if args.feeding_config is None:
         args.feeding_config = default_feeding_config(args.scene)
     if args.brain_guided_walking is None:
         args.brain_guided_walking = args.backend == "unified"
+    if args.actuator_recovery is None:
+        args.actuator_recovery=args.backend=="unified"
     if args.brain_linked_landing is None:
         args.brain_linked_landing = args.backend == "unified"
     if args.landing_surface_vision is None:
@@ -72,6 +79,10 @@ def main(argv=None):
         parser.error("--brain-guided-walking requires --backend unified")
     if args.fluid_physics and args.backend != "unified":
         parser.error("--fluid-physics requires --backend unified")
+    if args.fly_count!=1 and args.backend!="unified":
+        parser.error("Independent multiple flies require --backend unified")
+    if args.actuator_recovery and args.backend!="unified":
+        parser.error("--actuator-recovery requires --backend unified")
     if (args.brain_linked_landing or args.landing_surface_vision) and args.backend!="unified":
         parser.error("Brain-linked landing requires --backend unified")
     if args.backend=="unified":
@@ -83,6 +94,7 @@ def main(argv=None):
             "--scene",str(args.scene),"--feeding-config",str(args.feeding_config),
             "--dashboard-port",str(args.dashboard_port),
             "--arena-half-size-mm",str(args.flight_arena_half_size_mm),
+            "--fly-count",str(args.fly_count),
         ]
         if args.seconds is not None:
             command.extend(["--seconds",str(args.seconds)])
@@ -104,6 +116,8 @@ def main(argv=None):
             command.append("--brain-guided-walking")
         if args.fluid_physics:
             command.append("--fluid-physics")
+        if args.actuator_recovery:
+            command.append("--actuator-recovery")
         return subprocess.run(command,check=False).returncode
     try:
         run(

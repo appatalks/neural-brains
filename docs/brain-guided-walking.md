@@ -42,7 +42,8 @@ upstream BPN/P9/FG cells, not the eight decoded cells.
 - A rolling reference integrates these commands, with 200 ms measured-position
   correction. The learned policy also uses privileged body state and future
   reference samples. No body pose or velocity is reset to follow it.
-- Rays sample three headings at two heights. A 25 mm predicted-boundary cue,
+- Rays sample three headings at two heights. The current 45 mm predicted-boundary cue
+  (previous25mm cue retained in historical runs),
   20 mm object cue and 4 mm emergency FG cue are engineering assumptions.
   Geometry affects neural input, not a separate direct body turn command.
 

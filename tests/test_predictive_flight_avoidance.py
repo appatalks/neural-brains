@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/"scripts"))
-from fly_flight_avoidance import FlightAvoidance, MAX_TURN_RAD_S, MAX_TURN_ACCEL_RAD_S2
+from fly_flight_avoidance import FlightAvoidance, MAX_TURN_RAD_S, MAX_TURN_ACCEL_RAD_S2, MIN_HALF_SIZE_CM
 
 
 class FlightAvoidanceTests(unittest.TestCase):
@@ -33,7 +33,7 @@ class FlightAvoidanceTests(unittest.TestCase):
             assisted_force(.001,position,np.zeros(6),np.eye(3),np.eye(3),position,[float("nan"),0,0])
 
     def test_invalid_initialization_and_noncontiguous_clock_fail(self):
-        for half in (3,11.24,float("nan")):
+        for half in (3,MIN_HALF_SIZE_CM-.01,float("nan")):
             with self.assertRaises(ValueError):
                 FlightAvoidance(half)
         controller=FlightAvoidance(15)
@@ -47,6 +47,16 @@ class FlightAvoidanceTests(unittest.TestCase):
             controller.update([0,0,1],0,[{"position_cm":[float("nan"),0,0]}])
         with self.assertRaises(ValueError):
             controller.reference(.1)
+
+    def test_half_area_reference_is_slower_and_stays_inside(self):
+        controller=FlightAvoidance(MIN_HALF_SIZE_CM)
+        self.assertAlmostEqual(controller.cruise_speed,15/math.sqrt(2))
+        position=[0.,0.,1.]
+        controller.begin(position,0.)
+        for step in range(1000):
+            controller.update(position,step*.01,[])
+            position,_,_=controller.reference(step*.01+.01)
+            self.assertGreater(controller.half-max(abs(v) for v in position[:2]),.5)
 
     def test_turns_before_boundary_with_bounded_continuous_reference(self):
         controller=FlightAvoidance(15)
