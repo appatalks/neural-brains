@@ -21,6 +21,31 @@ def response(sequence,count):
 
 
 class BrainLandingTests(unittest.TestCase):
+    def test_hybrid_contact_stabilization_is_declared_and_legacy_is_unchanged(self):
+        import numpy as np
+        from scipy.spatial.transform import Rotation
+        legacy=NeuralLanding(metadata())
+        hybrid=NeuralLanding(metadata(),contact_stabilization=True)
+        rotation=Rotation.from_euler("x",.1).as_matrix()
+        for model in (legacy,hybrid):
+            model.accept(response(1,1),True,[0,0,1],[15,0,0],0)
+        np.testing.assert_array_equal(
+            legacy.assistance(.001,.5,np.array([0,0,1.]),np.zeros(6),rotation),
+            hybrid.assistance(.001,.5,np.array([0,0,1.]),np.zeros(6),rotation))
+        for model in (legacy,hybrid):
+            model.descent_start=.91
+        old=legacy.assistance(.001,1.5,np.array([0,0,.2]),np.zeros(6),rotation)
+        new=hybrid.assistance(.001,1.5,np.array([0,0,.2]),np.zeros(6),rotation)
+        np.testing.assert_array_equal(old[:3],new[:3])
+        np.testing.assert_allclose(new[3:],old[3:]*2.5)
+        self.assertEqual(hybrid.snapshot()["descent_attitude_gain"],2000.)
+        self.assertFalse(legacy.snapshot()["hybrid_contact_stabilization"])
+        hybrid.touchdown_time=2.
+        hybrid.release_time=3.
+        hybrid.walk_navigation.begin([0,0,.1278],2.)
+        np.testing.assert_array_equal(hybrid.assistance(.001,3.,np.array([0,0,.1278]),
+                                                      np.zeros(6),rotation),np.zeros(6))
+
     def test_only_actual_current_flight_interval_can_initiate_request(self):
         model=NeuralLanding(metadata())
         self.assertFalse(model.accept(response(1,0),True,[0,0,1],[15,0,0],0))

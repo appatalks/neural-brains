@@ -1,0 +1,50 @@
+{
+  "schema_version": 2,
+  "source_regions": [
+    {
+      "name": "island_sugar",
+      "position_mm": [
+        3.5,
+        2.2,
+        0.8
+      ],
+      "radius_mm": 1.2
+    },
+    {
+      "name": "shore_fruit",
+      "position_mm": [
+        34.34203787795447,
+        16.267281100083697,
+        1
+      ],
+      "radius_mm": 2
+    },
+    {
+      "name": "shore_sugar",
+      "position_mm": [
+        -34.65301719665404,
+        -15.59385773849432,
+        0.8
+      ],
+      "radius_mm": 1.5
+    },
+    {
+      "name": "berry_food",
+      "position_mm": [
+        -31.008930281862895,
+        21.964658949652883,
+        1
+      ],
+      "radius_mm": 1.7
+    }
+  ],
+  "oral_probe_offset_mm": [
+    0.6,
+    0,
+    -0.35
+  ],
+  "contact_stimulation_Hz": 100,
+  "seed": 420,
+  "description": "Approximate spherical taste regions matched to island sugar, shore fruit and shore sugar in puddle-habitat.json. No initial oral contact; multiple regions still use the original100Hz protocol, not additive stimulation.",
+  "readout": "Actual MN9 spikes; not physical ingestion, calories, thirst or neural water receptors."
+}

@@ -6,6 +6,11 @@ authoritative MuJoCo physics state; browser images are not a second simulation.
 On wide screens the ground world is on the left and eye/neural instruments
 on the right. Narrow screens stack these panels.
 
+**Fullscreen ground** now enters native browser fullscreen with eye/neural
+overlays, individual visibility toggles and bottom controls. Escape or
+**Exit fullscreen** restores the split layout. Letterbox margins are excluded
+from physical pointer projection. See [the current environment and scope](puddle-habitat.md).
+
 ## Start
 
 ```bash
@@ -26,8 +31,9 @@ experiments must run sequentially on the same port, not alongside a live app.
 Only isolated read-only HTTP unit fixtures use ephemeral ports without fly or
 neural-worker processes.
 
-The eyes and neuron map are panels in this **one dashboard**. The native 3D
-window is still the physical habitat, not another network. Older test URLs
+The eyes and neuron map are panels in this **one dashboard**. The server-rendered
+ground image shows the authoritative physical habitat; a separate native window
+requires explicit legacy opt-in. Older test URLs
 may remain open in browser tabs, but their closed servers are not live
 simulations. Close those tabs and use the stable address.
 

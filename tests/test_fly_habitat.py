@@ -38,7 +38,7 @@ class AutonomousHabitatTests(unittest.TestCase):
 
     def test_main_launches_same_automatic_components(self):
         with patch.object(fly_habitat, "run") as run:
-            self.assertEqual(fly_habitat.main(["--data-dir", "/tmp/test-data", "--output-dir", "/tmp/test-results"]), 0)
+            self.assertEqual(fly_habitat.main(["--backend","walking","--data-dir", "/tmp/test-data", "--output-dir", "/tmp/test-results"]), 0)
             params = run.call_args.kwargs
             for field in ["sensory", "until_closed", "vision", "self_righting", "autonomous"]:
                 self.assertTrue(params[field])
@@ -47,6 +47,7 @@ class AutonomousHabitatTests(unittest.TestCase):
     def test_bounded_launch_keeps_autonomy(self):
         with patch.object(fly_habitat, "run") as run:
             self.assertEqual(fly_habitat.main([
+                "--backend","walking",
                 "--data-dir", "/tmp/test-data", "--output-dir", "/tmp/test-results",
                 "--headless", "--seconds", "0.2",
             ]), 0)
@@ -67,6 +68,7 @@ class AutonomousHabitatTests(unittest.TestCase):
         with patch.object(fly_habitat, "run", side_effect=RuntimeError("brain unavailable")):
             with contextlib.redirect_stderr(io.StringIO()) as errors:
                 self.assertEqual(fly_habitat.main([
+                    "--backend","walking",
                     "--data-dir", "/tmp/test-data", "--output-dir", "/tmp/test-results",
                 ]), 1)
             self.assertIn("brain unavailable", errors.getvalue())

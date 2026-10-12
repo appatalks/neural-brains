@@ -16,8 +16,11 @@ SCOPE = (
 
 
 class NeuralLanding:
-    def __init__(self, metadata, half_size_cm=11.25):
+    def __init__(self, metadata, half_size_cm=11.25, contact_stabilization=False):
         from fly_walking_navigation import WalkingNavigation
+        if type(contact_stabilization) is not bool:
+            raise ValueError("Landing contact stabilization requires an explicit Boolean")
+        self.contact_stabilization = contact_stabilization
         self.walk_navigation=WalkingNavigation(half_size_cm)
         self.decoder = LegExtension(metadata)
         self.reset()
@@ -104,7 +107,8 @@ class NeuralLanding:
         support=max(0.,min(1.,(float(position[2])-.15)/.15))
         force=mass*(1500*(np.array(target)-position)-80*(velocity[3:]-target_velocity)+[0,0,981*support])
         error=sum(np.cross(rotation[:,i],desired[:,i]) for i in range(3))*.5
-        torque=mass*.1*(800*error-50*velocity[:3])
+        gain, damping = (2000.,100.) if self.contact_stabilization and self.descent_start is not None else (800.,50.)
+        torque=mass*.1*(gain*error-damping*velocity[:3])
         force=np.clip(force,-4*mass*981,4*mass*981)
         torque=np.clip(torque,-mass*.1*981,mass*.1*981)
         scale=1.
@@ -160,4 +164,7 @@ class NeuralLanding:
                 "assistance_release_time_s":self.release_time,"stable_unassisted_walking_steps":self.stable_walk_steps,
                 "activation":self.decoder.activation,"braking_duration_s":BRAKE_S,"descent_duration_s":DESCENT_S,
                 "descent_start_s":self.descent_start,
+                "hybrid_contact_stabilization":self.contact_stabilization,
+                "descent_attitude_gain":2000. if self.contact_stabilization else 800.,
+                "descent_angular_damping":100. if self.contact_stabilization else 50.,
                 "validation":"Not validated by presence of this controller"}

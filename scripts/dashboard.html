@@ -31,6 +31,21 @@ footer{font-size:13px;color:var(--muted);margin-top:18px}#backend-status{color:#
 #world{width:100%;height:100%;display:block;object-fit:fill;user-select:none}
 #world-message{position:absolute;top:12px;left:12px;background:#080e18cc;padding:8px;border-radius:8px}
 #input-status{min-height:22px;color:#ffc78a}
+.immersive{background:#050a11;width:100vw;height:100vh;max-width:none;position:relative;display:block!important}
+.immersive .world-panel{position:absolute;inset:0;margin:0;padding:0;border:0;border-radius:0}
+.immersive #world-frame{position:absolute;inset:0;aspect-ratio:auto}
+.immersive #world{object-fit:contain}
+.immersive #world-heading,.immersive .world-panel>p{display:none}
+.immersive .world-tools{position:absolute;left:12px;bottom:12px;z-index:2;max-width:min(640px,calc(100vw - 24px));padding:10px;background:#080e18e8;border:1px solid var(--line);border-radius:10px}
+.immersive #input-status{display:block;position:absolute;left:12px;bottom:80px;z-index:2;max-width:55%;background:#080e18cc;padding:4px}
+.immersive #world-message{z-index:2;max-width:55%}
+.immersive .instruments{position:absolute;right:12px;top:12px;width:min(390px,42vw);max-height:calc(100vh - 24px);overflow:auto;z-index:3;pointer-events:none}
+.immersive .instruments .panel{pointer-events:auto;background:#111c2ce8;margin-top:0;margin-bottom:10px;padding:12px}
+.immersive .eye-frame{height:150px}
+.immersive #map{height:260px}
+.immersive .instruments p,.immersive .instruments dl,.immersive .instruments button{font-size:12px}
+.hide-eyes #eyes-panel,.hide-neural #neural-layout{display:none}
+@media(max-width:600px){.immersive .instruments{width:45vw;right:6px;top:6px}.immersive .eye-frame{height:95px}.immersive #map{height:180px}.immersive .world-tools{max-height:25vh;overflow:auto}}
 @media(max-width:1100px){.app-shell{grid-template-columns:1fr}.world-panel{position:static}}
 @media(max-width:850px){main{padding:12px}.layout{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column;gap:10px}#map{height:360px}.eye-frame{height:160px}}
 </style>
@@ -49,7 +64,10 @@ footer{font-size:13px;color:var(--muted);margin-top:18px}#backend-status{color:#
 </div>
 <p id="world-clock" class="muted">World render clock: unavailable.</p>
 <p class="legend">Left drag: orbit · right drag: pan · wheel: zoom. Camera movement does not steer the fly. Enable the finger, then move over this ground view to interact.</p>
-<div class="toolbar">
+<div class="toolbar world-tools">
+<button id="app-fullscreen">Fullscreen ground</button>
+<button id="overlay-eyes" aria-pressed="true">Eye overlay</button>
+<button id="overlay-neural" aria-pressed="true">Neural overlay</button>
 <button id="app-pause">Pause / resume (P)</button><button id="app-reset">Reset (R)</button>
 <button id="app-camera">Overview</button><button id="app-follow">Follow camera (C)</button>
 <button id="app-finger">Finger on / off (H)</button><button id="app-food">Sugar on / off (T)</button>
@@ -64,15 +82,15 @@ footer{font-size:13px;color:var(--muted);margin-top:18px}#backend-status{color:#
 <p id="object-status" class="legend">Physical loose-object interaction data unavailable.</p>
 <p class="legend">Walking and flight use engineered/learned control. Any enabled reduced neural leg pathway is labeled separately; it is not calibrated muscle physiology or touchdown. Reset is an explicit experiment restart.</p>
 </section>
-<div class="instruments">
-<section class="panel" aria-labelledby="eyes-heading">
+<div class="instruments" id="instruments">
+<section class="panel" id="eyes-panel" aria-labelledby="eyes-heading">
 <h2 id="eyes-heading">Eye views · RGB composite</h2>
 <div class="eye-frame"><img id="eyes" hidden alt="Composite of the fly's two eye views"><span id="eyes-status" role="status">Eye images unavailable — awaiting a published frame.</span></div>
 <p id="eye-clock" class="muted">Eye source render clock: unavailable. Image and neural interval clocks are independent.</p>
 <div class="stats"><span>Brain <strong id="brain-time">unavailable</strong></span><span>Habitat <strong id="habitat-time">unavailable</strong></span>
 <span>Network interval spikes <strong id="network-count">unavailable</strong></span><span id="pause-status">Pause state unavailable</span></div>
 </section>
-<div class="layout">
+<div class="layout" id="neural-layout">
 <section class="panel" aria-labelledby="map-heading">
 <h2 id="map-heading">Neuron activity · schematic index layout, NOT anatomy</h2>
 <p class="muted">Every dot is one neuron in ordered index space (400 columns). Color shows actual interval spike counts,
@@ -85,7 +103,7 @@ not event times, voltages, spatial anatomy, or inferred activity. Inactive count
 <p id="activity-summary" class="muted">Waiting for recorded activity totals…</p>
 <p id="activity-display-status" role="status">Showing live interval counts.</p>
 <details id="sensorimotor-panel" hidden open>
-<summary>Steering and landing circuit readouts (observation only)</summary>
+<summary id="sensorimotor-title">Steering and landing circuit readouts (observation only)</summary>
 <p class="legend">Counts from verified neurons, not motor commands. Ambiguous steering identities and unverified driver correspondence remain labeled. Click a cell to inspect its real connections.</p>
 <ol id="sensorimotor-cells" class="connections"></ol>
 </details>
@@ -161,7 +179,7 @@ let eyeURL = null, stopping = false;
 let loadedEyeRevision = null;
 let sessionID = null;
 let appInteractive=false, worldURL=null, worldRevision=null, worldDrag=null;
-let safetyPaused=false;
+let safetyPaused=false, safetyNotice='';
 let pendingPointer=null, pointerTimer=null, inputBusy=false;
 
 async function appInput(event) {
@@ -185,7 +203,37 @@ for(const [id,key] of [
   ['app-push','B'],['app-terrain','O'],['app-close','Q'],
 ]) $(id).onclick=()=>appInput({kind:'key',key});
 $('app-camera').onclick=()=>appInput({kind:'camera_reset'});
+const shell=$('app-shell');
+$('app-fullscreen').onclick=async()=>{
+  try {
+    if(document.fullscreenElement===shell) await document.exitFullscreen();
+    else {
+      if(!shell.requestFullscreen) throw new Error('Fullscreen is not supported in this browser');
+      await shell.requestFullscreen();
+    }
+  } catch(error) {$('input-status').textContent=`Fullscreen unavailable: ${error.message}`;}
+};
+document.addEventListener('fullscreenchange',()=>{
+  const enabled=document.fullscreenElement===shell;
+  shell.classList.toggle('immersive',enabled);
+  $('app-fullscreen').textContent=enabled?'Exit fullscreen':'Fullscreen ground';
+  requestAnimationFrame(resize);
+});
+for(const [button,className] of [['overlay-eyes','hide-eyes'],['overlay-neural','hide-neural']]) {
+  $(button).onclick=()=>{
+    const hidden=shell.classList.toggle(className);
+    $(button).setAttribute('aria-pressed',String(!hidden));
+    requestAnimationFrame(resize);
+  };
+}
 const ground=$('world-frame');
+function groundImageRect() {
+  const rect=ground.getBoundingClientRect();
+  if(!shell.classList.contains('immersive'))return rect;
+  const image=$('world'),ratio=(image.naturalWidth||1280)/(image.naturalHeight||960);
+  const width=Math.min(rect.width,rect.height*ratio),height=width/ratio;
+  return {left:rect.left+(rect.width-width)/2,top:rect.top+(rect.height-height)/2,width,height};
+}
 ground.addEventListener('contextmenu',event=>event.preventDefault());
 ground.addEventListener('pointerdown',event=>{
   ground.focus();ground.setPointerCapture(event.pointerId);
@@ -202,7 +250,7 @@ async function flushPointer() {
   if(pendingPointer && !pointerTimer)pointerTimer=setTimeout(flushPointer,33);
 }
 ground.addEventListener('pointermove',event=>{
-  const rect=ground.getBoundingClientRect();
+  const rect=groundImageRect();
   if(worldDrag) {
     const dx=Math.max(-1,Math.min(1,(event.clientX-worldDrag.x)/rect.width));
     const dy=Math.max(-1,Math.min(1,(event.clientY-worldDrag.y)/rect.height));
@@ -244,7 +292,7 @@ async function refreshWorld(status,signal) {
   const blob=await fetchBounded('/api/world',8*1024*1024,signal);
   const old=worldURL;worldURL=URL.createObjectURL(blob);worldRevision=status.world_revision;
   $('world').src=worldURL;$('world').hidden=false;$('world-message').hidden=!safetyPaused;
-  if(safetyPaused) $('world-message').textContent='BOUNDARY SAFETY PAUSE · app remains open · camera and neurons available · Reset starts a new experiment';
+  if(safetyPaused) $('world-message').textContent=safetyNotice||'SAFETY PAUSE · camera and neurons available · Reset starts a new experiment';
   if(old)URL.revokeObjectURL(old);
   $('world-clock').textContent=`World source render: ${formatMs(status.world_time_s*1000)} ms · same simulation, not an independent browser physics engine.`;
 }
@@ -413,7 +461,9 @@ function labels(id) {
   const cell=sensorimotorCandidates.find(row=>row.root_id===id);
   if(cell) {
     result.push(`${cell.population} candidate · cell_type ${cell.cell_type||'unassigned'} · hemibrain ${cell.hemibrain_type||'unassigned'} · ${cell.side}`);
-    result.push(cell.ambiguous_type_correspondence?'AMBIGUOUS cross-label identity':'No validated motor decoder');
+    result.push(cell.ambiguous_type_correspondence?'AMBIGUOUS cross-label identity':
+      metadata.walking_control_enabled&&['BDN2','oDN1','DNa02','DNa11'].includes(cell.population)
+        ? 'Reduced hybrid walking decoder; gains not physiologically calibrated':'No validated motor decoder');
   }
   return result.join(' · ') || 'No known circuit label';
 }
@@ -541,6 +591,11 @@ function loadMetadata(data) {
     throw new Error('Invalid sensorimotor candidate metadata');
   for(const row of sensorimotorCandidates)circuit.add(row.root_id);
   $('sensorimotor-panel').hidden=sensorimotorCandidates.length===0;
+  $('sensorimotor-title').textContent=data.walking_control_enabled
+    ? 'Brain-guided walking interface and candidate flight readouts'
+    : data.walking_readouts_enabled
+    ? 'Walking, stopping, steering and landing readouts (observation only)'
+    : 'Steering and landing circuit readouts (observation only)';
   metadataReady=true;
   const commit=data.snapshot?.upstream_commit ?? data.upstream_commit;
   $('provenance').textContent=`${ids.length.toLocaleString()} ordered neuron IDs · upstream commit: ${typeof commit==='string'?commit:'unavailable'}`;
@@ -569,7 +624,8 @@ function receive(packet) {
     else {history.push(latest);if(history.length>MAX_HISTORY)history.shift();}
   }
   live=true;
-  safetyPaused=packet.status==='safety stopped';
+  safetyPaused=packet.status==='safety stopped'||packet.status==='fallen';
+  safetyNotice=packet.safety_notice||'';
   if(packet.motor_phase) {
     const extension=packet.leg_extension;
     const extensionText=extension?` Reduced leg-pathway activation: ${extension.activation.toFixed(3)}; ${extension.dnp10_spikes} actual DNp10 spikes this episode. Applied during flight only.`:'';
@@ -579,11 +635,16 @@ function receive(packet) {
     const landingText=landing
       ? ` Reduced landing: ${landing.neural_request?`requested by ${landing.neural_request.interval_spikes} actual DNp10 spikes at ${landing.neural_request.time_s.toFixed(2)} s`:'awaiting actual flight DNp10 response'}. ${landing.assistance_release_time_s!==null?`Assistance release at ${landing.assistance_release_time_s.toFixed(2)} s; ${landing.stable_unassisted_walking_steps} stable unassisted walking steps.`:'Brake/descent assistance is explicitly assumed, not biological muscle physiology.'}`
       : ' Stable touchdown/recovery on this experimental backend are not implemented.';
-    $('motor-status').textContent=`Physical phase: ${packet.motor_phase}. ${packet.controller_scope||''}. ${packet.eye_scope||''}.${extensionText}${rateText}${landingText}`;
+    const walk=packet.walking_control, motor=packet.walking_motor_reference;
+    const walkText=walk
+      ? ` Neural walking request: ${walk.speed_cm_s.toFixed(2)} cm/s, ${walk.turn_rad_s.toFixed(2)} rad/s.${motor?` Applied learned-leg reference: ${motor.speed_cm_s.toFixed(2)} cm/s, ${motor.turn_rad_s.toFixed(2)} rad/s.`:''}`
+      : '';
+    $('motor-status').textContent=`Physical phase: ${packet.motor_phase}. ${packet.controller_scope||''}. ${packet.eye_scope||''}.${extensionText}${rateText}${landingText}${walkText}`;
     const loose=packet.movable_objects||[];
     $('object-status').textContent=loose.length
       ? `Loose physical objects: ${loose.map(obj=>`${obj.name.replaceAll('_',' ')} (${obj.mass_mg.toFixed(3)} mg; ${obj.fly_contact_steps} fly-contact steps)`).join(' · ')}. Grass/leaves/fruit are contact surfaces; seed masses and friction are model assumptions. Sugar is a neural exposure proxy, not physical feeding.`
       : 'This scene has no free-body loose objects. Placed cubes/spheres are fixed contact obstacles.';
+    if(packet.water) $('object-status').textContent+=` Water mode: ${packet.water.surface_mode}. ${packet.water.scope}`;
   } else {
     $('motor-status').textContent='Motor backend: FlyGym engineered walking/recovery. Aerodynamic flight is not connected.';
   }

@@ -6,9 +6,19 @@ from fly_environment import Environment, object_definitions
 from sim_units import FLIGHT_UNITS
 
 
-def geometry_definitions(environment: Environment) -> list[dict]:
+def geometry_definitions(environment: Environment, fluid_physics=False) -> list[dict]:
     convert = FLIGHT_UNITS.length_from_mm
     definitions = object_definitions(environment, convert(1))
+    materials = {material.name: material for material in environment.materials}
+    for water in environment.water_regions:
+        definitions.append({
+            "name": water.name, "type": "cylinder",
+            "pos": [convert(water.position_mm[0]),convert(water.position_mm[1]),
+                    convert(water.position_mm[2]-water.depth_mm/2)],
+            "size": [convert(water.radius_mm),convert(water.depth_mm/2)],
+            "material": water.material,"friction":list(materials[water.material].friction),
+            "group":3 if fluid_physics else 0,"contype":0 if fluid_physics else 1,"conaffinity":0 if fluid_physics else 1,
+        })
     for terrain in environment.terrain:
         definitions.append({
             "name": terrain.name, "type": "box",
@@ -51,7 +61,7 @@ def geometry_definitions(environment: Environment) -> list[dict]:
     return definitions
 
 
-def make_arena(environment: Environment):
+def make_arena(environment: Environment, fluid_physics=False):
     from dm_control.locomotion.arenas import floors
 
     half = FLIGHT_UNITS.length_from_mm(environment.half_size_mm)
@@ -76,7 +86,7 @@ def make_arena(environment: Environment):
         root.worldbody.add("light", name="habitat_daylight", pos=[0,0,20], dir=[-.3,-.4,-1],
                            directional=True, diffuse=[.8,.78,.7], ambient=[.25,.27,.22],
                            specular=[.1,.1,.1], castshadow=True)
-    for definition in geometry_definitions(environment):
+    for definition in geometry_definitions(environment, fluid_physics):
         root.worldbody.add("geom", **definition)
     for obj, definition in zip(environment.movable_objects,
                                object_definitions(environment, FLIGHT_UNITS.length_from_mm(1), environment.movable_objects)):
@@ -107,6 +117,8 @@ class FlyContactReader:
         if not self.fly_geoms:
             raise ValueError("Contact reader requires the compiled FlyBody geometry")
         self.ground = model.geom("groundplane").id
+        self.support = {model.geom(obj.name).id for obj in environment.objects} if environment.schema_version >= 4 else set()
+        self.support |= {model.geom(water.name).id for water in environment.water_regions}
         self.movable = {model.geom(obj.name).id: obj for obj in environment.movable_objects}
         self.contact_steps = {geom: 0 for geom in self.movable}
 
@@ -122,6 +134,9 @@ class FlyContactReader:
             else:
                 continue
             floor += int(partner == self.ground)
+            if partner in self.support:
+                normal_z = float(contact.frame[2])*(1 if b in self.fly_geoms else -1)
+                floor += int(normal_z > .5)
             if partner in self.movable:
                 touched.add(partner)
         for geom in touched:

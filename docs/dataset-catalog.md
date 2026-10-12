@@ -23,6 +23,10 @@ working-space allocations before selecting assets.
 | Species | Dataset ID | Coverage | Acquisition status |
 | --- | --- | --- | --- |
 | Drosophila melanogaster | `flywire-model-630` | Original processed network for published model | Acquired with pinned Git blob checksums; bounded baseline executed |
+| Drosophila melanogaster | `walking-halting-ids-630-v1.0.0` | Selected paper-specific walking/halting neuron IDs, not motor dynamics | One approved 63,463-byte workbook acquired and Git-blob verified; release-specific license unresolved and local audit use explicitly approved |
+| Drosophila melanogaster | `walking-halting-primary-identities-2024` | Primary FlyWire/FANC/MANC type correspondence, with separate specimen namespaces | 25,598-byte publisher Supplementary Table 3 acquired and provider-MD5 verified; parent CC-BY-4.0 verified |
+| Drosophila melanogaster | `bdn2-manc-t1l-minicircuit-20241118` | Reduced male VNC circuit, motor targets and parent volume reference | Three explicitly approved pinned assets acquired and Git-blob verified; license unknown/local evaluation only |
+| Drosophila melanogaster | `bdn2-vnc-pruning-parameters-zenodo22260924` | Published computational pruning parameters, masks and rate outputs | One approved274,050,687-byte archive acquired, provider-MD5 verified; CC-BY-4.0 |
 | Caenorhabditis elegans | `wormwiring-cook2019-corrected2020` | Adult hermaphrodite/male whole-animal nervous-system matrices | Public corrected workbook; checksum/license still to verify |
 | Drosophila melanogaster | `flywire-female-brain-783` | Adult female whole brain | Public versioned files, selected upstream checksums |
 | Drosophila melanogaster | `male-cns-v1.0` | Adult male brain plus ventral nerve cord | Public bulk files; all seven selected files have provider sizes/MD5 values |

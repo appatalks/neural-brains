@@ -67,6 +67,7 @@ class GradedVisionTests(unittest.TestCase):
         client = BrainClient.__new__(BrainClient)
         client.pending = False
         client.graded_vision = True
+        client.walking_control = False
         client.send = Mock()
         rates = {"LC4": 10, "LPLC2": 20}
         client.begin_step(10, False, True, rates)
@@ -90,6 +91,7 @@ class GradedVisionTests(unittest.TestCase):
         client = BrainClient.__new__(BrainClient)
         client.pending = True
         client.graded_vision = True
+        client.walking_control = False
         client.activity_reader = Mock()
         client.expected_interval = (10., False, True, {"LC4": 10., "LPLC2": 20.})
         reply = {"duration_ms": 10., "sugar_contact": False, "looming_active": True,

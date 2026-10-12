@@ -107,6 +107,14 @@ teleport, gravity removal or hidden recovery is used.
 
 ## Walking boundary correction
 
+The opt-in [brain-guided hybrid](brain-guided-walking.md) replaces the ordinary
+ground/post-release reference with decoded neural speed/turn commands.
+The existing reference remains during the assumed assisted transition.
+For that hybrid only, descent angular gain/damping are 2000/100 rather than
+legacy 800/50, addressing contact rollout in the changed launch state.
+The touchdown gates, force/torque caps and zero-assistance release contract
+are unchanged; these are external engineering assumptions, not measured muscles.
+
 [WalkingNavigation](../scripts/fly_walking_navigation.py) supplies a separate
 explicitly engineered rolling ground reference to the learned gait. It keeps
 the previous straight ground reference until a turn is needed, then curves

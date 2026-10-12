@@ -14,6 +14,27 @@ from fly_dashboard import DEFAULT_PORT, validate_app_port
 
 
 class FlightAppTests(unittest.TestCase):
+    def test_brain_guided_walking_is_explicit_and_unified_only(self):
+        with patch("fly_habitat.subprocess.run",return_value=SimpleNamespace(returncode=0)) as run:
+            self.assertEqual(fly_habitat.main([
+                "--backend","unified","--data-dir","/external/data","--output-dir","/external/run",
+                "--brain-guided-walking",
+            ]),0)
+        self.assertIn("--brain-guided-walking",run.call_args.args[0])
+        self.assertNotIn("--test-walking-control",run.call_args.args[0])
+        with self.assertRaises(SystemExit):
+            fly_habitat.main(["--backend","walking","--data-dir","/external/data","--output-dir","/external/run","--brain-guided-walking"])
+
+    def test_walking_readouts_are_opt_in_and_not_a_motor_decoder(self):
+        with patch("fly_habitat.subprocess.run",return_value=SimpleNamespace(returncode=0)) as run:
+            self.assertEqual(fly_habitat.main([
+                "--backend","unified","--data-dir","/external/data","--output-dir","/external/run",
+                "--walking-readouts","--no-brain-guided-walking","--no-brain-linked-landing",
+            ]),0)
+        self.assertIn("--walking-readouts",run.call_args.args[0])
+        self.assertNotIn("--brain-linked-landing",run.call_args.args[0])
+        with self.assertRaises(SystemExit):
+            fly_habitat.main(["--backend","walking","--data-dir","/external/data","--output-dir","/external/run","--walking-readouts"])
     def test_one_browser_port_is_enforced_before_model_loading(self):
         self.assertEqual(DEFAULT_PORT,8840)
         self.assertEqual(validate_app_port(DEFAULT_PORT),DEFAULT_PORT)
@@ -54,12 +75,15 @@ class FlightAppTests(unittest.TestCase):
         self.assertIn("--objects",command)
         self.assertIn("--seconds",command)
         self.assertEqual(command[command.index("--arena-half-size-mm")+1],"112.5")
-        self.assertEqual(command[command.index("--scene")+1],str(ROOT/"experiments/fly-walking/grassland-habitat.json"))
-        self.assertEqual(command[command.index("--feeding-config")+1],str(ROOT/"experiments/flywire-sugar/grassland-feeding.json"))
+        self.assertEqual(command[command.index("--scene")+1],str(ROOT/"experiments/fly-walking/puddle-habitat.json"))
+        self.assertEqual(command[command.index("--feeding-config")+1],str(ROOT/"experiments/flywire-sugar/puddle-feeding.json"))
+        for flag in ("--brain-guided-walking","--brain-linked-landing","--landing-surface-vision"):
+            self.assertIn(flag,command)
         self.assertNotIn("--test-stimulus",command)
         self.assertNotIn("--neural-leg-extension",command)
         self.assertNotIn("--graded-vision",command)
         self.assertNotIn("--flight-avoidance",command)
+        self.assertNotIn("--walking-readouts",command)
 
     def test_reduced_neural_extension_is_explicit_and_unified_only(self):
         with patch("fly_habitat.subprocess.run",return_value=SimpleNamespace(returncode=0)) as run:
@@ -69,7 +93,7 @@ class FlightAppTests(unittest.TestCase):
             ]),0)
         self.assertIn("--neural-leg-extension",run.call_args.args[0])
         with self.assertRaises(SystemExit):
-            fly_habitat.main(["--data-dir","/external/data","--output-dir","/external/run",
+            fly_habitat.main(["--backend","walking","--data-dir","/external/data","--output-dir","/external/run",
                               "--neural-leg-extension"])
 
     def test_graded_vision_is_explicit_and_unified_only(self):
@@ -80,7 +104,7 @@ class FlightAppTests(unittest.TestCase):
             ]),0)
         self.assertIn("--graded-vision",run.call_args.args[0])
         with self.assertRaises(SystemExit):
-            fly_habitat.main(["--data-dir","/external/data","--output-dir","/external/run","--graded-vision"])
+            fly_habitat.main(["--backend","walking","--data-dir","/external/data","--output-dir","/external/run","--graded-vision"])
 
     def test_flight_avoidance_is_explicit_and_preserves_baseline(self):
         with patch("fly_habitat.subprocess.run",return_value=SimpleNamespace(returncode=0)) as run:
@@ -90,7 +114,19 @@ class FlightAppTests(unittest.TestCase):
             ]),0)
         self.assertIn("--flight-avoidance",run.call_args.args[0])
         with self.assertRaises(SystemExit):
-            fly_habitat.main(["--data-dir","/external/data","--output-dir","/external/run","--flight-avoidance"])
+            fly_habitat.main(["--backend","walking","--data-dir","/external/data","--output-dir","/external/run","--flight-avoidance"])
+
+    def test_auto_enabled_hybrid_has_explicit_opt_outs_and_graded_compatibility(self):
+        for flags,expected in (
+            ([],{"--brain-guided-walking","--brain-linked-landing","--landing-surface-vision"}),
+            (["--no-brain-guided-walking","--no-brain-linked-landing"],set()),
+            (["--graded-vision"],{"--brain-guided-walking","--brain-linked-landing"}),
+        ):
+            with patch("fly_habitat.subprocess.run",return_value=SimpleNamespace(returncode=0)) as run:
+                fly_habitat.main(["--data-dir","/external/data","--output-dir","/external/run",*flags])
+            actual={flag for flag in run.call_args.args[0] if flag in {
+                "--brain-guided-walking","--brain-linked-landing","--landing-surface-vision"}}
+            self.assertEqual(actual,expected)
 
     def test_invalid_explicit_test_modes_fail_before_loading_model(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -103,6 +139,9 @@ class FlightAppTests(unittest.TestCase):
                            {"landing_surface_vision":True},
                            {"research_dnp10":"silence","brain_linked_landing":True},
                            {"controlled_test":True},
+                           {"test_walking_control":True,"seconds":5},
+                           {"test_walking_control":True,"brain_guided_walking":True,"seconds":4.5},
+                           {"research_walking_control":"source-cut","brain_guided_walking":True},
                            {"test_leg_extension":True,"seconds":1.2}]:
                 with self.subTest(kwargs=kwargs),self.assertRaises(ValueError):
                     fly_flight_app.run(

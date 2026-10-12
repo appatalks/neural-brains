@@ -10,6 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]/"scripts"))
 from fly_world_renderer import BrowserInputs, WorldRenderer
+from fly_objects import set_flight_object_position
 
 
 class BrowserRoutingTests(unittest.TestCase):
@@ -41,6 +42,9 @@ class ThreadedRendererTests(unittest.TestCase):
             '<mujoco><visual><global offwidth="1280" offheight="960"/></visual>'
             '<worldbody><geom type="plane" size="30 30 .1"/>'
             '<body name="fly" pos="0 0 1"><freejoint/><geom type="sphere" size=".1"/></body>'
+            '<body name="placed_box_0_body" mocap="true" pos="0 0 -10">'
+            '<geom name="placed_box_0" type="box" size=".08 .08 .08" rgba="1 0 0 1"/>'
+            '</body>'
             '</worldbody></mujoco>')
         data = mj.MjData(model)
         mj.mj_forward(model, data)
@@ -74,6 +78,33 @@ class ThreadedRendererTests(unittest.TestCase):
             data.qpos[0] = 1
             renderer.submit(model, data, .1, False)
             self.assertTrue(published.wait(3))
+        self.assertFalse(renderer.thread.is_alive())
+
+    def test_placed_object_mocap_snapshot_updates_frozen_world_image(self):
+        import mujoco as mj
+        import numpy as np
+        model, data = self.scene()
+        initial = data.qpos.copy(), data.qvel.copy()
+        published = threading.Event()
+        frames = []
+
+        def publish(image, clock):
+            frames.append((image.copy(), clock))
+            published.set()
+
+        with WorldRenderer(model, data, 3, model.body("fly").id, BrowserInputs(), publish,
+                           unit_scale=.1, initial_distance=1.2) as renderer:
+            self.assertTrue(published.wait(10))
+            hidden = frames[-1][0]
+            published.clear()
+            set_flight_object_position(model, data, "placed_box_0", [0, 0, .8])
+            mj.mj_forward(model, data)
+            renderer.submit(model, data, 0, False)
+            self.assertTrue(published.wait(3))
+            self.assertFalse(np.array_equal(hidden, frames[-1][0]))
+            self.assertEqual(frames[-1][1], 0)
+            np.testing.assert_array_equal(data.qpos, initial[0])
+            np.testing.assert_array_equal(data.qvel, initial[1])
         self.assertFalse(renderer.thread.is_alive())
 
     def test_render_failure_is_explicit_and_thread_finishes(self):

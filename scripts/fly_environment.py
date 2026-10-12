@@ -66,6 +66,17 @@ class MovableObject(HabitatObject):
 
 
 @dataclass(frozen=True)
+class WaterRegion:
+    name: str
+    position_mm: tuple[float, ...]
+    radius_mm: float
+    depth_mm: float
+    density_mg_mm3: float
+    drag_rate_s: float
+    material: str
+
+
+@dataclass(frozen=True)
 class Environment:
     half_size_mm: float
     walls_height_mm: float
@@ -82,6 +93,8 @@ class Environment:
     objects: tuple[HabitatObject, ...] = ()
     ground_material: str | None = None
     movable_objects: tuple[MovableObject, ...] = ()
+    water_regions: tuple[WaterRegion, ...] = ()
+    spawn_position_mm: tuple[float, ...] | None = None
 
     @classmethod
     def load(cls, path: Path):
@@ -91,12 +104,14 @@ class Environment:
             "terrain", "odors", "lights", "wind_mm_s", "drag_uN_per_mm_s",
             "drag_limit_uN", "range_limit_mm",
         }
-        if not isinstance(data, dict) or type(data.get("schema_version")) is not int or data["schema_version"] not in {1, 2, 3}:
-            raise ValueError("Environment requires documented schema version 1, 2 or 3")
+        if not isinstance(data, dict) or type(data.get("schema_version")) is not int or data["schema_version"] not in {1, 2, 3, 4}:
+            raise ValueError("Environment requires documented schema version 1, 2, 3 or 4")
         version = data["schema_version"]
         expected = fields if version == 1 else fields | {"materials", "objects"}
-        if version == 3:
+        if version >= 3:
             expected |= {"ground_material", "movable_objects"}
+        if version == 4:
+            expected |= {"water_regions","spawn_position_mm"}
         if set(data) != expected:
             raise ValueError("Environment must contain exactly the documented schema fields")
         names = set()
@@ -158,6 +173,10 @@ class Environment:
         objects = []
         movable = []
         ground_material = None
+        water = []
+        spawn = vector(data["spawn_position_mm"],"spawn position") if version == 4 else None
+        if spawn is not None and (max(abs(value) for value in spawn[:2])>=half or spawn[2]<=0):
+            raise ValueError("Spawn must be inside arena XY bounds and above the floor")
         if version >= 2:
             if not isinstance(data["materials"], list) or not isinstance(data["objects"], list):
                 raise ValueError("Materials and objects must be lists")
@@ -174,10 +193,10 @@ class Environment:
                     raise ValueError("Material colors/specularity must be in [0, 1] and friction nonnegative")
                 materials.append(Material(name(entry), rgba, surface, specular, shininess))
             by_name = {material.name: material for material in materials}
-            movable_entries = data["movable_objects"] if version == 3 else []
+            movable_entries = data["movable_objects"] if version >= 3 else []
             if not isinstance(movable_entries, list) or len(movable_entries) > 32:
                 raise ValueError("Habitat supports at most 32 movable objects")
-            if version == 3:
+            if version >= 3:
                 ground_material = data["ground_material"]
                 if not isinstance(ground_material, str) or ground_material not in by_name:
                     raise ValueError("Ground material must reference a declared material")
@@ -218,6 +237,29 @@ class Environment:
                     movable.append(MovableObject(name(entry), kind, position, size, pitch, entry["material"], mass))
                 else:
                     objects.append(HabitatObject(name(entry), kind, position, size, pitch, entry["material"]))
+            if version == 4:
+                entries = data["water_regions"]
+                if not isinstance(entries, list) or len(entries) > 8:
+                    raise ValueError("Habitat supports at most eight water regions")
+                for entry in entries:
+                    if not isinstance(entry, dict) or set(entry) != {
+                        "name", "position_mm", "radius_mm", "depth_mm", "density_mg_mm3", "drag_rate_s", "material",
+                    }:
+                        raise ValueError("Invalid water region fields")
+                    position = vector(entry["position_mm"], "water surface position")
+                    radius = number(entry["radius_mm"], "water radius", .01)
+                    depth = number(entry["depth_mm"], "water depth", .001)
+                    density = number(entry["density_mg_mm3"], "water density", .001)
+                    drag = number(entry["drag_rate_s"], "water drag rate", 0)
+                    if (abs(position[0])+radius >= half or abs(position[1])+radius >= half
+                            or position[2]-depth < -1e-6 or density > 5 or drag > 1000):
+                        raise ValueError("Water must fit arena/ground bounds; density<=5mg/mm3 and drag<=1000/s")
+                    if not isinstance(entry["material"], str) or entry["material"] not in by_name:
+                        raise ValueError("Water material must reference a declared material")
+                    if any(math.hypot(position[0]-old.position_mm[0],position[1]-old.position_mm[1]) < radius+old.radius_mm
+                           for old in water):
+                        raise ValueError("Overlapping water regions are not supported")
+                    water.append(WaterRegion(name(entry),position,radius,depth,density,drag,entry["material"]))
         return cls(
             half, number(data["walls_height_mm"], "walls_height_mm", 0), friction,
             tuple(terrain), sources(data["odors"]), sources(data["lights"]),
@@ -225,7 +267,7 @@ class Environment:
             number(data["drag_uN_per_mm_s"], "drag_uN_per_mm_s", 0),
             number(data["drag_limit_uN"], "drag_limit_uN", 0),
             number(data["range_limit_mm"], "range_limit_mm", 0.1),
-            version, tuple(materials), tuple(objects), ground_material, tuple(movable),
+            version, tuple(materials), tuple(objects), ground_material, tuple(movable), tuple(water), spawn,
         )
 
     def wind_force(self, velocity) -> tuple[float, ...]:
@@ -370,4 +412,7 @@ def environment_dict(environment: Environment) -> dict:
     if environment.schema_version < 3:
         result.pop("ground_material")
         result.pop("movable_objects")
+    if environment.schema_version < 4:
+        result.pop("water_regions")
+        result.pop("spawn_position_mm")
     return result

@@ -42,30 +42,49 @@ requirements. Acquire only selected, verified assets using
 [the dataset acquisition guide](docs/dataset-catalog.md).
 Large datasets and all generated trial bundles stay outside Git.
 
-### Launch the current grassland comparison
+### Launch the current puddle habitat
 
 From the repository root, with all environments and verified assets prepared:
 
 ```bash
 export FLY_DATA_DIR="/path/to/neural-brains-data"
+: "${FLY_DATA_DIR:?Set FLY_DATA_DIR to your existing external data directory}"
 MUJOCO_GL=egl .venv-biomechanics/bin/python scripts/fly_habitat.py \
   --backend unified --flight-avoidance --neural-leg-extension \
   --data-dir "$FLY_DATA_DIR" \
   --output-dir "$FLY_DATA_DIR/results/fly-unified/session-$(date +%Y%m%d-%H%M%S)"
 ```
 
+Replace the placeholder with your existing external data directory in the same
+terminal used to launch. Activating a virtual environment does not set
+`FLY_DATA_DIR`. An empty value resolves the input path to the repository and is
+rejected; inputs must be outside Git, and each output directory must be new.
+
 Open **http://127.0.0.1:8840/**. This is the only allowed interactive-app port;
 alternate and ephemeral ports are rejected. Save/stop an existing instance
 before launching another. There is no alternate-port fallback.
 This starts an explicit new episode; it is not a seamless state transfer.
 
-The conservative command does not enable experimental full landing. To
-evaluate actual-DNp10 landing initiation and the assumed surface encoder,
-add `--brain-linked-landing --landing-surface-vision` after reading
-[the landing evidence and limitations](docs/brain-linked-landing.md).
+The main command now auto-enables neural-guided walking, actual-DNp10 assisted
+landing and the assumed surface encoder. For the older comparison add
+`--no-brain-guided-walking --no-brain-linked-landing`.
+Read [the current puddle/fullscreen guide](docs/puddle-habitat.md) and
+[landing evidence and limitations](docs/brain-linked-landing.md).
 The faster, body-readiness-gated descent revision is still undergoing
 robustness validation; earlier passing trials do not validate every subsequent
 parameter change.
+
+Optional `--walking-readouts` adds primary-verified walking/stopping neurons
+to the observation panel after acquiring the selected primary ID supplement.
+It does not control gait or add neural stimulation. See the
+[walking pathway tests and remaining motor interface](docs/walking-neural-evidence.md).
+
+Default `--brain-guided-walking` enables the
+[tested brain-guided hybrid](docs/brain-guided-walking.md): genuine BDN2/oDN1
+speed and DNa02/DNa11 turn requests, modeled upstream drive/cues and learned
+legs. Combined with brain-linked landing it resumes neural-guided walking after
+assistance release. Flight steering remains engineered/learned and physiological
+internal-energy control is absent. This does not enable the failed VNC relay.
 
 Use `--objects /previous/session/objects.json` to restore fixed editor
 placements. Loose-object trajectories remain in the run telemetry/summary;

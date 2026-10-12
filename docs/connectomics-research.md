@@ -12,6 +12,36 @@ entries with their own review status.
 
 ## 1. Executive assessment
 
+### 2026-10-11: embodiment demos versus our integration gaps
+
+- [Eon's primary technical explanation](https://eon.systems/updates/embodied-brain-emulation)
+  (S67) describes selected descending outputs influencing modified existing
+  NeuroMechFly controllers with hand-chosen gains: oDN1 forward velocity,
+  DNa01/DNa02 steering, and selected feeding/grooming outputs. It explicitly
+  does not reconstruct the full VNC/motor hierarchy, reports largely missing
+  internal-state mechanisms, and says current visual activity does not
+  substantially influence behavior. This is substantial multi-behavior
+  integration, not recovery of every physiological mechanism.
+- [NeuroCraft's primary README](https://github.com/evnsnclr/neurocraft-fly-public/tree/d121466b3ba2f11498e6da498c74acb061bb00eb)
+  (S68) explicitly connects neural readouts to scripted Minecraft body programs.
+  Runnable mod/companion downloads are not present in that release-status page.
+- [FlyGM's selected methods](https://arxiv.org/html/2602.17997) (S69) combine
+  a connectome operator with trained encoders, neural updates and motor
+  decoders. This differs from our preserved unmodified LIF spike model.
+
+**Project accountability:** missing behavior here is partly incomplete
+integration, not universal scientific impossibility. The main body gait uses
+a learned comparison reference; verified walking/steering brain outputs have
+not been connected to that reference as an end-to-end high-level controller.
+Others demonstrate more complete approximate interfaces. Reproducing one of
+those brain-influenced interfaces is different from the longer-term target of
+measured sensory/VNC/muscle physiology. Every physiological gap need not be
+closed before a useful, explicitly labeled reduced interface can be tested.
+
+No external implementation was installed or substituted by this review.
+An end-to-end baseline with disclosed decoder assumptions is a useful separate
+integration track; it does not erase our failed tests or prove complete autonomy.
+
 The articles describe related but distinct achievements:
 
 1. **FlyWire:** a reconstructed adult **female brain**, with 139,255 neurons

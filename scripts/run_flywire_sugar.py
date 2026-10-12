@@ -23,8 +23,12 @@ def verified_inputs(data_dir: Path, dataset: dict) -> dict[str, Path]:
     for entry in dataset["selected_assets"]:
         asset = select_asset(dataset, entry["filename"])
         path = data_dir / dataset["id"] / (asset.filename + ".download") / asset.filename
-        digest = hashlib.sha1(usedforsecurity=False)
-        digest.update(f"blob {asset.size_bytes}\0".encode())
+        if asset.size_bytes is None or asset.checksum is None:
+            raise ValueError(f"Verified input requires upstream size and checksum: {asset.filename}")
+        algorithm, expected = asset.checksum.split(":")
+        digest = hashlib.new("sha1" if algorithm == "git-blob-sha1" else algorithm, usedforsecurity=False)
+        if algorithm == "git-blob-sha1":
+            digest.update(f"blob {asset.size_bytes}\0".encode())
         sha256 = hashlib.sha256()
         count = 0
         with path.open("rb") as stream:
@@ -32,8 +36,9 @@ def verified_inputs(data_dir: Path, dataset: dict) -> dict[str, Path]:
                 digest.update(chunk)
                 sha256.update(chunk)
                 count += len(chunk)
-        if count != asset.size_bytes or asset.checksum != "git-blob-sha1:" + digest.hexdigest():
-            raise ValueError(f"Pinned Git blob verification failed: {asset.filename}")
+        if count != asset.size_bytes or expected != digest.hexdigest():
+            label = "Git blob" if algorithm == "git-blob-sha1" else algorithm
+            raise ValueError(f"Pinned {label} verification failed: {asset.filename}")
         receipt = json.loads((path.parent / "receipt.json").read_text())
         if (
             receipt["sha256"] != sha256.hexdigest()

@@ -100,6 +100,66 @@ class ActivityTests(unittest.TestCase):
     "Set explicit external data/output directories to run the real-network regression",
 )
 class ActualNetworkActivityTests(unittest.TestCase):
+    def test_walking_readouts_preserve_actual_visual_and_feeding_spikes(self):
+        from datasets import ROOT
+        from fly_feeding import BrainClient
+        from fly_walking import external_output
+
+        output = external_output(Path(os.environ["FLY_ACTIVITY_OUTPUT_DIR"])/"walking-readouts")
+        output.mkdir(parents=True)
+        responses = {}
+        for enabled in (False, True):
+            target = output/("enabled" if enabled else "baseline")
+            target.mkdir()
+            client = BrainClient(ROOT/".venv/bin/python", Path(os.environ["FLY_ACTIVITY_DATA_DIR"]),
+                                 target, 420, takeoff=True, telemetry=True, walking_readouts=enabled)
+            try:
+                (target/"metadata.json").write_text(json.dumps(client.metadata)+"\n")
+                legacy_ids = set(client.metadata["neuron_ids"])
+                self.assertTrue(all(row["root_id"] in legacy_ids for row in client.metadata["sensorimotor_candidates"]))
+                for name, contact, looming in (("visual", False, True), ("feeding", True, False)):
+                    client.reset()
+                    client.begin_step(1000, contact, looming)
+                    response = client.finish_step()
+                    responses[enabled, name] = response
+                    (target/(name+".json")).write_text(json.dumps(response)+"\n")
+                    if name == "feeding":
+                        self.assertEqual(response["mn9_spikes"], 65)
+                        self.assertEqual(response["network_spikes"], 9840)
+                self.assertEqual(len(client.metadata["sensorimotor_candidates"]), 67 if enabled else 39)
+                if enabled:
+                    self.assertTrue(client.metadata["walking_readouts_enabled"])
+                    walking = [row for row in client.metadata["sensorimotor_candidates"]
+                               if row["population"] in {"P9", "BPN", "FG", "BB", "BDN2", "oDN1", "BRK"}]
+                    self.assertEqual(len(walking), 28)
+                    client.reset()
+                    client.begin_step(1000, False, True)
+                    replay = client.finish_step()
+                    original = responses[True, "visual"]
+                    self.assertEqual(replay["sensorimotor_spikes"], original["sensorimotor_spikes"])
+                    self.assertEqual(replay["neuron_activity"]["indices"], original["neuron_activity"]["indices"])
+                    self.assertEqual(replay["neuron_activity"]["counts"], original["neuron_activity"]["counts"])
+                    client.reset()
+                    client.begin_step(1000, False, False)
+                    silent = client.finish_step()
+                    self.assertEqual(silent["network_spikes"], 0)
+                    self.assertTrue(all(value == 0 for value in silent["sensorimotor_spikes"].values()))
+            finally:
+                client.close()
+        for name in ("visual", "feeding"):
+            original = responses[False, name]
+            observed = dict(responses[True, name])
+            observed["sensorimotor_spikes"] = {
+                value: count for value, count in observed["sensorimotor_spikes"].items()
+                if value in original["sensorimotor_spikes"]
+            }
+            self.assertEqual(observed, original)
+        (output/"summary.json").write_text(json.dumps({
+            "status": "passed", "walking_cells": 28, "total_readouts": 67,
+            "visual_and_feeding_exact_parity": True, "reset_replay": True,
+            "no_input_silent": True, "motor_controller_modified": False,
+        }, indent=2)+"\n")
+
     def test_sensorimotor_readouts_do_not_change_visual_network(self):
         from datasets import ROOT
         from fly_feeding import BrainClient

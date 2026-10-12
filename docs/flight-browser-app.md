@@ -1,5 +1,80 @@
 # Experimental flight-capable browser app
 
+## Current default habitat and views
+
+The main launcher defaults to unified brain-guided walking/landing and surface
+input, with explicit `--no-*` scientific comparison flags. The
+[puddle habitat/fullscreen guide](puddle-habitat.md) covers dry-soil spawn,
+central water/leaf island, multiple taste regions, overlays and opt-in reduced
+fluid forces. Island traversal remains experimental; legacy scene files remain
+available. Earlier sections below preserve the initial opt-in milestones.
+
+## Opt-in brain-guided hybrid (2026-10-11)
+
+`--brain-guided-walking` now connects actual BDN2/oDN1 and DNa02/DNa11 counts
+to learned walking speed/turn references, including post-landing release.
+It adds modeled BPN locomotor drive and assumed scene/ray-to-P9/FG cues.
+See [physical/causal evidence, exact assumptions and retained
+failures](brain-guided-walking.md). This is distinct from observation-only
+`--walking-readouts`; old defaults remain unchanged. Flight steering is still
+engineered/learned, spontaneous takeoff and biological energy routing are not
+implemented. No live app was automatically relaunched.
+
+## User-approved live walking/landing options (2026-10-11)
+
+After the prior interactive episode was saved/stopped, the user explicitly
+approved learned walking with the existing engineered ground-boundary
+reference and DNp10-initiated assisted landing. The single port8840 launch
+adds `--brain-linked-landing --landing-surface-vision` to the conservative
+flight-avoidance/neural-leg-extension comparison, with `--walking-readouts`
+and the latest saved fixed objects.
+
+Startup verified one listener, real world/eye images,127,400brain cells and
+67readouts. This is liveness and option wiring, not a completed landing
+experiment. The surface encoder and brake/descent assistance remain assumed;
+actual flight DNp10 counts are required to request landing. Ground avoidance
+remains engineered, gait learned, and the failed research walking relay is
+not enabled. No automatic demonstration stimulus is added.
+
+## Primary-verified walking/halting observations (2026-10-11)
+
+Optional `--walking-readouts` on the unified app/main launcher adds 28
+primary-verified P9, BPN CL210, FG, BB, BDN2, oDN1 and BRK neurons to the
+existing observation panel (67 cells total). It requires the externally
+acquired primary identity supplement and fails explicitly if missing or
+checksum/laterality validation fails. Counts are checked against real sparse
+neural activity and support the existing live/historical and connection views.
+No stimulus, connection or motor decoder is added; walking remains learned.
+
+See [identity resolution, actual causal tests and retained negative
+results](walking-neural-evidence.md). Exact real-network visual/feeding parity,
+reset/silence controls and a single bounded 0.2 s app smoke passed.
+This does not fix walking boundaries or enable neural gait/landing by default.
+
+## Placed-object collision correction (2026-10-11)
+
+Unified browser boxes and spheres now use fixed mocap collision bodies.
+Previously the editor moved world-static geometry after compilation: the image
+and position changed, but static collision bounds could remain at the hidden
+slot position, allowing the fly to pass through objects elsewhere in the arena.
+Loading saved placements, editing, removing and restoring on reset now update
+physical mocap poses, also carried by the observer's integration-state snapshot.
+The saved `objects.json` format and 0.8 mm sizes are unchanged.
+
+These editor objects are fixed obstacles, not pushable free-body props; the
+grassland's loose seeds/chaff remain separate physical bodies. This correction
+does not add neural touch input, neural walking, spontaneous takeoff or metabolic
+energy routing. Walking and landing defaults are intentionally unchanged.
+Existing live sessions need an approved restart to use the corrected model.
+
+Validation: 41 focused tests passed in the pinned flight environment with EGL.
+The compiled FlyBody regression puts both a box and a sphere at x=62.5 mm,
+requires actual fly contacts and positive solver contact forces, checks
+relocation/removal/reset and ray visibility, and verifies editing does not change
+fly qpos/qvel. Observer snapshots and a real threaded paused-world render carry
+the edited mocap poses. This is collision/graphics evidence, not a long-duration
+obstacle-negotiation or biological behavior benchmark.
+
 ## Newly approved functional controls
 
 The user next requested the most natural brain-linked landing response.

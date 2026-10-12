@@ -15,12 +15,19 @@ from fly_environment import number, vector
 from fly_activity import ActivityReader
 
 
+def default_feeding_config(scene):
+    known = {ROOT/"experiments/fly-walking"/name:food for name,food in
+             (("puddle-habitat.json","puddle-feeding.json"),("grassland-habitat.json","grassland-feeding.json"))}
+    return ROOT/"experiments/flywire-sugar"/known.get(Path(scene).resolve(),"live-feeding.json")
+
+
 @dataclass(frozen=True)
 class FeedingConfig:
     position_mm: tuple
     radius_mm: float
     probe_mm: tuple
     seed: int
+    regions: tuple = ()
 
     @classmethod
     def load(cls, path):
@@ -29,25 +36,48 @@ class FeedingConfig:
             "schema_version", "source_position_mm", "source_radius_mm",
             "oral_probe_offset_mm", "contact_stimulation_Hz", "seed", "description", "readout",
         }
-        if (
-            not isinstance(raw, dict) or set(raw) != fields
-            or type(raw["schema_version"]) is not int or raw["schema_version"] != 1
-        ):
+        if not isinstance(raw, dict) or type(raw.get("schema_version")) is not int or raw["schema_version"] not in (1,2):
             raise ValueError("Invalid live feeding configuration schema")
+        version = raw["schema_version"]
+        if version == 2:
+            fields = fields-{"source_position_mm","source_radius_mm"}|{"source_regions"}
+        if set(raw) != fields:
+            raise ValueError("Invalid live feeding configuration fields")
         if raw["contact_stimulation_Hz"] != 100:
             raise ValueError("First feeding bridge supports only the validated 100 Hz protocol")
         if type(raw["seed"]) is not int or raw["seed"] < 0:
             raise ValueError("Feeding seed must be a nonnegative integer")
-        return cls(
-            vector(raw["source_position_mm"], "sugar source position"),
-            number(raw["source_radius_mm"], "sugar region radius", 0.01),
-            vector(raw["oral_probe_offset_mm"], "oral probe offset"), raw["seed"],
-        )
+        regions = []
+        if version == 2:
+            entries = raw["source_regions"]
+            if not isinstance(entries,list) or not 1 <= len(entries) <= 16:
+                raise ValueError("Feeding requires1..16 explicit source regions")
+            for entry in entries:
+                if not isinstance(entry,dict) or set(entry) != {"name","position_mm","radius_mm"}:
+                    raise ValueError("Invalid sugar region fields")
+                name = entry["name"]
+                if not isinstance(name,str) or not name.isidentifier() or any(row[0]==name for row in regions):
+                    raise ValueError("Sugar region names must be unique identifiers")
+                regions.append((name,vector(entry["position_mm"],"sugar source position"),
+                                number(entry["radius_mm"],"sugar region radius",.01)))
+            position,radius = regions[0][1:]
+        else:
+            position = vector(raw["source_position_mm"],"sugar source position")
+            radius = number(raw["source_radius_mm"],"sugar region radius",.01)
+        return cls(position,radius,vector(raw["oral_probe_offset_mm"],"oral probe offset"),
+                   raw["seed"],tuple(regions))
 
     def exposure(self, probe_position, enabled=True):
         if type(enabled) is not bool:
             raise ValueError("Sugar enabled state must be a boolean")
         position = vector(list(probe_position), "oral probe world position")
+        if self.regions:
+            exposures = [{"name":name,"distance_mm":math.dist(position,center),
+                          "sugar_contact":bool(enabled and math.dist(position,center)<=radius)}
+                         for name,center,radius in self.regions]
+            return {"probe_position_mm":list(position),"distance_mm":min(row["distance_mm"] for row in exposures),
+                    "sugar_enabled":enabled,"sugar_contact":any(row["sugar_contact"] for row in exposures),
+                    "source_regions":exposures}
         distance = math.sqrt(sum((a-b)**2 for a,b in zip(position, self.position_mm)))
         return {"probe_position_mm": list(position), "distance_mm": distance,
                 "sugar_enabled": enabled, "sugar_contact": bool(enabled and distance <= self.radius_mm)}
@@ -56,7 +86,19 @@ class FeedingConfig:
 class BrainClient:
     def __init__(self, python: Path, data_dir: Path, output: Path, seed: int, takeoff: bool = False,
                  telemetry: bool = False, disconnect_visual_output: str | None = None,
-                 dnp10_intervention: str | None = None, graded_vision: bool = False):
+                 dnp10_intervention: str | None = None, graded_vision: bool = False,
+                 walking_readouts: bool = False, walking_control: bool = False,
+                 walking_intervention: str | None = None):
+        if type(walking_control) is not bool or walking_control and not (takeoff and telemetry):
+            raise ValueError("Walking control requires verified takeoff and telemetry")
+        if walking_intervention is not None and (
+            not walking_control or walking_intervention not in {"sham", "source-cut", "output-silence"}
+        ):
+            raise ValueError("Walking intervention requires an explicit control worker")
+        walking_readouts = walking_readouts or walking_control
+        self.walking_control = walking_control
+        if type(walking_readouts) is not bool or walking_readouts and not (takeoff and telemetry):
+            raise ValueError("Walking readouts require takeoff circuit and exact neuron telemetry")
         if type(graded_vision) is not bool or graded_vision and not takeoff:
             raise ValueError("Graded vision requires verified takeoff populations")
         self.graded_vision = graded_vision
@@ -72,6 +114,7 @@ class BrainClient:
         self.thread = None
         self.pending = False
         self.expected_interval = None
+        self.expected_walking_drive = None
         self.process = None
         self.stderr = (output / "brain-worker.log").open("x")
         try:
@@ -82,7 +125,10 @@ class BrainClient:
                 + (["--neuron-telemetry"] if telemetry else [])
                 + (["--disconnect-visual-output", disconnect_visual_output] if disconnect_visual_output else [])
                 + (["--dnp10-intervention", dnp10_intervention] if dnp10_intervention else [])
-                + (["--graded-vision"] if graded_vision else []),
+                + (["--graded-vision"] if graded_vision else [])
+                + (["--walking-readouts"] if walking_readouts else [])
+                + (["--walking-control"] if walking_control else [])
+                + (["--walking-intervention", walking_intervention] if walking_intervention else []),
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.stderr,
                 text=True, bufsize=1,
                 env={**os.environ, "OMP_NUM_THREADS": "1", "OPENBLAS_NUM_THREADS": "1"},
@@ -100,6 +146,10 @@ class BrainClient:
                 raise RuntimeError("Brain worker does not support required neuron activity telemetry")
             if graded_vision and self.metadata.get("graded_vision_enabled") is not True:
                 raise RuntimeError("Brain worker does not support required graded visual input")
+            if walking_readouts and self.metadata.get("walking_readouts_enabled") is not True:
+                raise RuntimeError("Brain worker does not support primary-verified walking readouts")
+            if walking_control and self.metadata.get("walking_control_enabled") is not True:
+                raise RuntimeError("Brain worker does not support the declared walking input/output interface")
             self.activity_reader = ActivityReader(self.metadata) if telemetry else None
         except Exception:
             self.abort()
@@ -125,7 +175,7 @@ class BrainClient:
         self.process.stdin.write(json.dumps(value) + "\n")
         self.process.stdin.flush()
 
-    def begin_step(self, duration_ms, exposure, looming=False, visual_rates_Hz=None):
+    def begin_step(self, duration_ms, exposure, looming=False, visual_rates_Hz=None, walking_drive_Hz=None):
         if self.pending:
             raise RuntimeError("Previous brain interval has not completed")
         request = {"op": "step", "duration_ms": duration_ms, "sugar_contact": exposure, "looming_active": looming}
@@ -137,9 +187,16 @@ class BrainClient:
             request["visual_rates_Hz"] = visual_rates_Hz
         elif visual_rates_Hz is not None:
             raise ValueError("Rate input requires an explicitly enabled graded worker")
+        if self.walking_control:
+            from fly_brain_walk import validate_drive
+            walking_drive_Hz = validate_drive(walking_drive_Hz)
+            request["walking_drive_Hz"] = walking_drive_Hz
+        elif walking_drive_Hz is not None:
+            raise ValueError("Walking drive requires explicitly enabled control")
         self.send(request)
         self.pending = True
         self.expected_interval = (duration_ms, exposure, looming, visual_rates_Hz)
+        self.expected_walking_drive = walking_drive_Hz
 
     def finish_step(self):
         if not self.pending:
@@ -155,6 +212,10 @@ class BrainClient:
             received_rates = validate_visual_rates(reply.get("visual_rates_Hz"))
             if received_rates != rates:
                 raise RuntimeError("Neural response disagrees with graded input rates")
+        if self.walking_control:
+            from fly_brain_walk import validate_drive
+            if validate_drive(reply.get("walking_drive_Hz")) != self.expected_walking_drive:
+                raise RuntimeError("Neural response disagrees with declared walking drive")
         for field in ["mn9_spikes", "network_spikes"]:
             if type(reply.get(field)) is not int or reply[field] < 0:
                 raise RuntimeError("Neural response has invalid spike counts")

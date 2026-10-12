@@ -76,6 +76,245 @@
 
 ## Current state (2026-10-10)
 
+- 2026-10-11 user approved auto-enabled hybrid + fullscreen/overlays + central
+  puddle/leaf habitat and experimental fluid forces, then commit/push.
+  Main defaults unified/BGwalking/DNp10landing/surfacevision, explicit --no-*
+  comparisons; research run() defaults retained. New immutable v4 puddle scene,
+  78static/4loose objects,16materials,4matched taste regions; historicalv3 kept.
+  Nativefullscreen/eye-overlay toggle and deterministic coordinate tests pass.
+  [Guide/retained failures](../docs/puddle-habitat.md): island-start001..004
+  fell; user explicitly approved dry-soil spawn(-45,-65,1.278mm) forcommit
+  rather than holding push. Actualdryrigid6s minupright.99153; correctedfluid4s
+  actualleaf equilibrium.20682mm,zeroverticalspeed,.02000mm3displacement
+  balances.02mg weight. Fluid opt-in --fluid-physics, bounded buoyancy/drag,
+  implicit force integration, noCFD/waves/tension/wetting/swimming/receptors.
+  Firstexplicitforce equilibrium failed; firstappfluid loose-body forces
+  accumulated because onlyfly force cleared: fixedwhole-array per-tick clear,
+  failures retained. 310tests9skips; no live app left. Water/island traversal,
+  launch/field stability and calibrated cognition remain open. Latestfixed
+  editorobjectsEMPTY; preserve userstate before laterlaunch/restart.
+
+- 2026-10-11 brain-guided hybrid milestone: user approved completing explicitly
+  assumed high-level integration. Opt-in --brain-guided-walking now maps actual
+  BDN2/oDN1 speed and DNa02 + primary DNa11 (historical DNa01) turns through
+  learned legs; modeled BPN/P9/FG drive, privileged scene/reference feedback,
+  not reconstructed VNC or energy physiology. 71 exact readouts. Physical
+  start/left/right/stop passes11checks at420 and prospective433; exact physical/
+  neural sham, source-cut/output-clamp/motor-disconnect controls pass. Genuine
+  zero-input silence/reset and legacy actual network regressions27/27.
+  [Evidence/negative trials](../docs/brain-guided-walking.md): coupled8s GF/
+  DNp10 cycle passes420/433, request1.41,touchdown3.26,release4.26,
+  18701stable unassisted walking ticks, zero landing assistance after release.
+  Hybrid-only descent angular gains2000/100 address retained contact-rollout
+  failure; legacy800/50 and force caps/gates unchanged. Walking/flight remain
+  learned, avoidance engineered; calibrated spontaneous cognition/energy and
+  neural flight steering missing. 301tests9skips. Latest fixedobjectsEMPTY;
+  no interactive relaunch approved/performed. Only bounded controlled tests
+  used8840 sequentially. Check current live state before any deployment.
+  Environment-only17s run observed modeled-drive GF12.05/DNp10request12.43,
+  touchdown14.28/release15.28,34.20mm released walking,3878stableticks.
+  NOT broad stability proof: launch temporarily inverted(-.928), postrelease
+  ground dipped .681, shortflight belowdurationgate. Keep these failures/limits
+  explicit; next is field/launch stability, not stronger biological claims.
+
+- 2026-10-11 externalcomparison/accountability: user askswhy missing behaviors
+  ifotherssolved. Verifiedprimary Eontechnicaldoc(S67): selectedDNs=oDN1
+  velocity,DNa01/02steering,grooming/MN9 intoexisting bodycontrollers,
+  gainsbyhand, notfullVNC/muscles; internalstate largelymissing, visionmostly
+  decorative, embodiedescape notimplementedthere. PublicEonrepo inspected
+  isLIF/backendbenchmarks, fullbodyrelease notidentified. NeuroCraftprimary
+  README(S68) saysscriptedbodyprograms andnorunnabledownloadsyet. FlyGM
+  preprintmethods(S69) trainedencoder/neuralupdates/decoder, notourrawLIF.
+  [Dossier](../docs/connectomics-research.md) distinguishes absent HERE from
+  unsolvedeverywhere: our walking/steering high-levelbrain/body interface
+  remains incomplete; usefulapproximate integration needn't wait for every
+  physiologicalparameter. No code/data install orcontroller swap performed.
+- 2026-10-11 touch/state milestone: user reports obstaclefalls/no spontaneous
+  flight and selected NEURALRESEARCHONLY, no engineeredassistance. Livebody
+  observedinverted(upright-.86)whileUIwalking, neuralintervalsilent, no death/
+  metabolism model. LatestfixedobjectsEMPTY afteruserremoval; preserveempty,
+  no reset/restart/stimulation done. [Evidence](../docs/neural-touch-state.md):
+  primary adultTLA->MDN touchretreat relevant (S61abstract;fulltext403);
+  four primaryMDNs exactmodel IDs/canonical sides audited,40-58ascending
+  inputs each, no directly mech-labeled inputs. TLAlabel/identity unresolved,
+  do NOT guess fromgenericAN/iAN-MDN.2319/2364ANs modelmatched,
+  only21annotationrows named;headbristles302,eyebristles1111 modelmatched
+  not leg/thoraxreceptor mappings. OA-VPM4pair matches forfeedingonly;
+ 152predOA labels134matched includes12non-neuronannotationrows, NEVER
+  driveallOAlabels asarousal. SourcesS61-S66 distinguishproprioception,
+  ascendingbehaviorstate, starvationlocomotion(hours/days),feedingOA andflight.
+  audit_touch_state_paths read-only completed;288tests8skips+17focused pass.
+  Next: adultTLA/NOMPC identity/driver/forceencoding thenneural-only causal
+  recruitment; receptor/neuromodulation/bodyfeedback gaps explicit. Live
+  interactive-landing203814 at8840 leftuntouched;check currentcontrols first.
+- 2026-10-11 live enablement: user requested walking/landing and explicitly
+  approved learned walking with engineered ground-boundary avoidance plus
+  DNp10-initiated assumed assisted landing, NOT failedbrainwalkingrelay.
+  Prior203249 saved/stopped viaQ at11.23s(exit0,nosafetystop). Sole live
+  interactive-landing-20261011-203814 at8840 now additionally uses
+  --brain-linked-landing --landing-surface-vision, retaining flightavoidance,
+  neurallegextension,walkingreadouts and savedbox+sphere. Latest3.34swalking/
+  notpaused; HTTPworld/eyes200,127400neurons67readouts; browser reused/reloaded.
+  Controllerpresence is NOT landingcompletion validation. Surfaceencoder
+  and brake/descentassistance assumed, realDNp10 needed; no demo inputs or
+  spontaneoustakeoff timer. Keep currentusercontrols/edits, no secondapp.
+- 2026-10-11 live launch: user chose interactivehabitat with existing controllers
+  and neuralreadouts, not experimentaljointrelay. Sole8840 instance
+  interactive-20261011-203249 uses flight-avoidance, neural-leg-extension,
+  walking-readouts; saved latest135133box+sphere preserved with corrected
+  collisions. Prior135133 endedworkerexiterror/no diagnosticlog; failure
+  retained, causeunknown. NewHTTPworld/eyes200,127400neurons/67readouts
+  verified; integratedbrowser opened. User already interacting/toggledfinger,
+  latestobserved6.24s flight/notpaused/no safetynotice; leave currentcontrols
+  untouched. NOT controlled validation. Full landing and failedwalkingrelay
+  remain disabled; gait/flight learned/engineered scopes visible. Check live
+  app/edits before restart; don't open secondapp or alternateport.
+- 2026-10-11 uncertainty test: user lets test. [Evidence](../docs/relay-uncertainty-test.md):
+  frozen9grid mean125/250/500 at100Hz x20/40/80ms, development420/421 with
+  old420/421weaktrace regression, held-out431/432 generated only AFTER
+  immutable selection. Matched seededBernoulli0.1ms externalstimulus replay,
+  FGcoact/FGoutputcut exactsame events; actualbrainspikes stillcomputed.
+  Both neuralcohorts22checks pass.72developmentphysicaltrials+sharedbaseline,
+ 4candidates pass. Fixedclosestprior rule selects250mean20ms125/spike,
+  unchangedVNC/recruitment/torque/reflex/fixture.24heldouttrials25/26checks,
+  OVERALLFAILED:431delta.001233rad passes,432delta.000194rad fails. Matched
+  FGsuppression,disconnections,replay,bounds pass. No switch/refit using
+  held-out outcomes. Old00162/66 remainsFAILED; newFGcriterion isintegrated
+  activation underMATCHED input, not relabeled oldunmatchedpeakcriterion.
+  Selectedlegacy420developmentdelta.001014 showslittlemargin.284tests8skips
+  +focused tests pass. Defaultrelay40ms62.5 andnormalgait/app unchanged.
+  Next: predeclaredoperatingmargin/newindependentseeds orphysiology;431/432
+  must be considered observed, not reusedasblindvalidation after fitting.
+- 2026-10-11 genuine brain-spike joint test: user said lets test. Added
+  isolated export_bdn2_packets.py + assumed CountRelay + offline joint runner,
+  NO normalworker/gait/app changes. [Evidence](../docs/brain-spike-joint-test.md):
+  brain-packets00121trials24checks pass at420/421/prospective430:
+  leftBDN2 counts64/67/71, FG44/47/48; sham/reset sparsecounts exact,
+  BPN-outputcut andBDNclamp eliminate readout while BPNfires; resting silent.
+  BPN150Hz50..800ms, FG150Hz300..500ms explicitEVOKED, not sensory/autonomous.
+  Relay62.5modelunits/spike40ms assumed100Hz->mean250, endpoints10ms;
+  no retroactive/fakeeventtimes. Matched female root720575940612364530 vs
+  maleMANC10093 remains separate. brain-joint-relay00133trials62/66checks
+  OVERALLFAILED:420noactuation;421delta.000813rad below.001threshold andFG
+  raisespeakactivation;430delta.003600rad andFGsuppression pass.
+  All33causaldelivery,15disconnect,sham/reset andphysicalbounds pass.
+  No gains/thresholds fitted to rescue. SharedPoisson RNG changes BPNstream
+  afterFG activation; do not claim matched-input stabilization.280tests8skips
+  +focusedrelaytests pass. Next: frozen uncertainty/sensitivity experiment
+  with matcheddrive controls and NEW held-out seeds before any adoption.
+- 2026-10-11 positive bounded milestone: user approved own computational
+  reference and explicit assumed single-joint interface. [Evidence](../docs/independent-vnc-joint.md):
+  vnc_reference.py uses actual148cell MANC matrix/weight selection, float64
+  explicit50/800ms boundaries, no sourceclipping. own-reference001/002 each
+ 33checks pass incl RK45/DOP853 and tenfoldtighter tolerance; worst allcell
+  sampledifference.0000711 vs.001bound; exact reset/sham; newseeds428/429.
+  test_vnc_joint.py maps model-rate body12686 to assumed recruitment60ms
+  and torque/localfeedback at existingcoxa_T1_left in raised weldedbench,
+  not actual female brainspikes or calibratedmuscles/proprioceptors/gait.
+  Physicaljoint00524trials24checks pass: pairedneural response.0108-.0221rad,
+  DNcut/MNsilence/motorcut exactnoinputphysics, sham/reset exact,
+  feedbackremoval changesmotion. Fixture drift.00106cm<.01bound.
+  001failed negative-roundoffinput retained; explicitaccepted[-1e-8,0)
+  physicalprojection reported, rawreference preserved.002fixture failure
+  .01326cm retained; onlybenchweldtimeconstant2ms->.5ms changed, NO neural/
+  torque/feedbackgain tuning. Fresh429 afterfixturefix;005metadata/strict
+  referenceguards exactphysics vs004.274tests8skips +isolatedVNCtests pass.
+  No normalgait/app changed or newdatasets acquired. Next: genuine BDN2
+  spike packet delivery through explicit assumed spike-to-VNC relay into
+  this bench, then coordinatedleg; do not relabel oldGPUfailures as passes.
+- 2026-10-11 reference search: inspecting previously unread run_hydra.log
+  establishes archive run28965859 executed2025-09-08 on4NVIDIA L40S GPUs.
+  Earlier claim of whollyunknownhardware was incomplete. Current tested source
+  is dated2026-09-15; found candidate historic commit
+  edb18510c375dbf27e08644f172170e065c49022 dated2025-09-07T23:28:41Z
+  (S60), not proved exactexecutioncommit. Rateequation/solver/timegrid/tolerance
+  conventions reviewed match; historicenv declares unversioneddiffrax and
+  jax[cuda12]. ExactPython/JAX/JAXlib/Diffrax/CUDA versions stillmissing,
+  publictags/releases empty. [Evidence](../docs/bdn2-vnc-reproduction.md).
+  A new converged computational reference is legitimate but NOT a relabeled
+  match to failed authorarchive comparisons; any missing biological parameters
+  must be explicit assumed surrogates, never called measuredphysiology.
+  No CUDA/legacyenv/bodycontroller changes in this search.
+- 2026-10-11 continuation: user approved separate CPU .venv-vnc with pinned
+  JAX0.6.2/Diffrax0.7, requirements/lock under experiments/fly-vnc; existing
+  brain/body envs untouched. Corrected important reproduction bug:
+  mini_circuits.npz marks maxrate>.01 OUTPUTACTIVITY, not connectivity.
+  Actual HDF5W_mask rows336/422/966 retain4core+144MNs=148states.
+  [Current evidence](../docs/bdn2-vnc-reproduction.md): corrected native
+  projected21corecausalchecks pass but3pointwise comparisons FAIL(.114/.306/
+  .220 vs.05bound); denseparent intactalsofails(.113/.249/.285).
+  Finite source0..1000clipping is explicit with rawextrema/counts; NEVER
+  copy sourceNaN->0 fallback. Native001 rawnegative failure retained.
+  Previous activitymask runs not exactmask reproductions. Full4604parent
+  intactdiagnostic first4savedparameterrows allfail averagedcoxaswing/
+  stance gate; this does NOT refute paperindividualMN rhythms. Sourcearchive
+  lacks exact installedversions/hardware.266offline tests8skips +53focused
+  isolated tests pass. No app/body decoder changed, port8840 free.
+  Nextrequires trustworthy exactexecution reference and quantitative motor/
+  proprioceptive transfer, not anothergain tweak or claimed whole-fly gait.
+- 2026-10-11 BDN2 VNC milestone: user approved pinned reduced matrix121160B/
+  table13481B (200KBcaps), parenttable671375B(1MBcap) despite unknownrepo
+  license for local-onlyevaluation; then specificZenodo pruningarchive274050687B
+  (300MBcap,CC-BY4). Checksums verified, sourcesS57-S59.
+  [Evidence](../docs/bdn2-vnc-reproduction.md):123cells79edges,
+  68LHS55RHS despiteT1Lname, parentmedianvolume666270409. Rate-model
+  topology core10093BDN2->10707E1->11751E2/13905I, not brainLIFspikes.
+  Initial001/002 failures retained inclnegative numericalrates;003 completed
+  28cases, all4intact motoralternation gates failed, tenfoldsolver convergence
+  maxdifference.00005923. No zero/clipping fallbacks. Exactauthorparameters
+  and masks336/422/966:21corecausalchecks pass,3strict archived-rate checks
+  FAIL(max.266/.163/.209 vs.05bound); archive002overallFAILED.
+  Onsetsolverdiscontinuity suspected, not proved or patched by omittingsamples.
+  Mean/sample core rhythm != motorantagonist output; motorstance silent.
+  261offline tests6skips pass. No brain/body decoder/liveapp changed.
+  Next: source-matched solver/parent motorcircuits then measured proprio/
+  muscle and explicit spike-to-rate transfer; no guessedgain to hide failures.
+- 2026-10-11: user authorized additional bounded research/data and implementation
+  after validation. S56 primaryTable3 acquired25598bytes, providerMD5 verified,
+  parentCC-BY4 verified; confirms BDN2/oDN1/sixBRK and canonical sides matching
+  historical annotations. Old code-workbook reversal preserved; one Type1/
+  SMP461 BPN inconsistency excluded, CL210 subset12 used. [Evidence](../docs/walking-neural-evidence.md):
+  walking-causality001/002 each88trials76checks pass at .05/.1ms,
+  seeds420/421/422/prospective425. Sugar-causality00160trials42/44checks,
+  overallFAILED: P9 seed421 FGcut/clamp do not increase17oDN1spikes.
+  BPN/BDN2-specific checks pass all420/421/422/prospective426; do not hide
+  P9 failure or call BPN globallyoptimal. Genuine evoked spikes, not spontaneous.
+  Implemented opt-in --walking-readouts end-to-end:28additional/67total,
+  no added input/edges/gait decoder. Actual visual58750 and feeding65MN9/
+  9840network exact on/off parity, reset/silence pass (readout-parity002).
+  001 mistaken30/69expectation failure retained. Full257tests6skips pass,
+  separate actualnetwork regression pass; bounded .2s app8840 completed/
+  releasedport. User app had already closed before this turn; no live restart.
+  Next: measured BDN2 VNC/proprioception/muscle interface; physiological
+  motor mapping/spontaneous initiation remain blocked, not solved by counting.
+- 2026-10-11: user selected brain-linked walking initiation/stopping audit,
+  approved only pinned 63,463-byte walking-halting ID workbook, 100 KB limit
+  on existing external storage; Git blob verified, release license uncertainty
+  explicitly retained. [Evidence](../docs/walking-neural-evidence.md):
+  24/24 selected IDs match original model, all24 source-side labels conflict
+  with historical annotations; do not silently swap sides. FG/BB exact chemical
+  inputs audited; BPN_SEZ_DN2-to-BDN2 alias remains provisional, BRK identity
+  not assigned from near names. Added reusable audit, sources S53-S55; full
+  pinned-flight EGL suite247run5skips passes. Systempython lacksMuJoCo13errors.
+  NO stimuli or motor decoder changed, live8840 untouched. Next: primary
+  SupplementaryTable3 identity/laterality resolution, frozen neural-only
+  coactivation/silencing/sham tests, then justified VNC/muscle interface.
+  Injection is evoked, not spontaneous; learned gait is not neural gait.
+- 2026-10-11: user reaffirmed evidence-based biological autonomy using real
+  synaptic events, selected collision-only fix over engineered walking changes.
+  Unified editor objects now use fixed mocap collision bodies; moving static
+  geometry previously left stale collision bounds away from hidden slots.
+  Load/place/remove/reset and observer poses wired; saved object format unchanged.
+  41 focused tests pass incl actual FlyBody box/sphere contacts and solver forces
+  at 62.5 mm, unchanged fly qpos/qvel on edits, visibility and threaded EGL.
+  [Scope](../docs/flight-browser-app.md): fixed obstacles, not pushable props or
+  neural touch. Walking/landing defaults unchanged; ground avoidance is still
+  gated on brain-linked landing. Spontaneous takeoff, neural walking and
+  metabolic energy routing remain absent. User-started session at 8840 was
+  safety-paused when inspected and left untouched; check current edits before
+  any approved restart. Next: deploy collision fix with preserved objects,
+  then investigate evidence-based sensory/VNC/muscle interfaces, not fake
+  spontaneous spikes or biological labels for learned/engineered control.
 - 2026-10-11 documentation milestone: main README is a concise purpose/
   capabilities/conservative quick-launch overview; original technical
   detail and current architecture are in readme-2.md. Professional nine-page

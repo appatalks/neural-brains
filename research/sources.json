@@ -20,6 +20,159 @@
   },
   "sources": [
     {
+      "id": "S67",
+      "title": "How the Eon Team Produced a Virtual Embodied Fly",
+      "url": "https://eon.systems/updates/embodied-brain-emulation",
+      "kind": "primary_project_documentation",
+      "review_status": "documentation_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Primary technical explanation reviewed: existing NeuroMechFly walking controllers plus small descending-output interface; DNa01/DNa02 steering, oDN1 forward velocity, MN9 feeding, grooming outputs. DN-to-body gains chosen by hand, full downstream VNC/motor hierarchy not modeled, internal state/plasticity/hormonal effects largely missing. Vision described as not substantially influencing present behavioral outputs; embodied escape not yet implemented in this explanation. Public eonsystemspbc/fly-brain at commit a3db62f9436074e485c0278290c2164ed6150808 is GPL-2.0 LIF/backend benchmark code; no complete embodiment implementation identified in the inspected README/tree. Do not equate headline claims with recovered whole-animal physiology."
+    },
+    {
+      "id": "S68",
+      "title": "NeuroCraft Fly public project release status and model scope",
+      "url": "https://github.com/evnsnclr/neurocraft-fly-public/tree/d121466b3ba2f11498e6da498c74acb061bb00eb",
+      "kind": "primary_project_documentation",
+      "review_status": "documentation_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Primary README inspected at pinned commit: modeled neural readouts select/modulate scripted Minecraft body programs; not recovered fly physiology/natural behavior. Repository remains landing page with media, citation and roadmap; no runnable mod/companion downloads there yet. Provider reports166700neurons/25582938directededges; these are its retained graph counts, not independently reproduced. Keep original EvanSmith project distinct from independently named Minecraft implementations."
+    },
+    {
+      "id": "S69",
+      "title": "Whole-Brain Connectomic Graph Model Enables Whole-Body Locomotion Control in Fruit Fly",
+      "url": "https://arxiv.org/html/2602.17997",
+      "kind": "primary_paper",
+      "review_status": "article_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "FlyGM preprint selected methods reviewed: connectome graph operator plus trainable input encoder/gating, intrinsic descriptors/shared neural updates and motor decoder to FlyBody; project page describes expert-trajectory comparisons. This is a trained connectome-structured control model, not the preserved unmodified LIF spike model or complete measured VNC/muscle physiology. Official runnable source/checkpoint release not verified by this inspection; similarly named GitHub repositories are not assumed to be the authors' code."
+    },
+    {
+      "id": "S61",
+      "title": "TwoLumps Ascending Neurons Mediate Touch-Evoked Reversal of Walking Direction in Drosophila",
+      "url": "https://doi.org/10.1016/j.cub.2019.11.004",
+      "kind": "primary_paper",
+      "review_status": "abstract_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Sen, Wang and Dickson, Current Biology2019, PMID31813606. Verified primary indexed abstract: TLA activation evokes backward walking, silencing impairs barrier-evoked retreat in darkness; TLA excites MDNs in part and responds to activation of NOMPC-expressing mechanosensory neurons. Adult touch/barrier result, not larval Mooncrawler circuit. Publisher fulltext403, official lab page503; full methods/supplements not inspected, no exact FlyWire630 TLA IDs resolved."
+    },
+    {
+      "id": "S62",
+      "title": "Neuronal control of Drosophila walking direction",
+      "url": "https://doi.org/10.1126/science.1249964",
+      "kind": "primary_paper",
+      "review_status": "abstract_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Bidaye et al., Science2014, PMID24700860. Primary abstract establishes adult MDN necessity/sufficiency for barrier-related backward walking, with MAN support for persistent reverse walking. Does not supply force-to-spike encoder, self-righting or flight initiation. Four exact MDN model IDs/laterality independently confirmed by already acquired Sapkal2024 primaryTable3."
+    },
+    {
+      "id": "S63",
+      "title": "Functional architecture of neural circuits for leg proprioception in Drosophila",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8665017/",
+      "kind": "primary_paper",
+      "review_status": "article_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Chen et al., Current Biology2021, DOI10.1016/j.cub.2021.09.035. Selected primary FeCO/9Ba/10Ba results reviewed: position, movement-direction and vibration pathways distinct; 9Ba chemical acetylcholine input, 10Ba evidence for mixed local chemical/electrical signaling and intersegmental integration. Leg VNC physiology cannot be replaced by generic head/eye-bristle brain inputs; no gap-junction conductance or complete recovery controller acquired."
+    },
+    {
+      "id": "S64",
+      "title": "Ascending neurons convey behavioral state to integrative sensory and action selection brain regions",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10076225/",
+      "kind": "primary_paper",
+      "review_status": "article_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Chen et al., Nature Neuroscience2023, DOI10.1038/s41593-023-01281-z. Selected primary main/results/methods reviewed via XML: adult ascending populations encode self-motion and discrete behaviors, target AVLP/GNG preferentially; most recorded activity not explained simply by individual joint angles. Calcium/state correlations do not establish a collision-force encoder, hunger pathway or100Hz spike-transfer law."
+    },
+    {
+      "id": "S65",
+      "title": "Octopamine mediates starvation-induced hyperactivity in adult Drosophila",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4413307/",
+      "kind": "primary_paper",
+      "review_status": "article_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Yang et al., PNAS2015, DOI10.1073/pnas.1417838112. Selected adult primary locomotor/nutrient/octopamine results reviewed: delayed starvation-related walking increase, TbetaH/Tdc2 manipulations and food/nutrient effects; locomotion and feeding-state changes separable. Assays use hours/days and broad genetic populations, not an identified FlyWire630 spontaneous-flight cell set or a seconds-scale takeoff clock."
+    },
+    {
+      "id": "S66",
+      "title": "A subset of octopaminergic neurons that promotes feeding initiation in Drosophila melanogaster",
+      "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0198362",
+      "kind": "primary_paper",
+      "review_status": "article_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Youn et al., PLoSOne2018, PMID29949586/PMC6021039. Primary abstract/introduction evidence reviewed: OA-VPM4 activation/inactivation influences sucrose proboscis extension; octopamine/OAMB modulates sugar sensory responses. Exact historical OA-VPM4 annotation pair matches local model, but genotype-to-root equivalence and receptor/physiological transfer not reproduced. Feeding evidence is not general locomotor arousal or spontaneous takeoff."
+    },
+    {
+      "id": "S60",
+      "title": "Candidate execution-era Pugliese VNC code snapshot preceding archived GPU run",
+      "url": "https://github.com/smpuglie/Pugliese_2026/tree/edb18510c375dbf27e08644f172170e065c49022",
+      "kind": "primary_code",
+      "review_status": "documentation_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Commit dated2025-09-07T23:28:41Z precedes archive run28965859 logs dated2025-09-08. Log confirms four NVIDIA L40S GPUs; no exact package/CUDA versions or embedded code commit. Candidate is not proven execution commit. Reviewed equation/Dopri5/PID/time-grid/tolerance conventions match later snapshot; historical manifest specifies unversioned diffrax and jax[cuda12]. Public tags/releases empty when checked. No CUDA installation or historical environment substitution performed."
+    },
+    {
+      "id": "S59",
+      "title": "Pugliese et al. 2026 simulation data, versioned Zenodo record",
+      "url": "https://zenodo.org/records/22260924",
+      "kind": "primary_data",
+      "review_status": "metadata_checked",
+      "checked_on": "2026-10-11",
+      "notes": "Record publication2026-09-15, CC-BY-4.0 provider license. Selected archive274050687bytes, MD5 6121b6992ac9cc685de72c0902ad55ea and SHA256 0bb03214a3ac34949d6169c64a4c149e230b2ca8fcadf24fb0f0ac3bda1fb44d verified. Actual HDF5W_mask, not output-activity mask, binds core+all144MNs. Archived conformance remains failed. Independent reference/joint proxy has bounded positive controls. Original genuine-spike40msrelay failed62/66checks. Subsequent preregistered9grid with matched FG external stimuli selects250mean20ms on development420/421, then fails1of26held-out checks at431/432; no refitting or deployment. Neuralmatchedcontrols22/22eachcohort pass. These are local model experiments, not physiological gain calibration or autonomous gait. No remaining release acquired."
+    },
+    {
+      "id": "S57",
+      "title": "Connectome simulations identify a central pattern generator circuit for fly walking",
+      "url": "https://doi.org/10.1101/2025.09.12.675944",
+      "kind": "primary_paper",
+      "review_status": "article_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Pugliese et al. preprint, first posted2025-09-12; selected v1 results/discussion reviewed. DNg100/BDN2-driven VNC simulations predict a three-interneuron rhythm generator and antagonistic leg motor outputs. Does not establish calibrated muscles, proprioceptive feedback or autonomous whole-fly control. EuropePMC reports v1 CC-BY-NC-ND; repository points to v2 but v2 fulltext retrieval returned429. Do not equate v1 narrative with latest code/data reproduction."
+    },
+    {
+      "id": "S58",
+      "title": "Pugliese VNC model: pinned reduced MANC T1-left circuit and motor annotations",
+      "url": "https://github.com/smpuglie/Pugliese_2026/tree/10e7661bf414ba7b4c2edf795cd36d0f878c17c0",
+      "kind": "primary_code",
+      "review_status": "documentation_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Pinned code commit10e7661bf414ba7b4c2edf795cd36d0f878c17c0. Acquired reduced MANC matrix121160bytes, table13481bytes and parent annotation671375bytes, Git blobs verified. User approved200000byte reduced-asset caps and1000000byte parent cap despite unknown asset-specific license; no redistribution or new simulation environment. 123cells/79nonzeroedges, mixed68LHS/55RHS despite filename, parentmedianvolume666270409. Mean/sample motor alternation failed. Actual archived parameters independently evaluated separately. Published rate-model dynamics differ from original brain LIF spikes; male body10093 matches BDN2 by primaryTable3, not ID equality."
+    },
+    {
+      "id": "S56",
+      "title": "Sapkal et al. 2024 Supplementary Table 3: FlyWire/FANC/MANC connectome identities",
+      "url": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-024-07854-7/MediaObjects/41586_2024_7854_MOESM4_ESM.xlsx",
+      "kind": "primary_supplement",
+      "review_status": "documentation_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Acquired/inspected exact publisher asset: 25598 bytes, verified provider MD5 1b2a859f5099ff752171d3291f171e8d, local SHA256 41c0f799193faf13477a7b537fa3d37d72d88c8cc048ad56f229536169c04d04. Parent primary article explicitly CC-BY-4.0, subject to third-party credit-line exceptions. Primary sides agree with historical annotations and resolve the old code-workbook reversal; BDN2/oDN1/BRK identities confirmed. Separate FANC/MANC namespaces retained. Twelve Type1/CL210 BPNs selected; one Type1/SMP461 conflicting row excluded explicitly. Acquired with 100000-byte cap; distinct from historical code-release workbook."
+    },
+    {
+      "id": "S53",
+      "title": "Two Brain Pathways Initiate Distinct Forward Walking Programs in Drosophila",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9435592/",
+      "kind": "primary_paper",
+      "review_status": "article_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Bidaye et al., Neuron 2020, DOI 10.1016/j.neuron.2020.07.032. Selected primary results reviewed: P9 initiates forward walking with ipsilateral turning; higher-brain BPN initiates fast straight walking without unilateral turning bias. BPN calcium correlates with a subset of spontaneous walking bouts, not a calibrated spike-to-muscle law. Courtship necessity results concern males pursuing females."
+    },
+    {
+      "id": "S54",
+      "title": "Neural circuit mechanisms underlying context-specific halting in Drosophila",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11446846/",
+      "kind": "primary_paper",
+      "review_status": "article_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Sapkal et al., Nature 2024, DOI 10.1038/s41586-024-07854-7. Selected primary results and feeding/kinematics methods reviewed: GABAergic Foxglove/Bluebell inhibit different walking-promotion pathways; six ascending Brake neurons also arrest stepping through VNC mechanisms. BDN2 and oDN1 activation initiates forward walking; only BDN2 silencing reduces forward velocity in the reported assay. BDN2 calcium correlates with forward, not angular, velocity. Brain-only Brake activation is not complete mechanical braking."
+    },
+    {
+      "id": "S55",
+      "title": "Sapkal et al. published whole-brain walking/halting model and FlyWire630 ID workbook, v1.0.0",
+      "url": "https://github.com/bidaye-lab/spiking_neural_network_model/tree/ae2a5e2eace007fc7f186278538047b48017a087",
+      "kind": "primary_code",
+      "review_status": "documentation_reviewed",
+      "checked_on": "2026-10-11",
+      "notes": "Paper-linked repository release v1.0.0 pins commit ae2a5e2eace007fc7f186278538047b48017a087. Acquired/inspected selected workbook flywire_ids_630.xlsx: 63463 bytes, verified Git blob 48b3e0a5d29ede0b888aecc1b7134544e2ed3dd9, SHA256 8ced5aef414d8dd5394f3edb1a8c5bdaf5a9b04789e110c7f87e7ef95afa0186. All24 selected candidate IDs match preserved model; all24 workbook side labels oppose historical annotations, retained explicitly. BPN_SEZ_DN2 to BDN2 alias provisional. Current repository reports MIT, but the pinned release tree has no LICENSE; workbook-specific terms remain unresolved, explicitly approved for this local audit, not redistribution. Published connectivity file is 86631045 bytes versus 86630944 bytes in the preserved original model; no substitution or equivalence claimed."
+    },
+    {
       "id": "S52",
       "title": "Cheong et al. primary supplemental DN typing, tracts and light-level matching table, version 2",
       "url": "https://cdn.elifesciences.org/articles/96084/elife-96084-supp1-v2.csv",
@@ -464,6 +617,108 @@
     }
   ],
   "datasets": [
+    {
+      "id": "bdn2-vnc-pruning-parameters-zenodo22260924",
+      "species_id": "drosophila-melanogaster",
+      "species": "Drosophila melanogaster",
+      "scope": "Published computational DNg100/BDN2 MANC VNC pruning outputs and sampled parameters, not experimental whole-animal behavior",
+      "coverage": "selected_vnc_simulation_parameters_and_pruning",
+      "modality": ["simulation_results", "model_parameters"],
+      "catalog_status": "downloadable",
+      "version": "Zenodo22260924, published2026-09-15",
+      "source_ids": ["S57", "S59"],
+      "license": {"spdx_id": "CC-BY-4.0", "status": "Verified provider Zenodo record metadata", "source_id": "S59"},
+      "selected_assets": [
+        {
+          "filename": "DNg100_Stim_Prune.zip",
+          "url": "https://zenodo.org/api/records/22260924/files/DNg100_Stim_Prune.zip/content",
+          "size_bytes": 274050687,
+          "checksum": "md5:6121b6992ac9cc685de72c0902ad55ea",
+          "verification": "provider_record_file_metadata"
+        }
+      ],
+      "notes": "User-approved specific archive300000000byte cap; raw archive outside Git. Inspect selected parameter/config members only, not full extraction or another simulation environment."
+    },
+    {
+      "id": "bdn2-manc-t1l-minicircuit-20241118",
+      "species_id": "drosophila-melanogaster",
+      "species": "Drosophila melanogaster",
+      "scope": "Reduced adult male MANC left prothoracic BDN2/premotor/motor circuit; not a whole-body controller or female brain snapshot",
+      "coverage": "reduced_left_prothoracic_motor_circuit",
+      "modality": ["chemical_connectivity", "cell_annotations", "motor_target_annotations"],
+      "catalog_status": "downloadable",
+      "version": "2024-11-18 reduced exports at commit10e7661bf414ba7b4c2edf795cd36d0f878c17c0",
+      "source_ids": ["S57", "S58"],
+      "license": {"spdx_id": null, "status": "Repository has no license declaration; asset-specific terms unknown. User explicitly approved local research evaluation only, not redistribution."},
+      "selected_assets": [
+        {
+          "filename": "W_20241118_T1Lminicircuit.npy",
+          "url": "https://raw.githubusercontent.com/smpuglie/Pugliese_2026/10e7661bf414ba7b4c2edf795cd36d0f878c17c0/data/manc%20t1l%20minicircuit/W_20241118_T1Lminicircuit.npy",
+          "size_bytes": 121160,
+          "checksum": "git-blob-sha1:0a978006660a8e8e0c0008af390ac0d730e4b9e7",
+          "verification": "pinned_git_content_metadata"
+        },
+        {
+          "filename": "wTable_20241118_T1Lminicircuit.csv",
+          "url": "https://raw.githubusercontent.com/smpuglie/Pugliese_2026/10e7661bf414ba7b4c2edf795cd36d0f878c17c0/data/manc%20t1l%20minicircuit/wTable_20241118_T1Lminicircuit.csv",
+          "size_bytes": 13481,
+          "checksum": "git-blob-sha1:6f8dcdb6c96eedcb42226447db60a234fbf6c91d",
+          "verification": "pinned_git_content_metadata"
+        },
+        {
+          "filename": "wTable_20250813_DNtoMN_unsorted_withModules.csv",
+          "url": "https://raw.githubusercontent.com/smpuglie/Pugliese_2026/10e7661bf414ba7b4c2edf795cd36d0f878c17c0/data/manc%20t1%20connectome%20data/wTable_20250813_DNtoMN_unsorted_withModules.csv",
+          "size_bytes": 671375,
+          "checksum": "git-blob-sha1:071da7f6eeb4707c3ef899c30c79d09322782f7b",
+          "verification": "pinned_git_content_metadata"
+        }
+      ],
+      "notes": "User-approved200000byte limit for reduced assets and1000000byte limit for parent annotation reference; preserves original FlyWire baseline. Despite T1L name the reduced table contains LHS/RHS motor neurons. Parent reference acquired separately to verify normalization, not a new parent connectivity download. Muscle dynamics/physiological gains remain unverified."
+    },
+    {
+      "id": "walking-halting-primary-identities-2024",
+      "species_id": "drosophila-melanogaster",
+      "species": "Drosophila melanogaster",
+      "scope": "Primary walking/halting identity correspondence table across female FlyWire brain, female FANC nerve cord and male MANC nerve cord; namespaces remain distinct",
+      "coverage": "selected_walking_halting_neuron_identities",
+      "modality": ["cell_annotations", "cross_specimen_type_correspondence"],
+      "catalog_status": "downloadable",
+      "version": "Nature 2024 Supplementary Table 3, publisher object generation 1727938986486686",
+      "source_ids": ["S54", "S56"],
+      "license": {"spdx_id": "CC-BY-4.0", "status": "Parent article license verified in primary full-text XML; third-party credit-line exceptions apply", "source_id": "S54"},
+      "selected_assets": [
+        {
+          "filename": "41586_2024_7854_MOESM4_ESM.xlsx",
+          "url": "https://static-content.springer.com/esm/art%3A10.1038%2Fs41586-024-07854-7/MediaObjects/41586_2024_7854_MOESM4_ESM.xlsx",
+          "size_bytes": 25598,
+          "checksum": "md5:1b2a859f5099ff752171d3291f171e8d",
+          "verification": "publisher_response_x_goog_hash_and_content_length"
+        }
+      ],
+      "notes": "Selected only primary ID correspondence supplement, not physiological measurements or raw imaging. No automatic grafting of male/female brain/VNC IDs."
+    },
+    {
+      "id": "walking-halting-ids-630-v1.0.0",
+      "species_id": "drosophila-melanogaster",
+      "species": "Drosophila melanogaster",
+      "scope": "Paper-specific neuron identity workbook for the adult female FlyWire630 brain; not complete VNC or muscle data",
+      "coverage": "selected_walking_halting_neuron_identities",
+      "modality": ["cell_annotations"],
+      "catalog_status": "downloadable",
+      "version": "v1.0.0; commit ae2a5e2eace007fc7f186278538047b48017a087",
+      "source_ids": ["S54", "S55"],
+      "license": {"spdx_id": null, "status": "Current repository reports MIT but pinned release lacks LICENSE; workbook-specific terms unresolved. User explicitly approved local audit acquisition, not redistribution."},
+      "selected_assets": [
+        {
+          "filename": "flywire_ids_630.xlsx",
+          "url": "https://raw.githubusercontent.com/bidaye-lab/spiking_neural_network_model/ae2a5e2eace007fc7f186278538047b48017a087/flywire_ids_630.xlsx",
+          "size_bytes": 63463,
+          "checksum": "git-blob-sha1:48b3e0a5d29ede0b888aecc1b7134544e2ed3dd9",
+          "verification": "pinned_git_content_metadata"
+        }
+      ],
+      "notes": "Selected only the ID workbook with a user-approved 100000-byte limit. No connectivity replacement, neural stimulation or motor decoder authorized by this identity audit."
+    },
     {
       "id": "flywire-annotations-630-v1.1.0",
       "species_id": "drosophila-melanogaster",

@@ -10,6 +10,15 @@ SLOTS = [(f"placed_box_{i}", "box", 0.8) for i in range(3)] + [
 ]
 
 
+def set_flight_object_position(model, data, name, position_mm=None):
+    mocap = int(model.body_mocapid[model.body(name+"_body").id])
+    if mocap < 0:
+        raise ValueError(f"Placed object {name} requires a mocap collision body")
+    data.mocap_pos[mocap] = (
+        [value*.1 for value in position_mm] if position_mm is not None else [0, 0, -10]
+    )
+
+
 class Objects:
     def __init__(self, half_size):
         self.half_size = half_size

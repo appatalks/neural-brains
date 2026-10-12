@@ -73,7 +73,7 @@ def evaluate_motor(records, initial, final, upright, seconds, speed, airborne,
 
 
 def create_environment(habitat, seconds, airborne=False, wing_pattern=None, interactive=False,
-                       initial_heading=0., initial_wing_phase=.5, initial_position=None):
+                       initial_heading=0., initial_wing_phase=.5, initial_position=None, fluid_physics=False):
     import numpy as np
     from dm_control import composer
     from flybody.fruitfly.fruitfly import FruitFly
@@ -84,7 +84,7 @@ def create_environment(habitat, seconds, airborne=False, wing_pattern=None, inte
 
     class UnifiedTask(Walking):
         def __init__(self):
-            arena=make_arena(habitat)
+            arena=make_arena(habitat,fluid_physics=fluid_physics)
             if interactive:
                 from fly_objects import SLOTS
                 finger=arena.mjcf_model.worldbody.add("body",name="virtual_finger",mocap=True,pos=[0,0,-10])
@@ -94,9 +94,13 @@ def create_environment(habitat, seconds, airborne=False, wing_pattern=None, inte
                 arena.mjcf_model.worldbody.add("geom",name="pointer_target",type="sphere",pos=[0,0,-10],
                                              size=[.008],rgba=[.2,.9,1,1],contype=0,conaffinity=0,group=2)
                 for name,kind,size in SLOTS:
-                    arena.mjcf_model.worldbody.add(
-                        "geom",name=name,type=kind,pos=[0,0,-10],size=[size*.1]*(3 if kind=="box" else 1),
+                    placed=arena.mjcf_model.worldbody.add(
+                        "body",name=name+"_body",mocap=True,pos=[0,0,-10],
+                    )
+                    placed.add(
+                        "geom",name=name,type=kind,size=[size*.1]*(3 if kind=="box" else 1),
                         rgba=[.3,.55,.8,1] if kind=="box" else [.65,.3,.6,1],
+                        contype=1,conaffinity=1,
                     )
             super().__init__(
                 walker=FruitFly, arena=arena, time_limit=seconds + 0.01,

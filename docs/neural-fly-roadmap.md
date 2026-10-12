@@ -1,5 +1,11 @@
 # Neural fly simulation: implementation and agent-team plan
 
+**Latest user-selected research:** [neural touch and internal state](neural-touch-state.md)
+before engineered cognition assistance. Primary TLA/MDN, proprioception,
+ascending state and octopamine evidence is reviewed; direct sensory/state
+interfaces remain missing. Do not interpret the live fallen body as biological
+death or inject generic arousal/touch without identified pathways.
+
 **Baseline date:** 2026-10-10  
 **Companion:** [success checklist](neural-fly-checklist.md)  
 **Goal:** progressively replace engineered behavior with experimentally
@@ -9,6 +15,33 @@ environment-only habitat.
 This is a plan, not a claim that every behavior is determined by the available
 connectome. "Most realistic" requires matched experimental data and explicit
 comparisons, not a visually impressive demonstration.
+
+**2026-10-11 active milestone:** the user selected
+[walking initiation/stopping pathway audit](walking-neural-evidence.md).
+Primary Supplementary Table3 now resolves BDN2/Brake identities and laterality;
+176 walking coactivation trials pass all152checks at two timesteps. The
+sugar-path experiment retains two P9 failures (42/44checks overall), while its
+BPN/BDN2 checks pass across four seeds. Optional primary-verified walking
+readouts are implemented without changing gait. VNC/proprioceptive/muscle
+mechanisms remain the motor implementation gate.
+[The subsequent BDN2 VNC evaluation](bdn2-vnc-reproduction.md) supports
+rate-model core rhythmicity, but strict archived-rate reproduction and motor
+alternation failed; no physical gait decoder was wired.
+The latest continuation corrects activity-versus-weight-mask parsing and adds
+an isolated source-compatible CPU solver. Pointwise archived conformance remains
+failed, and full-parent motor diagnostics do not pass; see the linked report.
+The user-approved [independent numerical reference and isolated joint
+surrogate](independent-vnc-joint.md) has positive bounded evidence without
+relabelling those failures. Next is a genuine brain-spike relay into the
+same bench before coordinated gait.
+That [brain-spike relay test](brain-spike-joint-test.md) now has24/24neural
+controls and62/66coupled checks, overallfailed. Next is a frozen transfer
+sensitivity/held-out test, not deployment of this uncalibrated relay.
+That [uncertainty test](relay-uncertainty-test.md) now has matched FG inputs
+and a frozen selection, but fails432's motion gate (25/26held-out checks).
+Next requires operating-margin criteria/new validation or physiological data,
+not switching candidates using the same held-out outcomes.
+The older baseline inventory below is historical, not the current test count.
 
 ## 1. Preserve the working baseline
 

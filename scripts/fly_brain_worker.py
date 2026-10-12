@@ -37,12 +37,25 @@ def request_values(request: dict) -> tuple[str, float | None, bool | None]:
 class Brain:
     def __init__(self, data_dir: Path, seed_value: int, takeoff: bool = False, telemetry: bool = False,
                  disconnect_visual_output: str | None = None, dnp10_intervention: str | None = None,
-                 graded_vision: bool = False):
+                 graded_vision: bool = False, walking_readouts: bool = False,
+                 walking_control: bool = False, walking_intervention: str | None = None):
         import pandas as pd
         from brian2 import Hz, Network, SpikeMonitor, defaultclock, ms, prefs, seed, start_scope
 
         if seed_value < 0:
             raise ValueError("Seed must be nonnegative")
+        if type(walking_control) is not bool or walking_control and not (takeoff and telemetry):
+            raise ValueError("Walking control requires verified takeoff/telemetry")
+        if walking_intervention is not None and (
+            not walking_control or walking_intervention not in {"sham", "source-cut", "output-silence"}
+        ):
+            raise ValueError("Walking intervention requires explicitly enabled control and a declared case")
+        walking_readouts = walking_readouts or walking_control
+        self.walking_control = walking_control
+        self.walking_input = None
+        self.walking_population_indices = {}
+        if type(walking_readouts) is not bool or walking_readouts and not (takeoff and telemetry):
+            raise ValueError("Walking readouts require takeoff circuit and exact neuron telemetry")
         if type(graded_vision) is not bool or graded_vision and not takeoff:
             raise ValueError("Graded vision requires the verified takeoff populations")
         self.graded_vision = graded_vision
@@ -108,6 +121,26 @@ class Brain:
                      "evidence_scope": "flight amplitude/optomotor candidate; subtype-to-driver correspondence not established"}
                     for row in select_dng02(annotation_rows, {str(value) for value in ids})
                 ])
+                if walking_readouts:
+                    from audit_walking_paths import primary_populations
+                    primary_dataset = next(d for d in catalog["datasets"] if d["id"] == "walking-halting-primary-identities-2024")
+                    primary_paths = verified_inputs(data_dir, primary_dataset)
+                    populations, _ = primary_populations(
+                        primary_paths["41586_2024_7854_MOESM4_ESM.xlsx"],
+                        {row["root_id"]: row for row in annotation_rows}, {str(value) for value in ids})
+                    sensorimotor_candidates.extend([
+                        {**row, "ambiguous_type_correspondence": False,
+                         "evidence_scope": "Primary-table walking/halting identity; exact count observation only, not neural gait or muscle decoding"}
+                        for group in populations.values() for row in group
+                    ])
+                    if walking_control:
+                        from audit_walking_paths import read_workbook_sheets
+                        from fly_brain_walk import steering_candidates
+                        primary_rows = read_workbook_sheets(
+                            primary_paths["41586_2024_7854_MOESM4_ESM.xlsx"], ("FlyWire",))["FlyWire"]
+                        sensorimotor_candidates.extend(steering_candidates(
+                            primary_rows, {row["root_id"]: row for row in annotation_rows},
+                            {str(value) for value in ids}))
                 if any(not row["in_model"] for row in sensorimotor_candidates):
                     raise ValueError("Sensorimotor observation candidate is absent from verified network")
                 self.sensorimotor_indices = {
@@ -169,6 +202,49 @@ class Brain:
                     "selected_aggregated_edges": int(len(edges)), "previously_nonzero_edges": int(nonzero),
                     "scope": "All selected recurrent chemical outputs zeroed before initial state storage. Incoming inputs, spikes and Poisson drive remain; not neuronal silencing or an animal-equivalent intervention.",
                 }
+        walking_research = None
+        walking_sources = {}
+        if walking_control:
+            from brian2 import PoissonGroup, Synapses
+            from fly_brain_walk import OUTPUT_IDS
+            walking_sources = {
+                "BPN": [row["root_id"] for row in populations["BPN"]],
+                "P9_left": [row["root_id"] for row in populations["P9"] if row["side"] == "left"],
+                "P9_right": [row["root_id"] for row in populations["P9"] if row["side"] == "right"],
+                "FG": [row["root_id"] for row in populations["FG"]],
+            }
+            if [len(walking_sources[key]) for key in ("BPN", "P9_left", "P9_right", "FG")] != [12, 1, 1, 2]:
+                raise ValueError("Walking source populations differ from primary identities")
+            source_ids = []
+            for key, values in walking_sources.items():
+                self.walking_population_indices[key] = list(range(len(source_ids), len(source_ids)+len(values)))
+                source_ids.extend(values)
+            self.walking_input = PoissonGroup(len(source_ids), rates=0*Hz, name="walking_drive")
+            source_synapses = Synapses(self.walking_input, neu, on_pre="v_post += stimulus_weight",
+                                        namespace={"stimulus_weight": params["w_syn"]*params["f_poi"]},
+                                        name="walking_activation")
+            source_synapses.connect(i=list(range(len(source_ids))), j=[mapping[int(value)] for value in source_ids])
+            neu.rfc[[mapping[int(value)] for value in source_ids]] = 0*ms
+            self.walking_input.active = False
+            self.network.add(self.walking_input, source_synapses)
+            if walking_intervention in {"sham", "output-silence"}:
+                for group in OUTPUT_IDS.values():
+                    for value in group.values():
+                        index = mapping[int(value)]
+                        operation = neu[index:index+1].run_regularly(
+                            "v = v_0; g = 0*mV" if walking_intervention == "output-silence" else "v = v; g = g",
+                            when="before_thresholds")
+                        self.network.add(operation)
+            elif walking_intervention == "source-cut":
+                from fly_circuit_interventions import outgoing_edge_indices
+                edges = outgoing_edge_indices(syn.i[:], [mapping[int(value)] for value in source_ids])
+                if not len(edges):
+                    raise ValueError("Walking sources have no measured recurrent chemical output")
+                syn.w[edges] = 0*params["w_syn"]
+                if any(syn.w[edges] != 0*params["w_syn"]):
+                    raise RuntimeError("Walking source cut did not eliminate selected recurrent outputs")
+            if walking_intervention is not None:
+                walking_research = {"kind": walking_intervention, "scope": "Explicit model causal control, not animal-equivalent manipulation"}
         for stimulus in self.stimulation:
             stimulus.active = False
         self.network.store("initial")
@@ -219,6 +295,22 @@ class Brain:
                     for population, values in self.visual_population_indices.items()
                 },
             })
+        if walking_readouts:
+            self.metadata.update({
+                "walking_readouts_enabled": True,
+                "walking_identity_source": "S56 / Sapkal2024 primary Supplementary Table3",
+                "walking_scope": "28 primary-verified P9, BPN CL210, FG, BB, BDN2, oDN1 and BRK readouts; no added stimulation, connections or motor decoding.",
+            })
+        if walking_control:
+            from fly_brain_walk import SCOPE, DRIVE_SCOPE
+            self.metadata.update({
+                "walking_control_enabled": True, "walking_control_scope": SCOPE,
+                "sensorimotor_scope": SCOPE,
+                "walking_drive_scope": DRIVE_SCOPE, "walking_input_population_ids": walking_sources,
+                "walking_scope": "Primary walking/steering count readouts plus explicit modeled BPN/P9/FG input interface.",
+            })
+            if walking_research is not None:
+                self.metadata["walking_research_intervention"] = walking_research
 
     def reset(self):
         self.network.restore("initial")
@@ -231,7 +323,8 @@ class Brain:
             response["neuron_activity"] = activity_packet([], self.episode, 0, 0, 0)
         return response
 
-    def step(self, duration_ms: float, contact: bool, looming: bool = False, visual_rates_Hz=None):
+    def step(self, duration_ms: float, contact: bool, looming: bool = False, visual_rates_Hz=None,
+             walking_drive_Hz=None):
         from fly_looming import validate_visual_rates
 
         if self.graded_vision:
@@ -240,6 +333,15 @@ class Brain:
                 raise ValueError("Looming active must match graded visual rates")
         elif visual_rates_Hz is not None:
             raise ValueError("Rate input requires an explicitly enabled graded worker")
+        if self.walking_control:
+            from brian2 import Hz
+            from fly_brain_walk import validate_drive
+            walking_drive_Hz = validate_drive(walking_drive_Hz)
+            for population, indices in self.walking_population_indices.items():
+                self.walking_input.rates[indices] = walking_drive_Hz[population]*Hz
+            self.walking_input.active = any(walking_drive_Hz.values())
+        elif walking_drive_Hz is not None:
+            raise ValueError("Walking drive requires an explicitly enabled control worker")
         before_counts = self.monitor.count[:].copy() if self.telemetry else None
         start_ms = self.elapsed_ms
         before_readout = int(self.monitor.count[self.readout_index])
@@ -284,6 +386,8 @@ class Brain:
                 }
         if self.graded_vision:
             response["visual_rates_Hz"] = visual_rates_Hz
+        if self.walking_control:
+            response["walking_drive_Hz"] = walking_drive_Hz
         return response
 
 
@@ -303,11 +407,18 @@ def main():
                         help="Isolated model voltage-clamp intervention, not a browser control")
     parser.add_argument("--graded-vision", action="store_true",
                         help="Explicit continuous LC4/LPLC2 rate interface; not fitted physiology")
+    parser.add_argument("--walking-readouts", action="store_true",
+                        help="Observe primary-verified walking/halting cells; no gait commands or stimulation")
+    parser.add_argument("--walking-control", action="store_true",
+                        help="Explicit modeled locomotor/cue inputs and verified steering/walking readouts")
+    parser.add_argument("--walking-intervention", choices=("sham", "source-cut", "output-silence"),
+                        help="Isolated hybrid walking causal control")
     args = parser.parse_args()
     try:
         with contextlib.redirect_stdout(sys.stderr):
             brain = Brain(args.data_dir, args.seed, args.takeoff_circuit, args.neuron_telemetry,
-                          args.disconnect_visual_output, args.dnp10_intervention, args.graded_vision)
+                          args.disconnect_visual_output, args.dnp10_intervention, args.graded_vision,
+                          args.walking_readouts, args.walking_control, args.walking_intervention)
         emit(brain.metadata)
         for line in sys.stdin:
             request = json.loads(line)
@@ -316,15 +427,19 @@ def main():
                 raise ValueError("Looming input must be a boolean")
             has_rates = "visual_rates_Hz" in request
             rates = request.pop("visual_rates_Hz") if has_rates else None
+            has_walking = "walking_drive_Hz" in request
+            walking_drive = request.pop("walking_drive_Hz") if has_walking else None
             if has_rates:
                 from fly_looming import validate_visual_rates
                 rates = validate_visual_rates(rates)
             operation, duration, contact = request_values(request)
             if operation != "step" and (has_rates or looming):
                 raise ValueError("Visual input is only valid for step requests")
+            if operation != "step" and has_walking:
+                raise ValueError("Walking drive is only valid for step requests")
             with contextlib.redirect_stdout(sys.stderr):
                 if operation == "step":
-                    response = brain.step(duration, contact, looming, rates)
+                    response = brain.step(duration, contact, looming, rates, walking_drive)
                 elif operation == "reset":
                     response = brain.reset()
                 else:

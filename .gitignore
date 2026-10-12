@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 .venv-biomechanics/
 .venv-flight/
+.venv-vnc/
 .env
 data/
 downloads/

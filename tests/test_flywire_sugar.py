@@ -15,6 +15,29 @@ spec.loader.exec_module(runner)
 
 
 class FlywireSugarTests(unittest.TestCase):
+    def test_provider_md5_and_sha256_inputs_are_revalidated(self):
+        payload = b"primary supplement fixture"
+        for algorithm in ("md5", "sha256"):
+            checksum = algorithm+":"+hashlib.new(algorithm, payload, usedforsecurity=False).hexdigest()
+            dataset = {"id": "fixture", "selected_assets": [
+                {"filename": "table.xlsx", "url": "https://example.org/table.xlsx",
+                 "size_bytes": len(payload), "checksum": checksum},
+            ]}
+            with self.subTest(algorithm=algorithm), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                bundle = root/"fixture/table.xlsx.download"
+                bundle.mkdir(parents=True)
+                path = bundle/"table.xlsx"
+                path.write_bytes(payload)
+                (bundle/"receipt.json").write_text(json.dumps({
+                    "sha256": hashlib.sha256(payload).hexdigest(), "upstream_checksum": checksum,
+                    "dataset_id": "fixture", "source_url": "https://example.org/table.xlsx",
+                }))
+                self.assertEqual(runner.verified_inputs(root, dataset), {"table.xlsx": path})
+                path.write_bytes(b"corrupt")
+                with self.assertRaisesRegex(ValueError, "verification failed"):
+                    runner.verified_inputs(root, dataset)
+
     def test_full_activation_passes(self):
         result = runner.acceptance([5] * 30, 0, 30)
         self.assertTrue(result["passed"])

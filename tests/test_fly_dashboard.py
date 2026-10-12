@@ -418,6 +418,11 @@ function node(id) {
   if (!nodes.has(id)) nodes.set(id, {
     textContent:'', value:id==='filter'?'all':'', children:[], hidden:false, style:{},
     clientWidth:800,clientHeight:490,
+    attributes:{},setAttribute(name,value){this.attributes[name]=value;},
+    classList:{values:new Set(),contains(name){return this.values.has(name);},
+      add(name){this.values.add(name);},remove(name){this.values.delete(name);},
+      toggle(name,force){const enabled=force===undefined?!this.values.has(name):force;
+        if(enabled)this.values.add(name);else this.values.delete(name);return enabled;}},
     replaceChildren(){this.children=[];},append(child){this.children.push(child);},
     listeners:{},addEventListener(name,handler){this.listeners[name]=handler;},removeAttribute(){},focus(){},
     getBoundingClientRect(){return {left:0,top:0,width:800,height:490};},
@@ -427,9 +432,10 @@ function node(id) {
 }
 const sandbox = {
   console,process,Map,Set,Blob,TextDecoder,AbortController,
-  document:{getElementById:node,createElement:()=>({textContent:'',children:[],append(child){this.children.push(child);}})},
+  document:{listeners:{},addEventListener(name,fn){this.listeners[name]=fn;},getElementById:node,createElement:()=>({textContent:'',children:[],append(child){this.children.push(child);}})},
   window:{devicePixelRatio:1,addEventListener(){}},
   ResizeObserver:class {observe(){}},performance:{now:()=>0},
+  requestAnimationFrame:fn=>fn(),
   setTimeout:()=>1,clearTimeout(){},
   fetch:()=>new Promise(()=>{}),
   URL:{createObjectURL:()=>'blob:eye-test',revokeObjectURL(){}},
@@ -515,6 +521,22 @@ pointerTimer=null;inputBusy=false;pendingPointer=null;worldDrag=null;
 for(let i=0;i<100;i++) ground.listeners.pointermove({clientX:i,clientY:100});
 assert.equal(pointerSchedules,1,'Continuous motion must not postpone the scheduled update');
 assert.equal(pendingPointer.x,99/800);
+shell.classList.add('immersive');
+$('world').naturalWidth=1280;$('world').naturalHeight=960;
+const contained=groundImageRect();
+assert.ok(Math.abs(contained.width-490*4/3)<1e-6);
+pendingPointer=null;
+ground.listeners.pointermove({clientX:0,clientY:100});
+assert.equal(pendingPointer,null,'Letterbox bars cannot move the physical pointer');
+ground.listeners.pointermove({clientX:contained.left+contained.width/2,clientY:245});
+assert.equal(pendingPointer.x,.5);assert.equal(pendingPointer.y,.5);
+document.fullscreenElement=shell;document.listeners.fullscreenchange();
+assert.equal($('app-fullscreen').textContent,'Exit fullscreen');
+$('overlay-eyes').onclick();assert.ok(shell.classList.contains('hide-eyes'));
+assert.equal($('overlay-eyes').attributes['aria-pressed'],'false');
+$('overlay-eyes').onclick();assert.ok(!shell.classList.contains('hide-eyes'));
+document.fullscreenElement=null;document.listeners.fullscreenchange();
+assert.ok(!shell.classList.contains('immersive'));
 receive({...packet(1),status:'safety stopped',interaction_error:'Boundary safety stop. Reset to restart.'});
 assert.match($('input-status').textContent,/Simulation safety stop/);
 assert.ok(!$('input-status').textContent.includes('Edit rejected'));
@@ -533,7 +555,15 @@ assert.equal($('sensorimotor-panel').hidden,false);
 assert.match($('selected-labels').textContent,/AMBIGUOUS/);
 assert.equal($('selected-count').textContent,'1');
 assert.match($('sensorimotor-cells').children[0].children[0].textContent,/1 displayed spikes.*AMBIGUOUS/);
+loadMetadata({neuron_ids:neuronIDs,mn9_id:neuronIDs[0],gf_ids:[],input_ids:[],visual_input_ids:[],upstream_commit:'real-commit',
+  walking_readouts_enabled:true,
+  sensorimotor_candidates:[{root_id:neuronIDs[2],population:'BDN2',cell_type:'DNge162',hemibrain_type:'',side:'left',ambiguous_type_correspondence:false}]});
+receive(packet(4));choose(2);
+assert.match($('sensorimotor-title').textContent,/Walking, stopping/);
+assert.match($('selected-labels').textContent,/BDN2/);
+assert.equal($('selected-count').textContent,'1');
 loadMetadata({neuron_ids:neuronIDs,mn9_id:neuronIDs[0],gf_ids:[],input_ids:[],visual_input_ids:[],upstream_commit:'real-commit'});
+assert.match($('sensorimotor-title').textContent,/^Steering and landing/);
 `,sandbox);
 vm.runInContext(`
 (async()=>{

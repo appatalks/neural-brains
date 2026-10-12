@@ -15,10 +15,10 @@ from fly_connections import ConnectionIndex
 from fly_dashboard import DEFAULT_PORT, Dashboard, validate_app_port
 from fly_environment import Environment, environment_dict
 from fly_flight_arena import FlyContactReader
-from fly_feeding import BrainClient, FeedingConfig
+from fly_feeding import BrainClient, FeedingConfig, default_feeding_config
 from fly_flight import prepare_data
 from fly_looming import GRADED_ENCODER, SphereLooming, SphereVision, LandingSurfaceVision, finger_visibility, graded_visual_rates
-from fly_objects import Objects
+from fly_objects import Objects, set_flight_object_position
 from fly_policy import PublishedMotorPolicy, prepare_policy
 from fly_pointer_motion import capped_motion
 from fly_navigation import FlightNavigation, landing_assistance
@@ -27,6 +27,8 @@ from fly_takeoff import assisted_force
 from fly_leg_extension import DNP10_IDS, LegExtension, SCOPE as LEG_EXTENSION_SCOPE
 from fly_neural_landing import NeuralLanding, SCOPE as LANDING_SCOPE
 from fly_walking_navigation import WalkingNavigation
+from fly_brain_walk import WalkingControl, WalkingReference, scene_drive, prescribed_drive, profile_metrics, support_height, SCOPE as WALK_SCOPE, DRIVE_SCOPE
+from fly_water import FluidPhysics, SCOPE as WATER_SCOPE
 from fly_unified import CONTROL_DT, WALK_EVERY, MotorAdapter, create_environment
 from fly_world_renderer import BrowserInputs, WorldRenderer
 from sim_units import simulation_steps
@@ -53,13 +55,15 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
         port=DEFAULT_PORT, arena_half_size_mm=112.5, test_stimulus=False, test_approach=False,
         engineered_navigation=False, neural_leg_extension=False, test_leg_extension=False,
         graded_vision=False, flight_avoidance=False, brain_linked_landing=False,
-        test_brain_landing=False, landing_surface_vision=False,research_dnp10=None,controlled_test=False):
+        test_brain_landing=False, landing_surface_vision=False,research_dnp10=None,controlled_test=False,
+        walking_readouts=False, brain_guided_walking=False, test_walking_control=False,
+        research_walking_control=None, fluid_physics=False):
     import mujoco as mj
     import numpy as np
 
     validate_app_port(port)
-    if controlled_test and (seconds is None or not test_stimulus):
-        raise ValueError("Controlled-input lock requires a bounded explicit stimulus experiment")
+    if controlled_test and (seconds is None or not (test_stimulus or test_walking_control or brain_guided_walking)):
+        raise ValueError("Controlled-input lock requires a bounded stimulus or brain-guided walking experiment")
     output, data_dir = output.expanduser().resolve(), data_dir.expanduser().resolve()
     if any(p == ROOT or ROOT in p.parents for p in [output, data_dir]) or output.exists():
         raise ValueError("Choose external inputs and a new external output directory")
@@ -92,7 +96,18 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
         not test_stimulus or seconds is None or seconds < 1.2 or engineered_navigation
     ):
         raise ValueError("Flight leg test requires an explicit upstream launch test and at least 1.2 s; no assisted landing")
+    if test_walking_control and (
+        not brain_guided_walking or seconds is None or seconds < 5 or test_stimulus or test_approach
+    ):
+        raise ValueError("Walking control test requires explicit hybrid,>=5s and no visual launch test")
+    if research_walking_control is not None and (
+        not brain_guided_walking or seconds is None
+        or research_walking_control not in {"sham", "source-cut", "output-silence", "motor-disconnect"}
+    ):
+        raise ValueError("Walking research control requires bounded explicit hybrid experiment")
     habitat = replace(Environment.load(scene), half_size_mm=arena_half_size_mm)
+    if fluid_physics and not habitat.water_regions:
+        raise ValueError("--fluid-physics requires declared water in the selected scene")
     food = FeedingConfig.load(feeding_config)
     objects = Objects(habitat.half_size_mm)
     if objects_path:
@@ -137,9 +152,19 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
     post_release_displacement_mm=0.
     maximum_post_release_landing_assistance=0.
     walking_navigation=WalkingNavigation(arena_half_size_mm*.1) if brain_linked_landing else None
+    walking_control = None
+    walking_reference = None
+    safety_reason = None
+    fallen_since = None
+    walking_samples = []
+    reference_height=.1278
+    initial_position=[value*.1 for value in habitat.spawn_position_mm] if habitat.spawn_position_mm is not None else None
+    if initial_position is not None:
+        reference_height=initial_position[2]
     try:
         paths = prepare_data(data_dir)
-        env = create_environment(habitat, 3600, wing_pattern=paths["wing_pattern_fmech.npy"], interactive=True)
+        env = create_environment(habitat, 3600, wing_pattern=paths["wing_pattern_fmech.npy"], interactive=True,
+                                 fluid_physics=fluid_physics,initial_position=initial_position)
         with ExitStack() as resources:
             resources.callback(env.close)
             timestep = env.reset()
@@ -155,22 +180,33 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                 if (mj.mj_id2name(model, mj.mjtObj.mjOBJ_GEOM, geom) or "").startswith("walker"):
                     model.geom_group[geom] = 1
             for item in objects.placements:
-                model.geom_pos[model.geom(item["name"]).id] = np.array(item["position_mm"])*.1
+                set_flight_object_position(model,data,item["name"],item["position_mm"])
+            mj.mj_forward(model,data)
             original_friction = model.geom_friction[ground].copy()
             mass = float(sum(model.body_mass[i] for i in range(model.nbody)
                              if (mj.mj_id2name(model, mj.mjtObj.mjOBJ_BODY, i) or "").startswith("walker")))
             initial_mass, initial_inertia = model.body_mass.copy(), model.body_inertia.copy()
             adapter = MotorAdapter(env)
             contact_reader = FlyContactReader(model, habitat)
+            water = FluidPhysics(model,habitat,force_dt=CONTROL_DT) if fluid_physics else None
             walking = PublishedMotorPolicy(prepare_policy(data_dir, CATALOG, "walking"))
             flying = PublishedMotorPolicy(prepare_policy(data_dir, CATALOG, "flight"))
             brain = BrainClient(ROOT/".venv/bin/python", data_dir, output, food.seed, takeoff=True, telemetry=True,
-                                graded_vision=graded_vision,dnp10_intervention=research_dnp10)
+                                graded_vision=graded_vision,dnp10_intervention=research_dnp10,
+                                walking_readouts=walking_readouts or brain_guided_walking,
+                                walking_control=brain_guided_walking,
+                                walking_intervention=research_walking_control if research_walking_control != "motor-disconnect" else None)
             resources.callback(brain.close)
             extension = LegExtension(brain.metadata) if neural_leg_extension else None
-            neural_landing=NeuralLanding(brain.metadata,arena_half_size_mm*.1) if brain_linked_landing else None
+            neural_landing=NeuralLanding(brain.metadata,arena_half_size_mm*.1,
+                                         contact_stabilization=brain_guided_walking) if brain_linked_landing else None
             if walking_navigation is not None:
                 walking_navigation.begin(data.xpos[body],0.)
+            if brain_guided_walking:
+                walking_control = WalkingControl(brain.metadata)
+                walking_reference = WalkingReference()
+                rotation=data.xmat[body].reshape(3,3)
+                walking_reference.begin(data.xpos[body],0.,math.atan2(rotation[1,0],rotation[0,0]),height=reference_height)
             controller_scope = (
                 "GF initiation; approved engineered orbit navigation and force-assisted landing (NOT biological)"
                 if engineered_navigation else
@@ -186,6 +222,10 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                 controller_scope += ". "+LANDING_SCOPE+". Ground boundary reference is engineered; walking policy is learned."
             if landing_surface_vision:
                 controller_scope += ". Landing input uses assumed surface bounding silhouettes through LC4/LPLC2; natural DNp10 visual pathway is not calibrated."
+            if walking_readouts and not brain_guided_walking:
+                controller_scope += ". Walking/halting spikes are observed, not decoded into gait."
+            if brain_guided_walking:
+                controller_scope += ". "+WALK_SCOPE+". "+DRIVE_SCOPE
             eye_scope = "FlyBody rectilinear cameras; not FlyGym compound-eye sampling"
             if graded_vision:
                 eye_scope += ". " + GRADED_ENCODER["scope"] + " Only physical spheres are encoded; not full optic flow."
@@ -231,7 +271,7 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                     event = inputs.get_nowait()
                     events.write(json.dumps({"time_s":total_steps*CONTROL_DT,"episode":episode,"input":event})+"\n")
                     events.flush()
-                    error_message = None if not safety_stopped else "Boundary safety stop. Reset to restart."
+                    error_message = None if not safety_stopped else safety_reason or "Boundary safety stop. Reset to restart."
                     if event["kind"] == "pointer":
                         position = world.target(event["x"]*1280, (1-event["y"])*960, plane_z=.15)
                         cursor_valid = position is not None
@@ -260,10 +300,17 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                                 raise RuntimeError("Reset changed body structure; display state cannot be transferred")
                             adapter = MotorAdapter(env)
                             contact_reader = FlyContactReader(model, habitat)
+                            water = FluidPhysics(model,habitat,force_dt=CONTROL_DT) if fluid_physics else None
                             for geom in range(model.ngeom):
                                 if (mj.mj_id2name(model,mj.mjtObj.mjOBJ_GEOM,geom) or "").startswith("walker"):
                                     model.geom_group[geom]=1
                             neural_response = brain.reset()
+                            if walking_control is not None:
+                                walking_control.reset()
+                                walking_samples = []
+                                reference_height=initial_position[2] if initial_position is not None else .1278
+                                rotation=data.xmat[body].reshape(3,3)
+                                walking_reference.begin(data.xpos[body],0.,math.atan2(rotation[1,0],rotation[0,0]),height=reference_height)
                             if extension is not None:
                                 extension.reset()
                             if neural_landing is not None:
@@ -293,6 +340,8 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                             minimum_flight_height_cm = None
                             minimum_flight_upright = None
                             safety_stopped = False
+                            safety_reason = None
+                            fallen_since = None
                             phase = "walking"
                             error_message = None
                             bump_until = 0
@@ -308,7 +357,7 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                                 surface_vision.reset()
                             app.publish({**neural_response,"habitat_time_s":total_steps*CONTROL_DT,"status":"reset"})
                             for item in objects.placements:
-                                model.geom_pos[model.geom(item["name"]).id] = np.array(item["position_mm"])*.1
+                                set_flight_object_position(model,data,item["name"],item["position_mm"])
                             model.geom_friction[ground] = original_friction
                             if controls["slippery"]:
                                 model.geom_friction[ground,0]=.1
@@ -326,12 +375,13 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                             try:
                                 if key == "3":
                                     item = objects.remove()
-                                    model.geom_pos[model.geom(item["name"]).id] = [0,0,-10]
+                                    set_flight_object_position(model,data,item["name"])
                                 else:
                                     if not cursor_valid:
                                         raise ValueError("Move over the ground world before placing an object")
                                     item = objects.place("box" if key=="1" else "sphere", (target*10).tolist())
-                                    model.geom_pos[model.geom(item["name"]).id] = np.array(item["position_mm"])*.1
+                                    set_flight_object_position(model,data,item["name"],item["position_mm"])
+                                mj.mj_forward(model,data)
                                 if sphere_vision is not None:
                                     sphere_vision.forget(model.geom(item["name"]).id)
                                 (output/"objects.json").write_text(json.dumps(objects.placements,indent=2)+"\n")
@@ -391,12 +441,15 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                                      "paused":True,"habitat_time_s":total_steps*CONTROL_DT,
                                      "environment_controls":{**controls,"paused":True},"editable_objects":len(objects.placements),
                                      "virtual_finger_available":True,"interaction_error":error_message,"motor_phase":phase,
-                                     "safety_notice":"Boundary safety pause: app remains open; camera/neural inspection available. Reset to restart." if safety_stopped else None,
+                                     "safety_notice":safety_reason or "Boundary safety pause: app remains open; camera/neural inspection available. Reset to restart." if safety_stopped else None,
                                      "controller_scope":controller_scope,
                                      "controlled_test_inputs":controlled_test,
                                      **({"leg_extension":extension.snapshot()} if extension is not None else {}),
                                      **({"brain_linked_landing":neural_landing.snapshot()} if neural_landing is not None else {}),
+                                     **({"walking_control":walking_control.snapshot()} if walking_control is not None else {}),
                                      "movable_objects":contact_reader.movable_snapshot(data),
+                                     "water":water.snapshot() if water is not None else
+                                         {"surface_mode":"rigid-prototype","scope":"Water-colored fixed collision surface; no fluid forces or swimming."},
                                      "eye_scope":eye_scope})
                     world.submit(model,data,total_steps*CONTROL_DT,controls["follow_camera"])
                     time.sleep(.02)
@@ -434,7 +487,16 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                                  "LPLC2":100. if launch_stimulus else 0.}
                 probe = (data.xpos[body]+data.xmat[body].reshape(3,3)@np.array(food.probe_mm)*.1)*10
                 exposure = food.exposure(probe.tolist(),controls["sugar_enabled"])
-                brain.begin_step(duration*1000,exposure["sugar_contact"],stimulus,visual_rates_Hz=rates)
+                walking_rates = None
+                walking_cues = None
+                if walking_control is not None:
+                    ground_phase = phase in {"walking","post-landing-walk","landing-release"}
+                    walking_rates, walking_cues = scene_drive(model,data,body,arena_half_size_mm*.1,ground_phase)
+                    if test_walking_control:
+                        walking_rates = prescribed_drive(elapsed)
+                        walking_cues = {"scope":"Explicit bounded upstream neural input profile, not environment sensing"}
+                brain.begin_step(duration*1000,exposure["sugar_contact"],stimulus,visual_rates_Hz=rates,
+                                 walking_drive_Hz=walking_rates)
                 neural_response = brain.finish_step()
                 if avoidance is not None and trigger_time is not None and (neural_landing is None or neural_landing.request_time is None):
                     avoidance.update(data.xpos[body],elapsed,obstacle_samples(model,data,body,avoidance.known_obstacle_ids))
@@ -448,8 +510,12 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                             navigation.request_landing(data.xpos[body],elapsed)
                         if navigation.landing_start is not None:
                             phase="assisted-landing" if landed_at is None else "post-landing-walk"
-                    data.xfrc_applied[body] = 0
+                    data.xfrc_applied.fill(0)
                     landing_force=np.zeros(6)
+                    if walking_control is not None:
+                        neural_speed, neural_turn = walking_control.advance(CONTROL_DT)
+                        if research_walking_control == "motor-disconnect":
+                            neural_speed = neural_turn = 0.
                     if neural_landing is not None and neural_landing.request_time is not None and trigger_time is not None:
                         action,landing_motor=neural_landing.motor_action(
                             adapter,walking,flying,timestep.observation,elapsed,
@@ -461,7 +527,12 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                         data.xfrc_applied[body]=landing_force
                     elif trigger_time is None or landed_at is not None:
                         walk_reference=walking_navigation
-                        if neural_landing is not None and neural_landing.touchdown_time is not None:
+                        if walking_control is not None:
+                            if habitat.schema_version>=4 and episode_steps%WALK_EVERY==0:
+                                reference_height=.1278+support_height(model,data,body)
+                            walking_reference.update(data.xpos[body],elapsed,neural_speed,neural_turn,height=reference_height)
+                            walk_reference = walking_reference
+                        elif neural_landing is not None and neural_landing.touchdown_time is not None:
                             walk_reference=neural_landing.walk_navigation
                         elif walking_navigation is not None:
                             walking_navigation.update(data.xpos[body],elapsed)
@@ -524,6 +595,8 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                     data.xfrc_applied[body,:3] += np.array(wind)*.1
                     if elapsed < bump_until:
                         data.xfrc_applied[body,1] += .5
+                    if water is not None:
+                        water.apply(data)
                     timestep = env.step(action.copy())
                     episode_steps += 1
                     total_steps += 1
@@ -543,6 +616,11 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                             if trigger_time is not None:
                                 walk_motor=None
                                 release_position=data.xpos[body].copy()
+                                if walking_reference is not None:
+                                    rotation=data.xmat[body].reshape(3,3)
+                                    reference_height=.1278+support_height(model,data,body) if habitat.schema_version>=4 else .1278
+                                    walking_reference.begin(data.xpos[body],episode_steps*CONTROL_DT,
+                                                            math.atan2(rotation[1,0],rotation[0,0]),height=reference_height)
                             trigger_time=None
                             post_landing_steps+=1
                             if release_position is not None:
@@ -552,6 +630,15 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                                                                            float(np.max(np.abs(landing_force))))
                     if phase=="walking":
                         initial_contact |= contacts>0
+                        if walking_control is not None:
+                            upright=float(data.xmat[body].reshape(3,3)[2,2])
+                            if upright < .5 and contacts > 0:
+                                fallen_since=episode_steps*CONTROL_DT if fallen_since is None else fallen_since
+                                if episode_steps*CONTROL_DT-fallen_since >= .15:
+                                    safety_stopped = True
+                                    safety_reason = "Fallen-state safety pause: not biological death. Camera/neural inspection remains available; Reset required. No pose recovery is fabricated."
+                            else:
+                                fallen_since=None
                     if phase=="flight":
                         flight_steps += 1
                         floor_contact_steps += int(contacts>0)
@@ -578,6 +665,17 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                         raise RuntimeError("Unified task terminated; no automatic physics reset was performed")
                 if abs(neural_response["brain_time_ms"]-episode_steps*CONTROL_DT*1000)>1e-5:
                     raise RuntimeError("Unified app brain/body clocks diverged")
+                if walking_control is not None:
+                    walking_control.accept(neural_response)
+                    rotation=data.xmat[body].reshape(3,3)
+                    if test_walking_control:
+                        walking_samples.append({
+                            "time_s":episode_steps*CONTROL_DT,"position_cm":data.xpos[body].tolist(),
+                            "yaw_rad":math.atan2(rotation[1,0],rotation[0,0]),
+                            "upright_cosine":float(rotation[2,2]),
+                            "speed_cm_s":walking_control.speed,"turn_rad_s":walking_control.turn,
+                            "motor_speed_cm_s":walking_reference.speed,"motor_turn_rad_s":walking_reference.turn,
+                        })
                 if extension is not None:
                     extension.accept(neural_response)
                 if neural_landing is not None:
@@ -596,7 +694,7 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                 if phase == "flight":
                     flight_dn_spikes += sum(neural_response["sensorimotor_spikes"][value]
                                             for value in DNP10_IDS.values())
-                if trigger_time is None and sum(neural_response["giant_fiber_spikes"].values())>0:
+                if trigger_time is None and not safety_stopped and sum(neural_response["giant_fiber_spikes"].values())>0:
                     if neural_landing is not None and neural_landing.request_time is not None:
                         neural_landing.reset(clear_neural=False)
                         landed_at=None
@@ -618,7 +716,8 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                                         math.atan2(rotation[1,0],rotation[0,0]),launch=True)
                 if any(abs(x*10)>=habitat.half_size_mm-5 for x in data.xpos[body,:2]):
                     safety_stopped = True
-                    error_message = "Boundary safety pause: app remains open. Neural navigation/landing are not implemented. Reset to restart."
+                    safety_reason = "Boundary safety pause: app remains open; Reset required."
+                    error_message = safety_reason
                 new_eyes = None
                 if elapsed>=next_eyes:
                     images=[]
@@ -632,20 +731,27 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                     eye_time=total_steps*CONTROL_DT
                 packet={**neural_response,"habitat_time_s":total_steps*CONTROL_DT,
                         **({"eye_time_s":eye_time} if eye_time is not None else {}),
-                        "status":"safety stopped" if safety_stopped else phase,"paused":safety_stopped,
+                        "status":"fallen" if safety_stopped and fallen_since is not None else "safety stopped" if safety_stopped else phase,"paused":safety_stopped,
                         "environment_controls":{**controls,"paused":controls["paused"] or safety_stopped},
                         "editable_objects":len(objects.placements),"virtual_finger_available":True,
                         "interaction_error":error_message,"motor_phase":phase,
-                        "safety_notice":"Boundary safety stop. Reset to restart." if safety_stopped else None,
+                        "safety_notice":safety_reason or "Boundary safety stop. Reset to restart." if safety_stopped else None,
                         "finger_position_mm":(finger*10).tolist(),"pointer_target_mm":(target*10).tolist(),
                         "pointer_lag_mm":float(np.linalg.norm(target-finger)*10),
                         "finger_motion_clock":"stationary world sphere (explicit flight leg test)" if test_leg_extension else "simulated time (prescribed test)" if test_approach else "wall time (external interaction)",
                         "finger_wall_duration_s":min(pointer_wall_duration,.1),
                         "controller_scope":controller_scope,
                         "movable_objects":contact_reader.movable_snapshot(data),
+                        "water":water.snapshot() if water is not None else
+                            {"surface_mode":"rigid-prototype","scope":"Water-colored fixed collision surface; no fluid forces or swimming."},
                         **({"flight_avoidance":avoidance.snapshot()} if avoidance is not None else {}),
                         **({"leg_extension":extension.snapshot()} if extension is not None else {}),
                         **({"brain_linked_landing":neural_landing.snapshot()} if neural_landing is not None else {}),
+                        **({"walking_control":walking_control.snapshot(),"walking_drive_Hz":walking_rates,
+                            "walking_drive_cues":walking_cues,
+                            "walking_body_yaw_rad":math.atan2(rotation[1,0],rotation[0,0]),
+                            "walking_motor_reference":{"speed_cm_s":walking_reference.speed,
+                                                       "turn_rad_s":walking_reference.turn}} if walking_control is not None else {}),
                         **({"front_tibia_rad":data.qpos[front_tibias].tolist(),
                             "front_tibia_actuator_force":data.actuator_force[front_tibia_actuators].tolist()}
                            if front_tibias else {}),
@@ -657,7 +763,11 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                                       "upright_cosine":float(data.xmat[body].reshape(3,3)[2,2]),
                                       "floor_contacts":contacts,
                                       "landing_assistance_force_torque":landing_force.tolist(),
-                                      "external_force_torque":data.xfrc_applied[body].tolist()})+"\n")
+                                      "external_force_torque":data.xfrc_applied[body].tolist(),
+                                      **({"qpos_sha256":hashlib.sha256(data.qpos.tobytes()).hexdigest(),
+                                          "qvel_sha256":hashlib.sha256(data.qvel.tobytes()).hexdigest(),
+                                          "action_sha256":hashlib.sha256(action.tobytes()).hexdigest()}
+                                         if test_walking_control else {})})+"\n")
                 log.flush()
                 if safety_stopped and target_steps is not None:
                     break
@@ -673,8 +783,10 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                      "flight_dnp10_spikes":flight_dn_spikes,
                      "peak_flight_leg_activation":peak_flight_activation,
                      "initial_ground_contact_observed":bool(initial_contact),
-                     "neural_motor_decoding":neural_leg_extension,
-                     "neural_motor_decoding_scope":LEG_EXTENSION_SCOPE if neural_leg_extension else "No neural leg decoder; learned motor comparisons",
+                     "neural_motor_decoding":neural_leg_extension or brain_guided_walking,
+                     "neural_motor_decoding_scope":". ".join(scope for enabled,scope in
+                         ((neural_leg_extension,LEG_EXTENSION_SCOPE),(brain_guided_walking,WALK_SCOPE)) if enabled)
+                         if neural_leg_extension or brain_guided_walking else "No neural leg decoder; learned motor comparisons",
                      "calibrated_vnc_muscle_decoding":False,
                      "landing_controller_enabled":engineered_navigation or brain_linked_landing,
                      "brain_linked_landing_enabled":brain_linked_landing,
@@ -687,11 +799,21 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                      "research_dnp10_intervention":research_dnp10,
                      "reduced_neural_leg_extension_enabled":neural_leg_extension,
                      "graded_vision_enabled":graded_vision,
+                     "walking_readouts_enabled":walking_readouts or brain_guided_walking,
+                     "brain_guided_walking_enabled":brain_guided_walking,
+                     "walking_control":walking_control.snapshot() if walking_control is not None else None,
+                     "walking_research_intervention":research_walking_control,
+                     "safety_reason":safety_reason,
+                     "walking_module_sha256":hashlib.sha256((ROOT/"scripts/fly_brain_walk.py").read_bytes()).hexdigest() if brain_guided_walking else None,
                      "flight_avoidance_enabled":flight_avoidance,
                      "habitat_width_mm":2*habitat.half_size_mm,
                      "habitat_static_objects":len(habitat.objects),
                      "habitat_materials":len(habitat.materials),
                      "movable_objects":contact_reader.movable_snapshot(data),
+                     "fluid_physics_enabled":fluid_physics,"water_scope":WATER_SCOPE if fluid_physics else
+                         "Water-colored fixed collision prototype; not fluid physics.",
+                     "water_module_sha256":hashlib.sha256((ROOT/"scripts/fly_water.py").read_bytes()).hexdigest() if fluid_physics else None,
+                     "water":water.snapshot() if water is not None else None,
                      "minimum_flight_boundary_clearance_cm":minimum_flight_clearance_cm,
                      "minimum_flight_height_cm":minimum_flight_height_cm,
                      "minimum_flight_upright_cosine":minimum_flight_upright,
@@ -734,6 +856,11 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
                 if research_dnp10=="silence":
                     summary["neural_landing_control_passed"]=(
                         not neural_landing_handoffs and neural_landing.decoder.total_spikes==0)
+            if test_walking_control:
+                summary["walking_control_profile"] = profile_metrics(walking_samples,research_walking_control)
+                summary["walking_control_test_passed"] = (
+                    summary["walking_control_profile"]["passed"] and not safety_stopped
+                    and not handoffs and summary["same_body_mass_inertia_unchanged"])
             (output/"summary.json").write_text(json.dumps(summary,indent=2)+"\n")
         (output/"status.json").write_text(json.dumps({"status":summary["status"]})+"\n")
         return summary
@@ -746,8 +873,8 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data-dir",type=Path,required=True)
     parser.add_argument("--output-dir",type=Path,required=True)
-    parser.add_argument("--scene",type=Path,default=ROOT/"experiments/fly-walking/grassland-habitat.json")
-    parser.add_argument("--feeding-config",type=Path,default=ROOT/"experiments/flywire-sugar/grassland-feeding.json")
+    parser.add_argument("--scene",type=Path,default=ROOT/"experiments/fly-walking/puddle-habitat.json")
+    parser.add_argument("--feeding-config",type=Path)
     parser.add_argument("--objects",type=Path)
     parser.add_argument("--seconds",type=float)
     parser.add_argument("--dashboard-port",type=int,choices=[DEFAULT_PORT],default=DEFAULT_PORT,
@@ -774,18 +901,31 @@ def main():
                         help="Explicit bounded neural causal intervention, not a normal browser control")
     parser.add_argument("--controlled-test",action="store_true",
                         help="Bounded stimulus validation: reject physical edits/pushes/reset; camera, pause and stop remain available")
+    parser.add_argument("--walking-readouts",action="store_true",
+                        help="Observe 28 primary-verified walking/halting cells; walking remains learned")
+    parser.add_argument("--brain-guided-walking",action="store_true",
+                        help="Opt-in modeled BPN/P9/FG drive and genuine speed/turn readouts through learned legs")
+    parser.add_argument("--test-walking-control",action="store_true",
+                        help="Bounded upstream walking/turning/stopping neural input profile,>=5s")
+    parser.add_argument("--research-walking-control",choices=("sham","source-cut","output-silence","motor-disconnect"),
+                        help="Bounded causal control, never a normal browser control")
+    parser.add_argument("--fluid-physics",action="store_true",
+                        help="Experimental bounded buoyancy/drag; replaces rigid water collision, not CFD or swimming")
     args=parser.parse_args()
+    if args.feeding_config is None:
+        args.feeding_config=default_feeding_config(args.scene)
     try:
         summary=run(args.data_dir,args.output_dir,args.scene,args.feeding_config,args.objects,args.seconds,
                     args.dashboard_port,args.arena_half_size_mm,args.test_stimulus,args.test_approach,args.engineered_navigation,
                     args.neural_leg_extension,args.test_leg_extension,args.graded_vision,args.flight_avoidance,
                     args.brain_linked_landing,args.test_brain_landing,args.landing_surface_vision,args.research_dnp10,
-                    args.controlled_test)
+                    args.controlled_test,args.walking_readouts,args.brain_guided_walking,
+                    args.test_walking_control,args.research_walking_control,args.fluid_physics)
     except (OSError,ValueError,RuntimeError,ImportError) as error:
         print(f"ERROR: experimental flight app failed: {error}",file=sys.stderr)
         return 1
     if any(summary.get(key) is False for key in ("flight_test_passed","cycle_test_passed","avoidance_test_passed",
-                                                "brain_linked_cycle_test_passed","neural_landing_control_passed")):
+                                                "brain_linked_cycle_test_passed","neural_landing_control_passed","walking_control_test_passed")):
         print("ERROR: requested flight/cycle test failed; inspect saved summary",file=sys.stderr)
         return 2
     return 0
