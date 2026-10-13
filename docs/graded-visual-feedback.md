@@ -222,7 +222,7 @@ The boundary/landing/navigation limitation still applies to this comparison.
 Reproduce final causal validation in a new external directory:
 
 ```bash
-MUJOCO_GL=egl .venv-flight/bin/python scripts/test_graded_visual_feedback.py \
+MUJOCO_GL=egl .venv-flight-py311/bin/python scripts/test_graded_visual_feedback.py \
   --data-dir "$FLY_DATA_DIR" --output-dir /new/external/graded-feedback \
   --seeds 420 423
 ```

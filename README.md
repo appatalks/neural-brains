@@ -33,6 +33,10 @@ and the output directory must not already exist.
 
 Open **http://127.0.0.1:8840/** — one instance only. Use **Fullscreen ground**
 and toggle eye/neural overlays.
+Before the first launch on a data root, use the
+[flight guide](experiments/fly-flight/README.md) to generate and validate its
+external TFLite policy artifacts; the launcher uses the secured runtime and
+does not fall back to the legacy SavedModel loader.
 Use the **Flies** slider for1–3 [independent brain/body pairs](docs/multiple-flies.md).
 **Apply fly count** starts a new episode and preserves habitat/placed objects.
 Select a fly to inspect its eyes and neural activity.

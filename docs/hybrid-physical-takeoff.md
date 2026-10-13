@@ -29,7 +29,7 @@ controller. Landing and complete walking-to-flight transitions remain missing.
 ## Start the visible demonstration
 
 ```bash
-.venv-flight/bin/python scripts/fly_takeoff.py \
+.venv-flight-py311/bin/python scripts/fly_takeoff.py \
   --test-approach --seconds 1.5 --arena-half-size-mm 300 \
   --data-dir "$FLY_DATA_DIR" \
   --output-dir "$FLY_DATA_DIR/results/hybrid-takeoff/interactive-001"
@@ -45,7 +45,7 @@ state after its interval; Q/window close saves and exits.
 For pointer-controlled interaction instead of the test stimulus:
 
 ```bash
-.venv-flight/bin/python scripts/fly_takeoff.py \
+.venv-flight-py311/bin/python scripts/fly_takeoff.py \
   --seconds 3 --arena-half-size-mm 600 \
   --data-dir "$FLY_DATA_DIR" \
   --output-dir "$FLY_DATA_DIR/results/hybrid-takeoff/pointer-001"

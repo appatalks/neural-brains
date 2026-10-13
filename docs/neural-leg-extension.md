@@ -208,7 +208,7 @@ passed all ten tests.
 Reproduce the physical controls in a new external directory:
 
 ```bash
-MUJOCO_GL=egl .venv-flight/bin/python scripts/test_leg_extension_causality.py \
+MUJOCO_GL=egl .venv-flight-py311/bin/python scripts/test_leg_extension_causality.py \
   --data-dir "$FLY_DATA_DIR" --output-dir /new/external/causal-assay \
   --seeds 420 421 422
 ```

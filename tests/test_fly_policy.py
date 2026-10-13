@@ -92,6 +92,83 @@ class FlightPolicyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "verified"):
             fly_policy.prepare_policy(Path("/unused"), Path("/unused"), "unknown")
 
+    def test_tflite_policy_requires_source_and_parity_receipts(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            data_dir = root / "data"
+            data_dir.mkdir()
+            source = root / "trained-fly-policies.zip"
+            source.write_bytes(b"verified source")
+            source_sha = hashlib.sha256(source.read_bytes()).hexdigest()
+            (root / "receipt.json").write_text(json.dumps({"sha256": source_sha}))
+            asset = {"filename": source.name, "checksum": "md5:verified"}
+            dataset = {"id": "flybody-flight-imitation"}
+            directory = data_dir / fly_policy.TFLITE_POLICY_RELATIVE_PATH
+            directory.mkdir(parents=True)
+            model = directory / "flight-mean.tflite"
+            model.write_bytes(b"converted model")
+            parity = directory / "parity-inputs.npz"
+            parity.write_bytes(b"parity cases")
+            receipt = {
+                "schema_version": 1,
+                "source": {
+                    "dataset_id": dataset["id"],
+                    "archive_filename": asset["filename"],
+                    "upstream_checksum": asset["checksum"],
+                    "archive_sha256": source_sha,
+                },
+                "models": {
+                    "flight": {
+                        "filename": model.name,
+                        "size_bytes": model.stat().st_size,
+                        "sha256": hashlib.sha256(model.read_bytes()).hexdigest(),
+                    }
+                },
+                "parity_inputs": {
+                    "filename": parity.name,
+                    "size_bytes": parity.stat().st_size,
+                    "sha256": hashlib.sha256(parity.read_bytes()).hexdigest(),
+                },
+            }
+            receipt_path = directory / "conversion.json"
+            receipt_path.write_text(json.dumps(receipt))
+            validation = {
+                "status": "passed",
+                "conversion_sha256": hashlib.sha256(receipt_path.read_bytes()).hexdigest(),
+                "parity_inputs_sha256": receipt["parity_inputs"]["sha256"],
+                "results": {
+                    "flight": {
+                        "model_sha256": receipt["models"]["flight"]["sha256"],
+                        "max_clipped_abs_error": 0.00001,
+                    }
+                },
+            }
+            (directory / "parity-validation.json").write_text(json.dumps(validation))
+            with patch.object(
+                fly_policy,
+                "verified_archive",
+                return_value=(source, root, asset, dataset),
+            ):
+                self.assertEqual(
+                    fly_policy.prepare_tflite_policy(data_dir, Path("/unused")),
+                    model,
+                )
+                model.write_bytes(b"tampered")
+                with self.assertRaisesRegex(ValueError, "checksum mismatch"):
+                    fly_policy.prepare_tflite_policy(data_dir, Path("/unused"))
+
+    def test_tflite_input_names_are_explicitly_mapped(self):
+        self.assertEqual(
+            fly_policy._tflite_input_name("serving_default_args_0_walker_joints_pos:0"),
+            "walker/joints_pos",
+        )
+        self.assertEqual(
+            fly_policy._tflite_input_name("args_0/walker/gyro:0"),
+            "walker/gyro",
+        )
+        with self.assertRaisesRegex(ValueError, "Unexpected"):
+            fly_policy._tflite_input_name("unexpected_input")
+
     def test_benchmark_has_independent_phases_and_perturbation(self):
         cases = json.loads((ROOT / "experiments/fly-flight/benchmark.json").read_text())["cases"]
         seeds = {case["seed"] for case in cases if case["trajectory"] == 48 and case["gust_uN"] == 0}

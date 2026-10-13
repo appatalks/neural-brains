@@ -9,7 +9,7 @@ from datasets import CATALOG, ROOT
 from fly_feeding import BrainClient
 from fly_flight import prepare_data
 from fly_looming import GRADED_ENCODER
-from fly_policy import PublishedMotorPolicy, prepare_policy
+from fly_policy import PublishedMotorPolicy, prepare_tflite_policy
 from fly_walking import external_output
 from test_leg_extension_causality import PROTOCOLS, FEEDBACK_PROBE, trial, evaluate
 
@@ -99,7 +99,7 @@ def run(data_dir, output, seeds=(420, 423)):
     (output/"status.json").write_text('{"status":"running"}\n')
     try:
         paths = prepare_data(data_dir)
-        policy = PublishedMotorPolicy(prepare_policy(data_dir, CATALOG, "flight"))
+        policy = PublishedMotorPolicy(prepare_tflite_policy(data_dir, CATALOG, "flight"))
         reports = []
         for seed in seeds:
             results, traces = {}, {}

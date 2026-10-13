@@ -34,7 +34,7 @@ Use Linux and the separately pinned environments; do not combine them:
 
 - `.venv`: Python 3.10 / Brian2 brain model.
 - `.venv-biomechanics`: walking framework and main browser launcher.
-- `.venv-flight`: FlyBody, MuJoCo and published TensorFlow policies.
+- `.venv-flight-py311`: Python 3.11, FlyBody, MuJoCo and published TensorFlow policies.
 - `.venv-worm`: Python 3.13 worm data conversion with pinned PyArrow/openpyxl.
 
 Follow the existing [neural setup](experiments/flywire-sugar/README.md),

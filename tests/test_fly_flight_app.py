@@ -72,7 +72,7 @@ class FlightAppTests(unittest.TestCase):
             ])
         self.assertEqual(result,0)
         command=run.call_args.args[0]
-        self.assertEqual(command[:2],[str(ROOT/".venv-flight/bin/python"),str(ROOT/"scripts/fly_flight_app.py")])
+        self.assertEqual(command[:2],[str(ROOT/".venv-flight-py311/bin/python"),str(ROOT/"scripts/fly_flight_app.py")])
         self.assertIn("--objects",command)
         self.assertIn("--seconds",command)
         self.assertAlmostEqual(float(command[command.index("--arena-half-size-mm")+1]),112.5/math.sqrt(2))

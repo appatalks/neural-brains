@@ -13,7 +13,7 @@ from fly_feeding import BrainClient
 from fly_flight import prepare_data
 from fly_leg_extension import LegExtension, DNP10_IDS, SCOPE
 from fly_looming import SphereLooming, SphereVision, finger_visibility, graded_visual_rates
-from fly_policy import PublishedMotorPolicy, prepare_policy
+from fly_policy import PublishedMotorPolicy, prepare_tflite_policy
 from fly_unified import CONTROL_DT, MotorAdapter, create_environment
 from fly_walking import external_output
 
@@ -240,7 +240,7 @@ def run(data_dir, output, seeds=(420, 421)):
     (output/"status.json").write_text('{"status":"running"}\n')
     try:
         paths = prepare_data(data_dir)
-        policy = PublishedMotorPolicy(prepare_policy(data_dir, CATALOG, "flight"))
+        policy = PublishedMotorPolicy(prepare_tflite_policy(data_dir, CATALOG, "flight"))
         reports = []
         for seed in seeds:
             results, traces = {}, {}

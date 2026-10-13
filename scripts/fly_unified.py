@@ -15,7 +15,7 @@ from datasets import CATALOG, ROOT
 from fly_environment import Environment, environment_dict
 from fly_flight import prepare_data
 from fly_flight_arena import make_arena
-from fly_policy import PublishedMotorPolicy, prepare_policy
+from fly_policy import PublishedMotorPolicy, prepare_tflite_policy
 from fly_feeding import BrainClient
 from fly_takeoff import assisted_force
 from fly_graphics import ObserverScene
@@ -456,8 +456,8 @@ def run(data_dir, output, seconds=1.0, speed_cm_s=2.0, airborne=False, takeoff_t
         timestep = env.reset()
         adapter = MotorAdapter(env)
         family = "flight" if airborne else "walking"
-        policy = PublishedMotorPolicy(prepare_policy(data_dir, CATALOG, family))
-        flight_policy = PublishedMotorPolicy(prepare_policy(data_dir, CATALOG, "flight")) if takeoff_test else policy
+        policy = PublishedMotorPolicy(prepare_tflite_policy(data_dir, CATALOG, family))
+        flight_policy = PublishedMotorPolicy(prepare_tflite_policy(data_dir, CATALOG, "flight")) if takeoff_test else policy
         if takeoff_test:
             brain = BrainClient(ROOT / ".venv/bin/python", data_dir, output, 420, takeoff=True)
             (output / "brain-metadata.json").write_text(json.dumps(brain.metadata, indent=2) + "\n")

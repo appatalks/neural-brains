@@ -38,13 +38,13 @@ Use a new external output directory for each test.
 
 ```bash
 # Grounded walking on the legs-and-wings body.
-MUJOCO_GL=egl .venv-flight/bin/python scripts/fly_unified.py \
+MUJOCO_GL=egl .venv-flight-py311/bin/python scripts/fly_unified.py \
   --seconds 1 --data-dir "$FLY_DATA_DIR" \
   --output-dir "$FLY_DATA_DIR/results/fly-unified/walking-check-001"
 
 # Same-body walking, real GF initiation, assisted takeoff, continued flight.
 # Arena enlargement is explicit, not a silent fix for fast flight.
-.venv-flight/bin/python scripts/fly_unified.py \
+.venv-flight-py311/bin/python scripts/fly_unified.py \
   --view --takeoff-test --seconds 1.5 --arena-half-size-mm 300 \
   --data-dir "$FLY_DATA_DIR" \
   --output-dir "$FLY_DATA_DIR/results/fly-unified/takeoff-check-001"

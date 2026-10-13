@@ -9,7 +9,7 @@ from pathlib import Path
 from datasets import ROOT, CATALOG
 from fly_environment import Environment
 from fly_flight_arena import FlyContactReader
-from fly_policy import PublishedMotorPolicy, prepare_policy
+from fly_policy import PublishedMotorPolicy, prepare_tflite_policy
 from fly_unified import CONTROL_DT, WALK_EVERY, MotorAdapter, create_environment
 from fly_walking import external_output
 from sim_units import simulation_steps
@@ -22,7 +22,7 @@ def run(data_dir, output, seconds=.8):
     output = external_output(output)
     output.mkdir(parents=True)
     scene = Environment.load(ROOT/"experiments/fly-walking/grassland-habitat.json")
-    policy = PublishedMotorPolicy(prepare_policy(data_dir, CATALOG, "walking"))
+    policy = PublishedMotorPolicy(prepare_tflite_policy(data_dir, CATALOG, "walking"))
     (output/"protocol.json").write_text(json.dumps({
         "seconds":seconds,"scope":"Learned walking leg contacts and actual free-body physics, not connectome-generated movement",
         "cases":["contact","off-path","replay"],"thresholds":{"contact_displacement_mm":.2,"off_path_seed_displacement_mm":.05,

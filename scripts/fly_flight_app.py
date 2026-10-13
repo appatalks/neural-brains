@@ -19,7 +19,7 @@ from fly_feeding import BrainClient, FeedingConfig, default_feeding_config
 from fly_flight import prepare_data
 from fly_looming import GRADED_ENCODER, SphereLooming, SphereVision, LandingSurfaceVision, finger_visibility, graded_visual_rates
 from fly_objects import Objects, set_flight_object_position
-from fly_policy import PublishedMotorPolicy, prepare_policy
+from fly_policy import PublishedMotorPolicy, prepare_tflite_policy
 from fly_pointer_motion import capped_motion
 from fly_navigation import FlightNavigation, landing_assistance
 from fly_flight_avoidance import FlightAvoidance, obstacle_samples, SCOPE as AVOIDANCE_SCOPE, MIN_HALF_SIZE_CM
@@ -190,8 +190,8 @@ def run(data_dir, output, scene, feeding_config, objects_path=None, seconds=None
             adapter = MotorAdapter(env)
             contact_reader = FlyContactReader(model, habitat)
             water = FluidPhysics(model,habitat,force_dt=CONTROL_DT) if fluid_physics else None
-            walking = PublishedMotorPolicy(prepare_policy(data_dir, CATALOG, "walking"))
-            flying = PublishedMotorPolicy(prepare_policy(data_dir, CATALOG, "flight"))
+            walking = PublishedMotorPolicy(prepare_tflite_policy(data_dir, CATALOG, "walking"))
+            flying = PublishedMotorPolicy(prepare_tflite_policy(data_dir, CATALOG, "flight"))
             brain = BrainClient(ROOT/".venv/bin/python", data_dir, output, food.seed, takeoff=True, telemetry=True,
                                 graded_vision=graded_vision,dnp10_intervention=research_dnp10,
                                 walking_readouts=walking_readouts or brain_guided_walking,

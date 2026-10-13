@@ -11,7 +11,7 @@ from datasets import CATALOG, ROOT
 from fly_environment import Environment, HabitatObject
 from fly_flight import prepare_data
 from fly_flight_avoidance import FlightAvoidance, obstacle_samples, SCOPE
-from fly_policy import PublishedMotorPolicy, prepare_policy
+from fly_policy import PublishedMotorPolicy, prepare_tflite_policy
 from fly_unified import CONTROL_DT, MotorAdapter, create_environment
 from fly_walking import external_output
 
@@ -37,7 +37,7 @@ def run(data_dir, output, seconds=5., heading=0., phase=.5, disabled=False, bloc
     (output/"status.json").write_text('{"status":"running"}\n')
     try:
         paths = prepare_data(data_dir)
-        policy = PublishedMotorPolicy(prepare_policy(data_dir, CATALOG, "flight"))
+        policy = PublishedMotorPolicy(prepare_tflite_policy(data_dir, CATALOG, "flight"))
         habitat = replace(Environment.load(scene or ROOT/"experiments/fly-walking/planted-habitat.json"), half_size_mm=half_size_mm)
         if blocker:
             habitat=replace(habitat,objects=habitat.objects+(

@@ -177,7 +177,7 @@ REFERENCE_DIR="$FLY_DATA_DIR/results/walking-paths/reference-$(date +%Y%m%d-%H%M
 .venv-vnc/bin/python scripts/vnc_reference.py \
   --data-dir "$FLY_DATA_DIR" --output-dir "$REFERENCE_DIR" --parameter-seed 429
 
-MUJOCO_GL=egl .venv-flight/bin/python scripts/test_vnc_joint.py \
+MUJOCO_GL=egl .venv-flight-py311/bin/python scripts/test_vnc_joint.py \
   --reference-dir "$REFERENCE_DIR" \
   --output-dir "$FLY_DATA_DIR/results/walking-paths/joint-$(date +%Y%m%d-%H%M%S)"
 ```

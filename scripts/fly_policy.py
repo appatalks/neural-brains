@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import stat
+import threading
 from pathlib import Path, PurePosixPath
 from zipfile import ZipFile
 
@@ -20,6 +21,9 @@ WALKING_POLICY_MEMBERS = {
     "walking/variables/variables.data-00000-of-00001": 4919480,
     "walking/variables/variables.index": 924,
 }
+TFLITE_POLICY_RELATIVE_PATH = Path("derived/flybody-flight-policy-mean-tflite-v1")
+TFLITE_POLICY_FILES = {"flight": "flight-mean.tflite", "walking": "walking-mean.tflite"}
+TFLITE_PARITY_TOLERANCE = 1e-4
 
 
 def verified_archive(data_dir: Path, catalog_path: Path, filename: str | None = None):
@@ -110,6 +114,75 @@ def prepare_policy(data_dir: Path, catalog_path: Path, family: str = "flight") -
     return destination / family
 
 
+def prepare_tflite_policy(
+    data_dir: Path, catalog_path: Path, family: str = "flight", *, require_parity: bool = True
+) -> Path:
+    if family not in TFLITE_POLICY_FILES:
+        raise ValueError("Only verified flight and walking policies are supported")
+    archive, _, asset, dataset = verified_archive(data_dir, catalog_path, "trained-fly-policies.zip")
+    source_receipt = json.loads((archive.parent / "receipt.json").read_text())
+    data_root = data_dir.expanduser().resolve()
+    directory = data_root / TFLITE_POLICY_RELATIVE_PATH
+    if directory.resolve() != directory:
+        raise ValueError("Converted policy directory must not redirect through symlinks")
+    receipt_path = directory / "conversion.json"
+    if receipt_path.is_symlink() or not receipt_path.is_file():
+        raise FileNotFoundError(
+            "Verified TFLite policies are missing; run scripts/convert_fly_policy_tflite.py "
+            "with the pinned legacy policy environment"
+        )
+    receipt = json.loads(receipt_path.read_text())
+    source = receipt.get("source", {})
+    if (
+        receipt.get("schema_version") != 1
+        or source.get("dataset_id") != dataset["id"]
+        or source.get("archive_filename") != asset["filename"]
+        or source.get("upstream_checksum") != asset["checksum"]
+        or source.get("archive_sha256") != source_receipt["sha256"]
+    ):
+        raise ValueError("Converted policy provenance does not match the verified source archive")
+    models = receipt.get("models", {})
+    model = models.get(family, {})
+    filename = TFLITE_POLICY_FILES[family]
+    if model.get("filename") != filename:
+        raise ValueError(f"Converted {family} policy provenance is invalid")
+    policy_path = directory / filename
+    if policy_path.is_symlink() or not policy_path.is_file():
+        raise FileNotFoundError(f"Converted {family} policy file is missing")
+    payload = policy_path.read_bytes()
+    if len(payload) != model.get("size_bytes") or hashlib.sha256(payload).hexdigest() != model.get("sha256"):
+        raise ValueError(f"Converted {family} policy checksum mismatch")
+    parity = receipt.get("parity_inputs", {})
+    parity_path = directory / "parity-inputs.npz"
+    if (
+        parity.get("filename") != parity_path.name
+        or parity_path.is_symlink()
+        or not parity_path.is_file()
+    ):
+        raise ValueError("Converted policy parity inputs are missing")
+    parity_payload = parity_path.read_bytes()
+    if (
+        len(parity_payload) != parity.get("size_bytes")
+        or hashlib.sha256(parity_payload).hexdigest() != parity.get("sha256")
+    ):
+        raise ValueError("Converted policy parity input checksum mismatch")
+    if require_parity:
+        validation_path = directory / "parity-validation.json"
+        if validation_path.is_symlink() or not validation_path.is_file():
+            raise ValueError("Converted policy has not passed runtime parity validation")
+        validation = json.loads(validation_path.read_text())
+        result = validation.get("results", {}).get(family, {})
+        if (
+            validation.get("status") != "passed"
+            or validation.get("conversion_sha256") != hashlib.sha256(receipt_path.read_bytes()).hexdigest()
+            or validation.get("parity_inputs_sha256") != parity["sha256"]
+            or result.get("model_sha256") != model["sha256"]
+            or result.get("max_clipped_abs_error", math.inf) > TFLITE_PARITY_TOLERANCE
+        ):
+            raise ValueError(f"Converted {family} policy failed its recorded parity validation")
+    return policy_path
+
+
 def canonical_to_physical(action, minimum, maximum):
     import numpy as np
 
@@ -169,36 +242,64 @@ def evaluate_tracking(records: list[dict], completed_seconds: float, required_se
 
 class PublishedMotorPolicy:
     def __init__(self, directory: Path):
+        import numpy as np
         import tensorflow as tf
 
-        if tf.config.threading.get_intra_op_parallelism_threads() != 1:
-            tf.config.threading.set_intra_op_parallelism_threads(1)
-        if tf.config.threading.get_inter_op_parallelism_threads() != 1:
-            tf.config.threading.set_inter_op_parallelism_threads(1)
-        import tensorflow_probability as tfp
+        self.model_sha256 = hashlib.sha256(Path(directory).read_bytes()).hexdigest()
+        self.interpreter = tf.lite.Interpreter(model_path=str(directory), num_threads=1)
+        self.interpreter.allocate_tensors()
+        self.inputs = {}
+        for detail in self.interpreter.get_input_details():
+            name = _tflite_input_name(detail["name"])
+            if name in self.inputs:
+                raise ValueError(f"Duplicate converted policy input: {name}")
+            if detail["dtype"] != np.float32:
+                raise ValueError(f"Converted policy input must be float32: {name}")
+            self.inputs[name] = detail
+        outputs = self.interpreter.get_output_details()
+        if len(outputs) != 1 or outputs[0]["dtype"] != np.float32:
+            raise ValueError("Converted policy must expose one float32 mean-action output")
+        if len(outputs[0]["shape"]) != 2 or outputs[0]["shape"][0] != 1:
+            raise ValueError("Converted policy output must have a single batched action")
+        self.output = outputs[0]
+        self._lock = threading.Lock()
 
-        # Public exports are lazy; resolving these registers the SavedModel's types.
-        _ = tfp.distributions.Independent, tfp.distributions.Normal
-
-        self.tf = tf
-        self.module = tf.saved_model.load(str(directory))
-        self.mean_policy = tf.function(
-            lambda observation: self.module(observation).mean(), autograph=False
-        )
-
-    def action(self, observation, specification):
+    def mean_action(self, observation):
         import numpy as np
 
-        batched = {}
-        for name, value in observation.items():
-            array = np.asarray(value, dtype=np.float32)
-            if not np.isfinite(array).all():
-                raise ValueError(f"Non-finite policy observation: {name}")
-            batched[name] = self.tf.convert_to_tensor(array[None, ...])
-        mean = self.mean_policy(batched).numpy()
+        missing = self.inputs.keys() - observation.keys()
+        if missing:
+            raise ValueError(f"Missing converted policy observations: {sorted(missing)}")
+        with self._lock:
+            for name, detail in self.inputs.items():
+                values = np.asarray(observation[name], dtype=np.float32)
+                expected_shape = tuple(detail["shape"][1:])
+                if values.shape != expected_shape or not np.isfinite(values).all():
+                    raise ValueError(f"Invalid converted policy observation: {name}")
+                self.interpreter.set_tensor(detail["index"], values[None, ...])
+            self.interpreter.invoke()
+            result = self.interpreter.get_tensor(self.output["index"]).copy()
+        if not np.isfinite(result).all():
+            raise ValueError("Converted policy returned non-finite mean actions")
+        return result
+
+    def action(self, observation, specification):
+        mean = self.mean_action(observation)
         if mean.shape != (1, *specification.shape):
             raise ValueError("Published policy output does not match motor action specification")
         return canonical_to_physical(mean[0], specification.minimum, specification.maximum)
+
+
+def _tflite_input_name(name: str) -> str:
+    name = name.removesuffix(":0")
+    for prefix in ("serving_default_args_0_walker_", "args_0_walker_"):
+        if name.startswith(prefix):
+            return "walker/" + name[len(prefix):]
+    if name.startswith("args_0/walker/"):
+        return name[len("args_0/"):]
+    if name.startswith("walker/"):
+        return name
+    raise ValueError(f"Unexpected converted policy input name: {name}")
 
 
 PublishedFlightPolicy = PublishedMotorPolicy

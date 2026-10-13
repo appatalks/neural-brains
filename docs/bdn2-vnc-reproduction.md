@@ -297,11 +297,11 @@ Inputs must already be acquired and receipt/checksum validated. Each output
 directory must be new and outside Git:
 
 ```bash
-.venv-flight/bin/python scripts/test_bdn2_vnc.py \
+.venv-flight-py311/bin/python scripts/test_bdn2_vnc.py \
   --data-dir "${FLY_DATA_DIR:?Set verified external storage}" \
   --output-dir "$FLY_DATA_DIR/results/walking-paths/vnc-$(date +%Y%m%d-%H%M%S)"
 
-.venv-flight/bin/python scripts/test_bdn2_vnc.py --archived-parameters \
+.venv-flight-py311/bin/python scripts/test_bdn2_vnc.py --archived-parameters \
   --data-dir "${FLY_DATA_DIR:?Set verified external storage}" \
   --output-dir "$FLY_DATA_DIR/results/walking-paths/vnc-archive-$(date +%Y%m%d-%H%M%S)"
 ```

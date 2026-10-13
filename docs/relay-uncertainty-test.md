@@ -172,7 +172,7 @@ No additional dataset or simulation environment was acquired.
 
 ```bash
 MUJOCO_GL=egl OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
-  .venv-flight/bin/python scripts/test_relay_sensitivity.py \
+  .venv-flight-py311/bin/python scripts/test_relay_sensitivity.py \
   --data-dir "${FLY_DATA_DIR:?Set verified external storage}" \
   --legacy-packets-dir "$FLY_DATA_DIR/results/walking-paths/brain-packets-001" \
   --output-dir "$FLY_DATA_DIR/results/walking-paths/sensitivity-$(date +%Y%m%d-%H%M%S)"

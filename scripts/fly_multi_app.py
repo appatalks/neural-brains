@@ -13,7 +13,7 @@ from fly_connections import ConnectionIndex
 from fly_environment import Environment,environment_dict
 from fly_feeding import FeedingConfig
 from fly_objects import Objects,set_flight_object_position
-from fly_policy import PublishedMotorPolicy,prepare_policy
+from fly_policy import PublishedMotorPolicy,prepare_tflite_policy
 from fly_unified import CONTROL_DT,create_environment,prepare_data
 from fly_water import FluidPhysics
 from fly_world_renderer import BrowserInputs,WorldRenderer
@@ -78,8 +78,8 @@ def run(data_dir,output,scene,feeding_config,objects_path=None,seconds=None,
             resources.callback(env.close)
             timestep=env.reset()
             model,data=env.physics.model.ptr,env.physics.data.ptr
-            walking=PublishedMotorPolicy(prepare_policy(data_dir,CATALOG,"walking"))
-            flying=PublishedMotorPolicy(prepare_policy(data_dir,CATALOG,"flight"))
+            walking=PublishedMotorPolicy(prepare_tflite_policy(data_dir,CATALOG,"walking"))
+            flying=PublishedMotorPolicy(prepare_tflite_policy(data_dir,CATALOG,"flight"))
             agents=[]
 
             def configure():

@@ -191,7 +191,7 @@ those biological gaps.
 Reproduce a physical trial:
 
 ```bash
-MUJOCO_GL=egl .venv-flight/bin/python scripts/test_flight_avoidance.py \
+MUJOCO_GL=egl .venv-flight-py311/bin/python scripts/test_flight_avoidance.py \
   --data-dir "$FLY_DATA_DIR" --output-dir /new/external/flight-trial \
   --seconds 20 --heading 3.14159265359 --phase 0.35
 ```

@@ -10,7 +10,7 @@ from fly_environment import Environment
 from fly_flight import prepare_data
 from fly_flight_avoidance import FlightAvoidance,obstacle_samples
 from fly_flight_arena import FlyContactReader
-from fly_policy import PublishedMotorPolicy,prepare_policy
+from fly_policy import PublishedMotorPolicy,prepare_tflite_policy
 from fly_takeoff import assisted_force
 from fly_unified import create_environment,MotorAdapter,CONTROL_DT
 from fly_walking import external_output
@@ -23,7 +23,7 @@ def run(data_dir,output):
     output=external_output(output)
     output.mkdir(parents=True)
     paths=prepare_data(data_dir)
-    policy=PublishedMotorPolicy(prepare_policy(data_dir,CATALOG,"flight"))
+    policy=PublishedMotorPolicy(prepare_tflite_policy(data_dir,CATALOG,"flight"))
     scene=Environment.load(ROOT/"experiments/fly-walking/grassland-habitat.json")
     cases=[("center",[0,0,.1278],0.),("reported-corner",[6.75,9.65,.1278],0.),
            ("north-outward",[6.75,9.65,.1278],math.pi/2),

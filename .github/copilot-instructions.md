@@ -76,6 +76,17 @@
 
 ## Current state (2026-10-10)
 
+- 2026-10-13: Dependabot remediation pins flight Python 3.11 / TensorFlow CPU
+  2.18.1, Keras 3.15.0 and protobuf 5.29.6; the secure runtime no longer
+  depends on TFP. Sugar pins PyArrow 14.0.1 and setuptools 83.0.0.
+  `FLY_DATA_DIR` is set locally to the existing external data root. The
+  verified legacy flight/walking policies were converted to external float32
+  TFLite mean-action artifacts; 32 synthetic cases per policy pass clipped
+  action parity (max errors 7.64e-7/8.71e-5, 1e-4 limit). One-second
+  converted-policy flight and walking checks pass; full robustness remains
+  unclaimed. The old `.venv-flight` is untouched and used only for trusted
+  one-time offline conversion, not normal runtime.
+
 - Multi-fly milestone: user explicitly chose INDEPENDENTbrain+body and1–3 slider,
   Apply startsnew episode/preserveshabitat+placedobjects; chosefinalstart1fly.
   AddedrealsharedMuJoCo world with1..3 namespacedFlyBodyentities,195disjoint
@@ -517,7 +528,7 @@
   no stimulation/motor wiring;see docs/flight-steering-evidence.md.183tests
   reported5environment skips. No procedural/random turning added.
 - User approved switching live browser to flight-capable single-body backend.
-  Main --backend unified invokes .venv-flight/scripts/fly_flight_app.py at8840;
+  Main --backend unified invokes .venv-flight-py311/scripts/fly_flight_app.py at8840;
   working walking backend retained/default for comparison. Shared plants/
   materials/four saved objects,brain feeding,sparse neuron telemetry/edges,
   threaded observer,FlyBody256px rectilinear eyes and pointer are connected.
@@ -725,7 +736,7 @@
   capped thorax drag, typed motor commands, and exact replay of scheduled
   keyboard perturbations. Gaussian odor/light and range rays are engineered
   approximations, not validated fly sensory physiology.
-- `.venv-flight` isolates pinned FlyBody/dm-control/MuJoCo flight.
+- `.venv-flight-py311` isolates pinned FlyBody/dm-control/MuJoCo flight.
   Supplied wingbeat/reference data were checksum-verified; their GPL-3.0+
   dataset license differs from upstream Apache-2.0 code. Two aerodynamic
   wing geoms and native wing/frequency controls were tested. Published policy

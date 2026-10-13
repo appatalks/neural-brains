@@ -7,7 +7,7 @@ from pathlib import Path
 
 from datasets import ROOT,CATALOG
 from fly_environment import Environment
-from fly_policy import PublishedMotorPolicy,prepare_policy
+from fly_policy import PublishedMotorPolicy,prepare_tflite_policy
 from fly_unified import CONTROL_DT,WALK_EVERY,MotorAdapter,create_environment
 from fly_walking_navigation import WalkingNavigation
 from fly_walking import external_output
@@ -19,7 +19,7 @@ def run(data_dir,output,seconds=12.,disabled=False):
     steps=simulation_steps(seconds,CONTROL_DT)
     output=external_output(output)
     output.mkdir(parents=True)
-    policy=PublishedMotorPolicy(prepare_policy(data_dir,CATALOG,"walking"))
+    policy=PublishedMotorPolicy(prepare_tflite_policy(data_dir,CATALOG,"walking"))
     scene=Environment.load(ROOT/"experiments/fly-walking/grassland-habitat.json")
     (output/"status.json").write_text('{"status":"running"}\n')
     try:

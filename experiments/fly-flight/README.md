@@ -41,16 +41,16 @@ methods review is needed for that claim.
 ## Separate environment and diagnostic
 
 ```bash
-uv venv --python python3.10 .venv-flight
-uv pip install --python .venv-flight/bin/python \
+uv venv --python python3.11 .venv-flight-py311
+uv pip install --python .venv-flight-py311/bin/python \
   -r experiments/fly-flight/requirements.lock.txt
 
-MUJOCO_GL=egl .venv-flight/bin/python scripts/fly_flight.py \
+MUJOCO_GL=egl .venv-flight-py311/bin/python scripts/fly_flight.py \
   --headless --seconds 0.05 --data-dir "$FLY_DATA_DIR" \
   --output-dir "$FLY_DATA_DIR/results/fly-flight/aerodynamics-001"
 ```
 
-Use a new output directory. The flight environment pins FlyBody revision
+Use a new output directory. The flight environment uses Python 3.11 and pins FlyBody revision
 `d015e9bfe441bd90ae431bac24c55cb74bdbce26`, dm-control 1.0.27,
 MuJoCo 3.2.7, and NumPy 1.26.4. It is separate from both neural and
 walking environments.
@@ -75,29 +75,55 @@ references are not visual perception or a reconstructed biological brain.
 ## Run the published controller
 
 ```bash
-MUJOCO_GL=egl .venv-flight/bin/python scripts/fly_flight.py \
+MUJOCO_GL=egl .venv-flight-py311/bin/python scripts/fly_flight.py \
   --headless --controller trained --trajectory 48 --seconds 0.5 --seed 0 \
   --data-dir "$FLY_DATA_DIR" \
   --output-dir "$FLY_DATA_DIR/results/fly-flight/trained-001"
 ```
 
-The SavedModel requires **TensorFlow CPU 2.8.0 / TensorFlow Probability
-0.16.0**, matching upstream serialization. Newer versions failed to register
-its serialized distribution types; we did not invent aliases or substitute
-a different policy. The lock file pins the working versions.
+The secured flight environment pins **TensorFlow CPU 2.18.1**, Keras 3.15.0
+and protobuf 5.29.6. It does not load the source SavedModel directly: its
+historical `Independent_ACTTypeSpec` is not registered by current TensorFlow
+Probability. Instead, create a checksum-bound, float32 TFLite export of each
+policy's mean-action function once, using the previously verified legacy
+environment only for this offline conversion:
+
+```bash
+.venv-flight/bin/python scripts/convert_fly_policy_tflite.py \
+  --data-dir "$FLY_DATA_DIR"
+.venv-flight-py311/bin/python scripts/test_fly_policy_tflite.py \
+  --data-dir "$FLY_DATA_DIR"
+```
+
+The converter validates the original provider archive and refuses to
+overwrite an existing export. The TFLite files, synthetic parity inputs and
+receipts are stored under `$FLY_DATA_DIR/derived`, outside Git. The old
+`.venv-flight` contains vulnerable legacy dependencies; use it only for this
+trusted, local conversion and never as the normal runtime. The application and
+simulation scripts use `.venv-flight-py311`. They have no fallback if the
+verified converted artifacts are missing or invalid.
+
+The secure runtime was parity-checked against the source-version mean actions
+for 32 deterministic synthetic observations per policy. Maximum clipped
+canonical-action differences were **7.64e-7 flight** and **8.71e-5 walking**,
+within the declared 1e-4 threshold. A bounded one-second straight-goal flight
+then completed 5,000 steps with 0.02716 cm RMS position error, 8.89 degree
+maximum orientation error and no floor contacts; a separate one-second
+walking check remained upright (0.9956) with unchanged mass/inertia. These
+are controller-parity and bounded engineering checks, not broad robustness or
+biological validation. The full conversion report and trial outputs remain in
+the external data directory.
 Synchronize an existing environment rather than retaining incompatible
 extra packages:
 
 ```bash
-uv pip sync --python .venv-flight/bin/python experiments/fly-flight/requirements.lock.txt
+uv pip sync --python .venv-flight-py311/bin/python experiments/fly-flight/requirements.lock.txt
 ```
 
 Inference follows the published test wrapper: float32 batched observations,
 the distribution **mean** rather than sampling, canonical clipping, and
-affine conversion to physical action bounds. Our conversion matched the
-upstream formula exactly with single-precision bounds. TensorFlow inference
-uses one intra/inter-op thread, and the combined mean function is compiled.
-There is no fallback controller when the policy fails to load.
+affine conversion to physical action bounds. The TFLite runtime uses one CPU
+thread; the exact source SavedModel remains preserved in the verified archive.
 
 Raw wing/frequency inputs are disabled by default in trained mode.
 W/S/A/D are not game-style navigation keys; pressing them produces an explicit
@@ -112,7 +138,7 @@ construct an **explicit synthetic goal**, rather than pretending short
 scientific recordings cover a longer flight:
 
 ```bash
-.venv-flight/bin/python scripts/fly_flight.py \
+.venv-flight-py311/bin/python scripts/fly_flight.py \
   --controller trained --reference straight-goal \
   --seconds 1 --speed-cm-s 20 --height-cm 1 --yaw-rate-rad-s 0 \
   --data-dir "$FLY_DATA_DIR" \
@@ -167,7 +193,7 @@ Both backends now accept the same
 within the unchanged arena:
 
 ```bash
-.venv-flight/bin/python scripts/fly_flight.py \
+.venv-flight-py311/bin/python scripts/fly_flight.py \
   --controller trained --reference straight-goal \
   --scene experiments/fly-walking/habitat.json \
   --seconds 0.1 --speed-cm-s 20 --height-cm 1 \
@@ -217,7 +243,7 @@ terrain schedules in flight remain unimplemented.
 Run the fixed [benchmark](benchmark.json):
 
 ```bash
-.venv-flight/bin/python scripts/benchmark_fly_flight.py \
+.venv-flight-py311/bin/python scripts/benchmark_fly_flight.py \
   --data-dir "$FLY_DATA_DIR" \
   --output-dir "$FLY_DATA_DIR/results/fly-flight/benchmark-001"
 ```
@@ -255,7 +281,7 @@ floating-point extra steps.
 ## Native viewer and control ports
 
 ```bash
-.venv-flight/bin/python scripts/fly_flight.py \
+.venv-flight-py311/bin/python scripts/fly_flight.py \
   --start-paused --seconds 0.05 --data-dir "$FLY_DATA_DIR" \
   --output-dir "$FLY_DATA_DIR/results/fly-flight/interactive-001"
 ```

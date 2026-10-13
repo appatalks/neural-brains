@@ -14,7 +14,7 @@ from zipfile import ZipFile
 
 from datasets import CATALOG, ROOT
 from fly_policy import (
-    PublishedFlightPolicy, evaluate_tracking, prepare_policy, tracking_errors,
+    PublishedFlightPolicy, evaluate_tracking, prepare_tflite_policy, tracking_errors,
     verified_archive,
 )
 from sim_units import FLIGHT_UNITS, simulation_steps
@@ -245,7 +245,7 @@ def run(
                 f"after its required future-reference window; choose a shorter duration "
                 f"or a longer measured trajectory"
             )
-        policy = PublishedFlightPolicy(prepare_policy(data_dir, CATALOG)) if controller == "trained" else None
+        policy = PublishedFlightPolicy(prepare_tflite_policy(data_dir, CATALOG)) if controller == "trained" else None
         spec = env.action_spec()
         names = spec.name.split("\t")
         if spec.shape != (len(names),):
@@ -511,12 +511,13 @@ def run(
             "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             "dataset_checksum": "md5:bb35ce27e07c4ffbd3d56ff6dec90905",
             "policy_checksum": "md5:12934d5a1c60631a710bc2b6d297d3ce" if policy is not None else None,
+            "policy_runtime": "tflite_mean_action" if policy is not None else None,
+            "policy_artifact_sha256": policy.model_sha256 if policy is not None else None,
             "policy_module_sha256": hashlib.sha256((ROOT / "scripts/fly_policy.py").read_bytes()).hexdigest(),
             "unit_module_sha256": hashlib.sha256((ROOT / "scripts/sim_units.py").read_bytes()).hexdigest(),
         }
         if policy is not None:
             summary["tensorflow"] = importlib.metadata.version("tensorflow-cpu")
-            summary["tensorflow_probability"] = importlib.metadata.version("tensorflow-probability")
             summary["reference_tracking_validated"] = (
                 seconds >= 0.5 and summary["tracking_validation"]["passed"]
             )

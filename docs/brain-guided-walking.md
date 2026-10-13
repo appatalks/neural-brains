@@ -148,7 +148,7 @@ with `--objects` when resuming user configuration; results are not complete
 resumable brain/body checkpoints. No interactive instance is automatically
 started by implementation or tests.
 
-Bounded profile: use `scripts/fly_flight_app.py` in `.venv-flight` with
+Bounded profile: use `scripts/fly_flight_app.py` in `.venv-flight-py311` with
 `--brain-guided-walking --seconds 5.3 --test-walking-control --controlled-test`.
 Causal variants add `--research-walking-control` with `sham`, `source-cut`,
 `output-silence` or `motor-disconnect`.

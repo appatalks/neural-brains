@@ -89,7 +89,7 @@ def main(argv=None):
         if args.native_window or args.schedule:
             parser.error("Unified browser backend does not support native-window or schedules")
         command=[
-            str(ROOT/".venv-flight/bin/python"),str(ROOT/"scripts/fly_flight_app.py"),
+            str(ROOT/".venv-flight-py311/bin/python"),str(ROOT/"scripts/fly_flight_app.py"),
             "--data-dir",str(args.data_dir),"--output-dir",str(args.output_dir),
             "--scene",str(args.scene),"--feeding-config",str(args.feeding_config),
             "--dashboard-port",str(args.dashboard_port),

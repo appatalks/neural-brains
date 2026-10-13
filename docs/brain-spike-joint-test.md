@@ -156,7 +156,7 @@ PACKETS_DIR="$FLY_DATA_DIR/results/walking-paths/packets-$(date +%Y%m%d-%H%M%S)"
 .venv/bin/python scripts/export_bdn2_packets.py \
   --data-dir "$FLY_DATA_DIR" --output-dir "$PACKETS_DIR"
 
-MUJOCO_GL=egl .venv-flight/bin/python scripts/test_brain_joint_relay.py \
+MUJOCO_GL=egl .venv-flight-py311/bin/python scripts/test_brain_joint_relay.py \
   --data-dir "$FLY_DATA_DIR" --packets-dir "$PACKETS_DIR" \
   --output-dir "$FLY_DATA_DIR/results/walking-paths/relay-$(date +%Y%m%d-%H%M%S)"
 ```

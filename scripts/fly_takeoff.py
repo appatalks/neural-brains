@@ -16,7 +16,7 @@ from fly_feeding import BrainClient
 from fly_finger import Looming, Pointer, pointer_target
 from fly_flight import prepare_data
 from fly_flight_arena import make_arena
-from fly_policy import PublishedFlightPolicy, prepare_policy
+from fly_policy import PublishedFlightPolicy, prepare_tflite_policy
 from sim_units import FLIGHT_UNITS, simulation_steps
 from sim_viewer import managed_viewer
 from fly_graphics import ObserverScene
@@ -175,7 +175,7 @@ def run(data_dir, output, seconds, headless, test_approach, arena_half_size, exi
         desired_rotation = data.xmat[body].reshape(3, 3).copy()
         mass = sum(model.body_mass[i] for i in range(model.nbody)
                    if (mj.mj_id2name(model, mj.mjtObj.mjOBJ_BODY, i) or "").startswith("walker"))
-        policy = PublishedFlightPolicy(prepare_policy(data_dir, CATALOG))
+        policy = PublishedFlightPolicy(prepare_tflite_policy(data_dir, CATALOG))
         brain = BrainClient(ROOT / ".venv/bin/python", data_dir, output, 420, takeoff=True)
         (output / "brain-metadata.json").write_text(json.dumps(brain.metadata, indent=2) + "\n")
         model_state_hash = hashlib.sha256(model.body_mass.tobytes() + model.body_inertia.tobytes()).hexdigest()

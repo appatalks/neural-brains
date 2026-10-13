@@ -12,7 +12,7 @@ from fly_feeding import BrainClient
 from fly_flight import prepare_data
 from fly_flight_arena import FlyContactReader
 from fly_neural_landing import NeuralLanding,SCOPE
-from fly_policy import PublishedMotorPolicy,prepare_policy
+from fly_policy import PublishedMotorPolicy,prepare_tflite_policy
 from fly_unified import CONTROL_DT,WALK_EVERY,MotorAdapter,create_environment
 from fly_looming import SphereVision
 from fly_walking import external_output
@@ -41,8 +41,8 @@ def run(data_dir,output,seconds=4.5,seed=420,case="intact",phase=.5):
     (output/"status.json").write_text('{"status":"running"}\n')
     try:
         paths=prepare_data(data_dir)
-        walking=PublishedMotorPolicy(prepare_policy(data_dir,CATALOG,"walking"))
-        flying=PublishedMotorPolicy(prepare_policy(data_dir,CATALOG,"flight"))
+        walking=PublishedMotorPolicy(prepare_tflite_policy(data_dir,CATALOG,"walking"))
+        flying=PublishedMotorPolicy(prepare_tflite_policy(data_dir,CATALOG,"flight"))
         brain=BrainClient(ROOT/".venv/bin/python",data_dir,output,seed,takeoff=True,telemetry=True,
                           dnp10_intervention="silence" if case=="silence" else "sham" if case=="sham" else None,
                           disconnect_visual_output="both" if case=="visual-disconnect" else None)

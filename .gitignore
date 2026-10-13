@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 .venv-biomechanics/
 .venv-flight/
+.venv-flight-py311/
 .venv-vnc/
 .venv-worm/
 .env
