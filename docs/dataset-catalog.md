@@ -27,7 +27,8 @@ working-space allocations before selecting assets.
 | Drosophila melanogaster | `walking-halting-primary-identities-2024` | Primary FlyWire/FANC/MANC type correspondence, with separate specimen namespaces | 25,598-byte publisher Supplementary Table 3 acquired and provider-MD5 verified; parent CC-BY-4.0 verified |
 | Drosophila melanogaster | `bdn2-manc-t1l-minicircuit-20241118` | Reduced male VNC circuit, motor targets and parent volume reference | Three explicitly approved pinned assets acquired and Git-blob verified; license unknown/local evaluation only |
 | Drosophila melanogaster | `bdn2-vnc-pruning-parameters-zenodo22260924` | Published computational pruning parameters, masks and rate outputs | One approved274,050,687-byte archive acquired, provider-MD5 verified; CC-BY-4.0 |
-| Caenorhabditis elegans | `wormwiring-cook2019-corrected2020` | Adult hermaphrodite/male whole-animal nervous-system matrices | Public corrected workbook; checksum/license still to verify |
+| Caenorhabditis elegans | `wormwiring-cook2019-corrected2020` | Adult hermaphrodite/male whole-animal nervous-system matrices | Acquired externally for user-approved local-only evaluation; upstream checksum/license remain unknown; do not redistribute |
+| Caenorhabditis elegans | `celegans-homogenized-calcium-activity-20250508` | Processed calcium-fluorescence traces aggregated from 12 source experiments | Pinned 669,511,381-byte Parquet acquired externally; provider SHA-256 verified; processed-dataset card labels it MIT |
 | Drosophila melanogaster | `flywire-female-brain-783` | Adult female whole brain | Public versioned files, selected upstream checksums |
 | Drosophila melanogaster | `male-cns-v1.0` | Adult male brain plus ventral nerve cord | Public bulk files; all seven selected files have provider sizes/MD5 values |
 | Mus musculus | `microns-cortical-mm3` | Mouse visual cortical volume, not whole brain | CAVE and functional-data portals; no single asset pinned yet |
@@ -46,6 +47,14 @@ These data include chemical synapses, electrical gap junctions, and
 neuromuscular/end-organ connections. Do not collapse them into one ordinary
 directed chemical-synapse graph. Multiple workbook sheets and cell classes
 must be inspected before conversion to simulation tables.
+
+The separate Kato2015 activity rows are measured calcium fluorescence, not
+voltage or action-potential events. The processed table preserves source file,
+worm, and neuron fields, but does not encode sex or stage per recording.
+Preserve source IDs and original time vectors; unmatched or unlabeled cells
+are not evidence of biological silence. The first microscope integration uses
+two bounded recordings only. See the
+[worm microscope guide](worm-microscope.md) for the matching and limitations.
 
 Sources: [WormWiring](https://www.wormwiring.org/),
 [corrected matrices](https://www.wormwiring.org/pages/adjacency.html), and

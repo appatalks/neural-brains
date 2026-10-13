@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>C. elegans microscope preview</title>
+<style>
+:root{color-scheme:dark;--bg:#10151a;--panel:#192127;--line:#34434b;--text:#e7eeee;--muted:#9cadb1;--accent:#8bd5c1}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
+header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;border-bottom:1px solid var(--line);background:#151d22}
+h1{margin:0;font-size:18px;font-weight:650}
+.tag{padding:4px 9px;border:1px solid #79643e;border-radius:999px;color:#efd39c;font-size:12px;white-space:nowrap}
+.head-tools{display:flex;align-items:center;gap:10px}
+header button{white-space:nowrap}
+main{display:grid;grid-template-columns:minmax(0,1fr) 330px;grid-template-rows:auto auto;gap:14px;padding:14px;max-width:1600px;margin:auto}
+.stage,.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.stage{grid-column:1;grid-row:1;min-height:540px;display:flex;flex-direction:column}
+.stagebar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);color:var(--muted)}
+canvas{display:block;width:100%;height:min(72vh,760px);min-height:440px;background:#121918;touch-action:none;cursor:grab}
+canvas.dragging{cursor:grabbing}
+.connectome{grid-column:1;grid-row:2}
+#networkGraph{height:min(65vh,650px);min-height:400px;touch-action:manipulation;cursor:crosshair}
+#traceGraph{height:180px;min-height:180px;cursor:default;touch-action:auto}
+.side{grid-column:2;grid-row:1 / span 2;display:flex;flex-direction:column;gap:14px}
+.panel{padding:14px}
+h2{font-size:14px;margin:0 0 12px}
+.network-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.network-heading h2{margin-bottom:4px}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+button,select,input{font:inherit}
+button,select{color:var(--text);background:#222f35;border:1px solid #40545b;border-radius:6px;padding:7px 10px}
+button{cursor:pointer}
+button:hover{border-color:var(--accent)}
+label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:12px 0;color:var(--muted)}
+label select{margin-left:auto}
+input[type=range]{width:115px;accent-color:var(--accent)}
+.readout{display:grid;grid-template-columns:1fr auto;gap:7px 12px;color:var(--muted)}
+.readout strong{color:var(--text);font-weight:550}
+.note{margin:0;color:var(--muted);font-size:12px}
+.warning{padding:10px;border-left:3px solid #d5aa5a;background:#29261f;color:#ead9b7;border-radius:3px}
+.instructions{margin:0;padding-left:18px;color:var(--muted)}
+.instructions li+li{margin-top:5px}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin:9px 2px;color:var(--muted);font-size:12px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:50%}
+.swatch.chemical{background:#efa05e}
+.swatch.electrical{background:#61c7d7}
+.swatch.activity{background:#f4df74}
+.swatch.unobserved{background:#68777d}
+.swatch.relay{background:#ce8cff}
+.status{min-height:20px;color:var(--muted)}
+:root:fullscreen body{height:100vh;overflow:auto}
+:root:fullscreen main{max-width:none;width:100%;padding:10px;grid-template-columns:minmax(0,1fr) 330px}
+:root:fullscreen .stage{min-height:0}
+:root:fullscreen #field{height:54vh;min-height:300px}
+:root:fullscreen #networkGraph{height:48vh;min-height:300px}
+:root:fullscreen .side{max-height:calc(100vh - 70px);overflow-y:auto}
+@media(max-width:780px){main{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto;padding:8px}.stage,.connectome,.side{grid-column:1;grid-row:auto}.side{display:flex}.stage{min-height:0}#field{height:62vh;min-height:350px}#networkGraph{height:62vh;min-height:350px}header{padding:12px}.tag{white-space:normal;text-align:center}}
+@media(max-width:780px){:root:fullscreen main{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto}:root:fullscreen .side{max-height:none;overflow:visible}}
+</style>
+</head>
+<body>
+<header>
+  <h1>C. elegans · microscope environment preview</h1>
+  <div class="head-tools">
+    <button id="fullscreenToggle" type="button">Enter fullscreen</button>
+    <span id="fullscreenStatus" class="note status" role="status" aria-live="polite"></span>
+    <span class="tag">Structural wiring + measured calcium · touch relay assumed</span>
+  </div>
+</header>
+<main>
+  <section class="stage" aria-label="Microscope field">
+    <div class="stagebar">
+      <span>Transmitted-light view · illustrative agar plate and kinematic body</span>
+      <span><span id="runState">Running</span> · <strong id="movementState">Kinematic forward</strong></span>
+    </div>
+    <canvas id="field" aria-label="Animated illustrative worm in a microscope field"></canvas>
+    <div class="controls" style="padding:10px 14px">
+      <button id="toggle" type="button">Pause</button>
+      <button id="reset" type="button">Reset view and motion</button>
+      <button id="center" type="button">Center specimen</button>
+    </div>
+  </section>
+  <section class="panel connectome" aria-label="Connectome graph">
+    <div class="network-heading">
+      <div>
+        <h2>Cell connectivity · live activity map</h2>
+        <p class="note">Exact Cook 2019 labels/edges; switch between measured calcium and the assumed touch relay. Positions are not anatomical.</p>
+      </div>
+      <label for="edgeFilter">Edge layer
+        <select id="edgeFilter">
+          <option value="focus">Selected cell pathways</option>
+          <option value="chemical">All chemical · directed</option>
+          <option value="electrical_gap_junction">All electrical gap junctions</option>
+          <option value="all">All edge types</option>
+        </select>
+      </label>
+      <label for="activityLayer">Activity map
+        <select id="activityLayer">
+          <option value="calcium">Recorded calcium fluorescence</option>
+          <option value="touch">Modeled touch relay · not spikes</option>
+        </select>
+      </label>
+    </div>
+    <canvas id="networkGraph" aria-label="Schematic graph of measured cell connections"></canvas>
+    <div class="legend">
+      <span><i class="swatch chemical"></i>Chemical · arrow direction</span>
+      <span><i class="swatch electrical"></i>Electrical · undirected</span>
+      <span><i class="swatch activity"></i>Recorded calcium trace</span>
+      <span><i class="swatch relay"></i>Assumed touch relay</span>
+      <span><i class="swatch unobserved"></i>No matched trace</span>
+    </div>
+    <p class="note">Default view isolates edges touching the selected cell. Edge width reflects EM serial-section counts, not conductance. Node tint is normalized within each cell only; use the trace plot for source values.</p>
+    <p id="networkStatus" class="note status" aria-live="polite">Loading pinned connectome and recordings…</p>
+    <p id="relayStatus" class="note status" aria-live="polite">The touch relay map is inactive until an explicit pulse.</p>
+  </section>
+  <aside class="side">
+    <section class="panel">
+      <h2>Microscope controls</h2>
+      <label for="objective">Objective
+        <select id="objective">
+          <option value="1" selected>4× · overview</option>
+          <option value="2.5">10× · medium</option>
+          <option value="5">20× · close-up</option>
+          <option value="" disabled>Custom zoom</option>
+        </select>
+      </label>
+      <label for="illumination">Illumination <input id="illumination" type="range" min="25" max="100" value="78"></label>
+      <label><span>Body landmarks (schematic)</span><input id="landmarks" type="checkbox" checked></label>
+      <p class="note">Drag to pan; scroll to zoom. Camera controls do not steer or alter the specimen motion.</p>
+    </section>
+    <section class="panel">
+      <h2>Preview state</h2>
+      <div class="readout">
+        <span>Simulation time</span><strong id="time">0.00 s</strong>
+        <span>Body motion</span><strong>Kinematic only</strong>
+        <span>Connectome</span><strong id="connectomeSummary">Loading</strong>
+        <span>Recorded activity</span><strong id="activitySummary">Loading</strong>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Evoked anterior touch</h2>
+      <div class="controls">
+        <button id="touchAnterior" type="button" disabled>Apply anterior touch pulse</button>
+      </div>
+      <p id="touchStatus" class="note status" aria-live="polite">No stimulus applied. There is no automatic or spontaneous neural drive.</p>
+      <p class="warning">Assumed surrogate: ALML/ALMR receive the evoked pulse; chemical edges relay positively, gap edges relay bidirectionally, and each hop attenuates by 0.5. AVD→VA/DA and AVB→VB/DB identify backward/forward motor groups. A winning backward readout reverses the kinematic wave for 1.5 simulation seconds. These are not measured conductances, spikes, timing, or calibrated body forces.</p>
+    </section>
+    <section class="panel">
+      <h2>Recorded calcium playback</h2>
+      <label for="recordingPicker">Recording
+        <select id="recordingPicker" disabled></select>
+      </label>
+      <div class="controls">
+        <button id="playRecording" type="button" disabled>Play recording</button>
+        <button id="firstSample" type="button" disabled>First sample</button>
+      </div>
+      <label for="sampleSlider">Recorded sample order
+        <input id="sampleSlider" type="range" min="0" max="1" value="0" step="1" disabled>
+      </label>
+      <div class="readout">
+        <span>Sample</span><strong id="sampleStatus">Not loaded</strong>
+        <span>Source timestamp</span><strong id="sourceTime">Not loaded</strong>
+        <span>Matched cells</span><strong id="matchedCells">Not loaded</strong>
+      </div>
+      <p class="note">Source timestamps contain repeated values. Playback follows original sample order, shows each stored timestamp, and does not interpolate. The 5-sample/s UI cadence is display pacing, not an experimental clock.</p>
+    </section>
+    <section class="panel">
+      <h2>Inspect a cell</h2>
+      <label for="cellPicker">Cell label
+        <select id="cellPicker" disabled></select>
+      </label>
+      <p id="cellStatus" class="note status" aria-live="polite">Select a graph node to inspect its connections and trace.</p>
+      <canvas id="traceGraph" aria-label="Recorded calcium fluorescence trace for the selected cell"></canvas>
+    </section>
+    <section class="panel">
+      <p class="warning">Recorded calcium fluorescence is not voltage or spike data and never drives movement. Touch-triggered relay activation is a separate, assumed topology surrogate over the measured graph. Unmatched cells are unobserved, not silent. The body remains kinematic, not biomechanical.</p>
+    </section>
+    <section class="panel">
+      <h2>Controls</h2>
+      <ul class="instructions">
+        <li>Click a graph node or choose a cell label to inspect it.</li>
+        <li>Filter directed chemical vs undirected electrical edges.</li>
+        <li>Scrub the measured recording by sample order.</li>
+        <li>Apply an explicit anterior touch pulse to test the assumed relay.</li>
+        <li>Camera controls affect only the microscope view.</li>
+      </ul>
+    </section>
+  </aside>
+</main>
+<script>
+(() => {
+  "use strict";
+  const canvas = document.getElementById("field");
+  const ctx = canvas.getContext("2d");
+  const networkCanvas = document.getElementById("networkGraph");
+  const networkCtx = networkCanvas.getContext("2d");
+  const traceCanvas = document.getElementById("traceGraph");
+  const traceCtx = traceCanvas.getContext("2d");
+  const runningLabel = document.getElementById("runState");
+  const timeLabel = document.getElementById("time");
+  const objective = document.getElementById("objective");
+  const illumination = document.getElementById("illumination");
+  const landmarks = document.getElementById("landmarks");
+  const toggle = document.getElementById("toggle");
+  const recordingPicker = document.getElementById("recordingPicker");
+  const sampleSlider = document.getElementById("sampleSlider");
+  const networkStatus = document.getElementById("networkStatus");
+  const cellStatus = document.getElementById("cellStatus");
+  const cellPicker = document.getElementById("cellPicker");
+  const touchButton = document.getElementById("touchAnterior");
+  const touchStatus = document.getElementById("touchStatus");
+  const movementStateLabel = document.getElementById("movementState");
+  const activityLayer = document.getElementById("activityLayer");
+  const relayStatus = document.getElementById("relayStatus");
+  const fullscreenButton = document.getElementById("fullscreenToggle");
+  const fullscreenStatus = document.getElementById("fullscreenStatus");
+  const plateRadius = 3;
+  const assumedReverseSeconds = 1.5;
+  const relayHopUiSeconds = 0.12;
+  let paused = false;
+  let simTime = 0;
+  let headPhase = 0;
+  let bodyWavePhase = 0;
+  let zoom = Number(objective.value);
+  let panX = 0;
+  let panY = 0;
+  let drag = null;
+  let lastFrame = performance.now();
+  let model = null;
+  let recording = null;
+  let selectedCell = null;
+  let sampleIndex = 0;
+  let graphPositions = new Map();
+  let activityTimer = null;
+  let touchRelay = null;
+  let touchRelayStartSimTime = null;
+  let reverseStartSimTime = Infinity;
+  let reverseUntilSimTime = -Infinity;
+
+  function resizeCanvas(target) {
+    const rect = target.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    target.width = Math.max(1, Math.round(rect.width * dpr));
+    target.height = Math.max(1, Math.round(rect.height * dpr));
+  }
+
+  function resize() {
+    resizeCanvas(canvas);
+    resizeCanvas(networkCanvas);
+    resizeCanvas(traceCanvas);
+    drawNetwork();
+    drawTrace();
+  }
+
+  function worldPoint(x, y, scale, cx, cy) {
+    return [cx + (x - panX) * scale, cy - (y - panY) * scale];
+  }
+
+  function drawWorm(scale, cx, cy) {
+    const {headX, headY, angle, direction} = wormPose();
+    const points = [];
+    const count = 100;
+    for (let i = 0; i <= count; i++) {
+      const u = i / count;
+      const wave = 0.13 * Math.sin(2 * Math.PI * (1.45 * u) + bodyWavePhase - 1.3 * u)
+        * Math.sin(Math.PI * u);
+      const localX = -u * 1.05;
+      const x = headX + localX * Math.cos(angle) - wave * Math.sin(angle);
+      const y = headY + localX * Math.sin(angle) + wave * Math.cos(angle);
+      const width = (0.047 * (1 - 0.70 * u)) * Math.min(1, 0.16 + 8 * u, 0.16 + 8 * (1 - u));
+      points.push({x, y, width});
+    }
+    const left = [];
+    const right = [];
+    for (let i = 0; i < points.length; i++) {
+      const before = points[Math.max(0, i - 1)];
+      const after = points[Math.min(points.length - 1, i + 1)];
+      const dx = after.x - before.x;
+      const dy = after.y - before.y;
+      const length = Math.hypot(dx, dy) || 1;
+      const normalX = -dy / length;
+      const normalY = dx / length;
+      const point = points[i];
+      left.push(worldPoint(point.x + normalX * point.width, point.y + normalY * point.width, scale, cx, cy));
+      right.push(worldPoint(point.x - normalX * point.width, point.y - normalY * point.width, scale, cx, cy));
+    }
+    ctx.beginPath();
+    ctx.moveTo(...left[0]);
+    for (const point of left.slice(1)) ctx.lineTo(...point);
+    for (const point of right.reverse()) ctx.lineTo(...point);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(233, 180, 163, 0.92)";
+    ctx.strokeStyle = "rgba(104, 59, 58, 0.85)";
+    ctx.lineWidth = Math.max(1, scale * 0.009);
+    ctx.fill();
+    ctx.stroke();
+
+    const head = worldPoint(headX, headY, scale, cx, cy);
+    ctx.beginPath();
+    ctx.arc(head[0], head[1], Math.max(2, scale * 0.025), 0, Math.PI * 2);
+    ctx.fillStyle = "#fff0dc";
+    ctx.fill();
+    if (landmarks.checked) {
+      ctx.font = `${Math.max(11, Math.min(15, scale * 0.055))}px system-ui`;
+      ctx.fillStyle = "#f1ddd2";
+      ctx.fillText("head", head[0] + 10, head[1] - 18);
+      const tail = worldPoint(points[points.length - 1].x, points[points.length - 1].y, scale, cx, cy);
+      ctx.fillText("tail", tail[0] - 28, tail[1] + 28);
+    }
+  }
+
+  function wormPose() {
+    const direction = simTime >= reverseStartSimTime && simTime < reverseUntilSimTime ? -1 : 1;
+    const headAngle = headPhase;
+    return {
+      headX: 0.58 * Math.cos(headAngle),
+      headY: 0.58 * Math.sin(headAngle),
+      angle: headAngle + Math.PI / 2,
+      direction,
+    };
+  }
+
+  function draw() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = canvas.width / dpr;
+    const height = canvas.height / dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    const baseScale = Math.min(width, height) / (2 * plateRadius + 0.35);
+    const scale = baseScale * zoom;
+    const cx = width / 2;
+    const cy = height / 2;
+    const [dishX, dishY] = worldPoint(0, 0, scale, cx, cy);
+    const dishPx = plateRadius * scale;
+
+    ctx.fillStyle = "#101918";
+    ctx.fillRect(0, 0, width, height);
+    const gradient = ctx.createRadialGradient(dishX, dishY, dishPx * 0.05, dishX, dishY, dishPx);
+    const light = Number(illumination.value) / 100;
+    gradient.addColorStop(0, `rgba(157, 181, 154, ${0.20 * light})`);
+    gradient.addColorStop(0.78, `rgba(104, 133, 111, ${0.23 * light})`);
+    gradient.addColorStop(1, "rgba(45, 62, 57, 0.92)");
+    ctx.beginPath();
+    ctx.arc(dishX, dishY, dishPx, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(201, 222, 208, 0.55)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(dishX, dishY, dishPx - 2, 0, Math.PI * 2);
+    ctx.clip();
+    for (let i = 0; i < 180; i++) {
+      const a = i * 2.399963;
+      const r = plateRadius * Math.sqrt(((i * 37) % 181) / 181);
+      const [x, y] = worldPoint(r * Math.cos(a), r * Math.sin(a), scale, cx, cy);
+      ctx.fillStyle = `rgba(215, 226, 196, ${0.025 + (i % 4) * 0.009})`;
+      ctx.fillRect(x, y, 2, 2);
+    }
+    drawWorm(scale, cx, cy);
+    ctx.restore();
+
+    const barLengthMm = Math.min(1, width * 0.34 / scale);
+    const barLength = barLengthMm * scale;
+    ctx.strokeStyle = "#f0f3e8";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(22, height - 26);
+    ctx.lineTo(22 + barLength, height - 26);
+    ctx.moveTo(22, height - 31);
+    ctx.lineTo(22, height - 21);
+    ctx.moveTo(22 + barLength, height - 31);
+    ctx.lineTo(22 + barLength, height - 21);
+    ctx.stroke();
+    ctx.fillStyle = "#f0f3e8";
+    ctx.font = "12px system-ui";
+    ctx.fillText(`${barLengthMm.toPrecision(2)} mm (illustrative)`, 22, height - 38);
+  }
+
+  function activeTraces() {
+    return new Map((recording?.traces || []).map(trace => [trace.cell, trace]));
+  }
+
+  function traceRange(values) {
+    let min = Infinity;
+    let max = -Infinity;
+    for (const value of values) {
+      min = Math.min(min, value);
+      max = Math.max(max, value);
+    }
+    return [min, max];
+  }
+
+  function currentRelayHop() {
+    if (!touchRelay || touchRelayStartSimTime === null) return -1;
+    const elapsed = Math.max(0, simTime - touchRelayStartSimTime);
+    return Math.min(touchRelay.max_hop, Math.floor(elapsed / relayHopUiSeconds));
+  }
+
+  function updateRelayStatus() {
+    if (activityLayer.value === "calcium") {
+      relayStatus.textContent = recording
+        ? `Measured fluorescence overlay: ${recording.recording_id}. It is not propagated through the graph.`
+        : "Measured calcium traces are not loaded.";
+      return;
+    }
+    if (!touchRelay) {
+      relayStatus.textContent = "No relay event yet. The modeled network generates no spontaneous activity.";
+      return;
+    }
+    const hop = currentRelayHop();
+    const activeCount = touchRelay.activation.filter(item => item.hop <= hop).length;
+    relayStatus.textContent =
+      `Assumed relay hop ${Math.max(0, hop)} / ${touchRelay.max_hop}; ${activeCount} cells active in this event; ` +
+      `command ${touchRelay.movement_command}. The 0.12 s/hop display pace is not biological timing.`;
+  }
+
+  function drawNetwork() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = networkCanvas.width / dpr;
+    const height = networkCanvas.height / dpr;
+    networkCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    networkCtx.clearRect(0, 0, width, height);
+    networkCtx.fillStyle = "#11191d";
+    networkCtx.fillRect(0, 0, width, height);
+    if (!model) {
+      networkCtx.fillStyle = "#a9b8bc";
+      networkCtx.font = "14px system-ui";
+      networkCtx.fillText("Connectome/activity data not loaded", 18, 28);
+      return;
+    }
+
+    const nodes = model.connectome.nodes;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.max(10, Math.min(width, height) * 0.44);
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    graphPositions = new Map(nodes.map((cell, index) => {
+      const distance = radius * Math.sqrt((index + 0.5) / nodes.length);
+      const angle = index * goldenAngle;
+      return [cell, [centerX + Math.cos(angle) * distance, centerY + Math.sin(angle) * distance]];
+    }));
+
+    const traces = activeTraces();
+    const touchMode = activityLayer.value === "touch";
+    const currentHop = touchMode ? currentRelayHop() : -1;
+    const relayActivation = new Map((touchRelay?.activation || []).map(item => [item.cell, item]));
+    const activeRelayCells = new Set(
+      (touchRelay?.activation || []).filter(item => item.hop <= currentHop).map(item => item.cell)
+    );
+    const relayEdges = new Map((touchRelay?.relay_edges || []).map(edge => [
+      JSON.stringify([edge.kind, edge.source, edge.target]), edge,
+    ]));
+    const selectedTouchEdges = new Set((touchRelay?.highlight_edges || []).map(
+      edge => JSON.stringify([edge.kind, edge.source, edge.target])
+    ));
+    const edgeFilter = document.getElementById("edgeFilter").value;
+    for (const edge of model.connectome.edges) {
+      const edgeKey = JSON.stringify([edge.kind, edge.source, edge.target]);
+      const selectedEdge = selectedCell && (edge.source === selectedCell || edge.target === selectedCell);
+      const relayEdge = relayEdges.get(edgeKey);
+      if (touchMode) {
+        if (!relayEdge || relayEdge.hop > currentHop) continue;
+        if (edgeFilter !== "focus" && edgeFilter !== "all" && edge.kind !== edgeFilter) continue;
+      } else {
+        if (edgeFilter === "focus" && !selectedEdge) continue;
+        if (edgeFilter !== "focus" && edgeFilter !== "all" && edge.kind !== edgeFilter) continue;
+      }
+      const start = graphPositions.get(edge.source);
+      const end = graphPositions.get(edge.target);
+      if (!start || !end) continue;
+      const selectedTouchEdge = touchMode && selectedTouchEdges.has(edgeKey);
+      const muted = !touchMode && edgeFilter !== "focus" && selectedCell && !selectedEdge;
+      networkCtx.globalAlpha = touchMode
+        ? (selectedTouchEdge ? 1 : (relayEdge.hop === currentHop ? 0.95 : 0.45))
+        : (muted ? 0.08 : (edge.kind === "chemical" ? 0.48 : 0.72));
+      networkCtx.strokeStyle = touchMode
+        ? (selectedTouchEdge ? "#f1c9ff" : (edge.kind === "chemical" ? "#ce8cff" : "#74d9e9"))
+        : (edge.kind === "chemical" ? "#efa05e" : "#61c7d7");
+      networkCtx.fillStyle = networkCtx.strokeStyle;
+      networkCtx.lineWidth = touchMode
+        ? (selectedTouchEdge ? 2.7 : 1.8)
+        : Math.min(1.8, 0.45 + Math.log1p(edge.weight_sections) * 0.16);
+      networkCtx.beginPath();
+      if (edge.source === edge.target) {
+        networkCtx.arc(start[0] + 5, start[1] - 5, 5, 0, 2 * Math.PI);
+        networkCtx.stroke();
+        networkCtx.globalAlpha = 1;
+        continue;
+      }
+      const dx = end[0] - start[0];
+      const dy = end[1] - start[1];
+      const length = Math.hypot(dx, dy) || 1;
+      const ux = dx / length;
+      const uy = dy / length;
+      const targetX = end[0] - ux * 5;
+      const targetY = end[1] - uy * 5;
+      networkCtx.moveTo(start[0], start[1]);
+      networkCtx.lineTo(targetX, targetY);
+      networkCtx.stroke();
+      if (edge.kind === "chemical") {
+        const arrowSize = 3.2;
+        networkCtx.beginPath();
+        networkCtx.moveTo(targetX, targetY);
+        networkCtx.lineTo(targetX - ux * arrowSize - uy * arrowSize * 0.7, targetY - uy * arrowSize + ux * arrowSize * 0.7);
+        networkCtx.lineTo(targetX - ux * arrowSize + uy * arrowSize * 0.7, targetY - uy * arrowSize - ux * arrowSize * 0.7);
+        networkCtx.closePath();
+        networkCtx.fill();
+      }
+      networkCtx.globalAlpha = 1;
+    }
+
+    for (const [cell, point] of graphPositions) {
+      const trace = traces.get(cell);
+      const relay = relayActivation.get(cell);
+      let fill = "#68777d";
+      if (touchMode && relay && relay.hop <= currentHop) {
+        const lightness = Math.round(34 + relay.level * 46);
+        fill = `hsl(275 82% ${lightness}%)`;
+      } else if (!touchMode && trace) {
+        const [min, max] = traceRange(trace.calcium);
+        const value = trace.calcium[sampleIndex] ?? min;
+        const fraction = max > min ? (value - min) / (max - min) : 0.5;
+        const red = Math.round(48 + 206 * fraction);
+        const green = Math.round(98 + 125 * fraction);
+        const blue = Math.round(111 - 29 * fraction);
+        fill = `rgb(${red},${green},${blue})`;
+      }
+      networkCtx.beginPath();
+      networkCtx.arc(point[0], point[1], cell === selectedCell ? 5.7 : (trace ? 4.2 : 3), 0, 2 * Math.PI);
+      networkCtx.fillStyle = fill;
+      networkCtx.fill();
+      networkCtx.lineWidth = cell === selectedCell ? 2 : 0.6;
+      networkCtx.strokeStyle = cell === selectedCell ? "#fff0a8" : "#0c1114";
+      networkCtx.stroke();
+      if (touchMode && activeRelayCells.has(cell)) {
+        networkCtx.beginPath();
+        networkCtx.arc(point[0], point[1], 8.2, 0, 2 * Math.PI);
+        networkCtx.strokeStyle = "#ce8cff";
+        networkCtx.lineWidth = 1.8;
+        networkCtx.stroke();
+      }
+      if (cell === selectedCell) {
+        networkCtx.fillStyle = "#f2f3ed";
+        networkCtx.font = "12px system-ui";
+        networkCtx.fillText(cell, point[0] + 9, point[1] - 8);
+      }
+    }
+    networkCtx.globalAlpha = 1;
+  }
+
+  function drawTrace() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = traceCanvas.width / dpr;
+    const height = traceCanvas.height / dpr;
+    traceCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    traceCtx.clearRect(0, 0, width, height);
+    traceCtx.fillStyle = "#11191d";
+    traceCtx.fillRect(0, 0, width, height);
+    const trace = recording?.traces.find(item => item.cell === selectedCell);
+    if (!trace) {
+      traceCtx.fillStyle = "#a9b8bc";
+      traceCtx.font = "12px system-ui";
+      traceCtx.fillText("No matched trace for this cell in the selected recording", 10, 24);
+      return;
+    }
+    const values = trace.calcium;
+    const [min, max] = traceRange(values);
+    const left = 38;
+    const right = Math.max(left + 1, width - 10);
+    const top = 12;
+    const bottom = height - 24;
+    traceCtx.strokeStyle = "#8bd5c1";
+    traceCtx.lineWidth = 1.5;
+    traceCtx.beginPath();
+    for (let i = 0; i < values.length; i++) {
+      const x = left + (right - left) * i / Math.max(1, values.length - 1);
+      const y = bottom - (max > min ? (values[i] - min) / (max - min) : 0.5) * (bottom - top);
+      if (i === 0) traceCtx.moveTo(x, y);
+      else traceCtx.lineTo(x, y);
+    }
+    traceCtx.stroke();
+    const markerX = left + (right - left) * sampleIndex / Math.max(1, values.length - 1);
+    traceCtx.strokeStyle = "#f4df74";
+    traceCtx.beginPath();
+    traceCtx.moveTo(markerX, top);
+    traceCtx.lineTo(markerX, bottom);
+    traceCtx.stroke();
+    traceCtx.fillStyle = "#a9b8bc";
+    traceCtx.font = "10px system-ui";
+    traceCtx.fillText(max.toPrecision(3), 3, top + 4);
+    traceCtx.fillText(min.toPrecision(3), 3, bottom);
+    traceCtx.fillText("source fluorescence · sample order", left, height - 6);
+  }
+
+  function updateCellStatus() {
+    if (!model || !selectedCell) return;
+    const edges = model.connectome.edges;
+    const chemicalIn = edges.filter(edge => edge.kind === "chemical" && edge.target === selectedCell).length;
+    const chemicalOut = edges.filter(edge => edge.kind === "chemical" && edge.source === selectedCell).length;
+    const electrical = edges.filter(
+      edge => edge.kind === "electrical_gap_junction" && (edge.source === selectedCell || edge.target === selectedCell)
+    ).length;
+    const trace = recording?.traces.find(item => item.cell === selectedCell);
+    const value = trace ? trace.calcium[sampleIndex] : null;
+    const activityText = trace
+      ? `matched calcium value ${Number(value).toPrecision(5)} at sample ${sampleIndex + 1}`
+      : "no matched trace in this recording";
+    cellStatus.textContent = `${selectedCell} · chemical in ${chemicalIn}, out ${chemicalOut} · electrical neighbors ${electrical} · ${activityText}`;
+  }
+
+  function selectCell(cell) {
+    selectedCell = cell;
+    if (cellPicker.value !== cell) cellPicker.value = cell;
+    updateCellStatus();
+    drawNetwork();
+    drawTrace();
+  }
+
+  function populateCellPicker() {
+    const traces = activeTraces();
+    const previous = selectedCell;
+    cellPicker.replaceChildren();
+    for (const cell of model.connectome.nodes) {
+      const option = document.createElement("option");
+      option.value = cell;
+      option.textContent = traces.has(cell) ? `${cell} · recorded` : `${cell} · no matched trace`;
+      cellPicker.append(option);
+    }
+    cellPicker.disabled = false;
+    selectedCell = traces.has(previous) ? previous : recording.traces[0].cell;
+    cellPicker.value = selectedCell;
+  }
+
+  function updateRecordingSample() {
+    if (!recording) return;
+    sampleIndex = Number(sampleSlider.value);
+    document.getElementById("sampleStatus").textContent =
+      `${sampleIndex + 1} / ${recording.sample_count}`;
+    document.getElementById("sourceTime").textContent =
+      `${recording.time_s[sampleIndex].toFixed(3)} s`;
+    document.getElementById("matchedCells").textContent =
+      `${recording.matched_trace_count} matched · ${recording.unmatched_labeled_count} unmatched labels · ${recording.unlabeled_trace_rows} unlabeled rows`;
+    updateCellStatus();
+    drawNetwork();
+    drawTrace();
+  }
+
+  function setRecording(recordingId) {
+    recording = model.activity.recordings.find(item => item.recording_id === recordingId);
+    if (!recording) throw new Error(`Unknown recording: ${recordingId}`);
+    sampleIndex = 0;
+    sampleSlider.min = "0";
+    sampleSlider.max = String(recording.sample_count - 1);
+    sampleSlider.value = "0";
+    sampleSlider.disabled = false;
+    populateCellPicker();
+    const recordLabel = `${recording.raw_data_file} · ${recording.worm}`;
+    networkStatus.textContent =
+      `${model.connectome.sex} connectome: ${model.connectome.nodes.length} cells, ` +
+      `${model.connectome.edge_counts.chemical_directed} directed chemical links, ` +
+      `${model.connectome.edge_counts.electrical_gap_undirected} undirected gap links; ` +
+      `${model.connectome.edge_counts.chemical_self_entries_retained} chemical self entries retained; ` +
+      `${model.connectome.edge_counts.electrical_diagonal_entries_excluded} gap diagonal entries excluded from edges. ` +
+      `Selected trace source: ${recordLabel}; recording sex/stage is not encoded.`;
+    document.getElementById("activitySummary").textContent =
+      `${recording.matched_trace_count} matched labels`;
+    document.getElementById("playRecording").disabled = false;
+    document.getElementById("firstSample").disabled = false;
+    updateRecordingSample();
+    updateRelayStatus();
+  }
+
+  function loadModel(data) {
+    model = data;
+    document.getElementById("connectomeSummary").textContent =
+      `${data.connectome.sex} · ${data.connectome.nodes.length} cells`;
+    document.getElementById("activitySummary").textContent =
+      `${data.activity.recordings.length} recordings`;
+    recordingPicker.replaceChildren();
+    for (const item of data.activity.recordings) {
+      const option = document.createElement("option");
+      option.value = item.recording_id;
+      option.textContent = item.recording_id;
+      recordingPicker.append(option);
+    }
+    recordingPicker.disabled = false;
+    touchButton.disabled = false;
+    setRecording(data.activity.recordings[0].recording_id);
+    updateRelayStatus();
+  }
+
+  function frame(now) {
+    const elapsed = Math.min((now - lastFrame) / 1000, 0.1);
+    lastFrame = now;
+    if (!paused) {
+      simTime += elapsed;
+      const direction = simTime >= reverseStartSimTime && simTime < reverseUntilSimTime ? -1 : 1;
+      headPhase += elapsed * 0.11 * direction;
+      bodyWavePhase += elapsed * 4.2 * direction;
+    }
+    draw();
+    timeLabel.textContent = `${simTime.toFixed(2)} s`;
+    const reverseActive = simTime >= reverseStartSimTime && simTime < reverseUntilSimTime;
+    const reverseRemaining = reverseUntilSimTime - simTime;
+    if (reverseActive) movementStateLabel.textContent = `Assumed reverse · ${reverseRemaining.toFixed(1)} s`;
+    else if (touchRelay && touchRelay.movement_command === "backward" && simTime < reverseStartSimTime) {
+      movementStateLabel.textContent = `Relay pending · ${Math.max(0, reverseStartSimTime - simTime).toFixed(1)} s`;
+    } else {
+      movementStateLabel.textContent = "Kinematic forward";
+    }
+    updateRelayStatus();
+    if (
+      activityLayer.value === "touch"
+      && touchRelay
+      && simTime <= touchRelayStartSimTime + touchRelay.max_hop * relayHopUiSeconds
+    ) {
+      drawNetwork();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  toggle.addEventListener("click", () => {
+    paused = !paused;
+    toggle.textContent = paused ? "Resume" : "Pause";
+    runningLabel.textContent = paused ? "Paused" : "Running";
+  });
+  document.getElementById("reset").addEventListener("click", () => {
+    simTime = 0;
+    headPhase = 0;
+    bodyWavePhase = 0;
+    reverseStartSimTime = Infinity;
+    reverseUntilSimTime = -Infinity;
+    touchRelay = null;
+    touchRelayStartSimTime = null;
+    activityLayer.value = "calcium";
+    touchStatus.textContent = "No stimulus applied. There is no automatic or spontaneous neural drive.";
+    movementStateLabel.textContent = "Kinematic forward";
+    objective.value = "1";
+    zoom = 1;
+    panX = 0;
+    panY = 0;
+    drawNetwork();
+    updateRelayStatus();
+  });
+  document.getElementById("center").addEventListener("click", () => {
+    const {headX, headY} = wormPose();
+    panX = headX;
+    panY = headY;
+  });
+  objective.addEventListener("change", () => { zoom = Number(objective.value); });
+  touchButton.addEventListener("click", async () => {
+    touchButton.disabled = true;
+    touchStatus.textContent = "Relaying explicit ALML/ALMR touch pulse through the structural graph…";
+    try {
+      const response = await fetch("/api/stimulus", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({kind: "anterior_touch"}),
+      });
+      if (!response.ok) throw new Error(`stimulus endpoint returned HTTP ${response.status}`);
+      touchRelay = await response.json();
+      touchRelayStartSimTime = simTime;
+      if (touchRelay.movement_command === "backward") {
+        if (!Number.isInteger(touchRelay.movement_hops)) {
+          throw new Error("touch relay did not return a valid motor-path depth");
+        }
+        reverseStartSimTime = simTime + touchRelay.movement_hops * relayHopUiSeconds;
+        reverseUntilSimTime = reverseStartSimTime + assumedReverseSeconds;
+      } else {
+        reverseStartSimTime = Infinity;
+        reverseUntilSimTime = -Infinity;
+      }
+      activityLayer.value = "touch";
+      const backwardRoute = touchRelay.backward_motor_routes[0]?.cells.join(" → ") || "no backward path";
+      const forwardRoute = touchRelay.forward_motor_routes[0]?.cells.join(" → ") || "no forward path";
+      touchStatus.textContent =
+        `Command: ${touchRelay.movement_command}; backward score ${touchRelay.backward_score.toFixed(3)}, ` +
+        `forward score ${touchRelay.forward_score.toFixed(3)}. Example routes: ${backwardRoute} / ${forwardRoute}. ` +
+        "Relay scores and 1.5 s reversal are assumed, not measured neural dynamics.";
+      updateRelayStatus();
+      drawNetwork();
+    } catch (error) {
+      touchStatus.textContent = `Touch relay failed: ${error.message}`;
+      console.error(touchStatus.textContent);
+    } finally {
+      touchButton.disabled = false;
+    }
+  });
+  canvas.addEventListener("pointerdown", event => {
+    drag = {x: event.clientX, y: event.clientY, panX, panY};
+    canvas.setPointerCapture(event.pointerId);
+    canvas.classList.add("dragging");
+  });
+  canvas.addEventListener("pointermove", event => {
+    if (!drag) return;
+    const scale = Math.min(canvas.clientWidth, canvas.clientHeight) / (2 * plateRadius + 0.35) * zoom;
+    panX = drag.panX - (event.clientX - drag.x) / scale;
+    panY = drag.panY - (event.clientY - drag.y) / scale;
+  });
+  canvas.addEventListener("pointerup", () => { drag = null; canvas.classList.remove("dragging"); });
+  canvas.addEventListener("pointercancel", () => { drag = null; canvas.classList.remove("dragging"); });
+  canvas.addEventListener("wheel", event => {
+    event.preventDefault();
+    zoom = Math.max(0.55, Math.min(8, zoom * Math.exp(-event.deltaY * 0.001)));
+    const presets = [...objective.options].filter(option => option.value !== "");
+    const closest = presets.reduce((a, b) =>
+      Math.abs(Number(a.value) - zoom) < Math.abs(Number(b.value) - zoom) ? a : b
+    );
+    objective.value = Math.abs(Number(closest.value) - zoom) < 0.05 ? closest.value : "";
+  }, {passive: false});
+  networkCanvas.addEventListener("click", event => {
+    if (!model) return;
+    const rect = networkCanvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    let nearest = null;
+    let distance = 13;
+    for (const [cell, point] of graphPositions) {
+      const current = Math.hypot(point[0] - x, point[1] - y);
+      if (current < distance) {
+        nearest = cell;
+        distance = current;
+      }
+    }
+    if (nearest) selectCell(nearest);
+  });
+  document.getElementById("edgeFilter").addEventListener("change", drawNetwork);
+  activityLayer.addEventListener("change", () => {
+    updateRelayStatus();
+    drawNetwork();
+  });
+  cellPicker.addEventListener("change", () => selectCell(cellPicker.value));
+  recordingPicker.addEventListener("change", () => {
+    if (activityTimer !== null) window.clearInterval(activityTimer);
+    activityTimer = null;
+    document.getElementById("playRecording").textContent = "Play recording";
+    setRecording(recordingPicker.value);
+  });
+  sampleSlider.addEventListener("input", updateRecordingSample);
+  document.getElementById("firstSample").addEventListener("click", () => {
+    sampleSlider.value = "0";
+    updateRecordingSample();
+  });
+  document.getElementById("playRecording").addEventListener("click", () => {
+    const button = document.getElementById("playRecording");
+    if (activityTimer !== null) {
+      window.clearInterval(activityTimer);
+      activityTimer = null;
+      button.textContent = "Play recording";
+      return;
+    }
+    if (sampleIndex >= recording.sample_count - 1) {
+      sampleSlider.value = "0";
+      updateRecordingSample();
+    }
+    button.textContent = "Pause recording";
+    activityTimer = window.setInterval(() => {
+      if (sampleIndex >= recording.sample_count - 1) {
+        window.clearInterval(activityTimer);
+        activityTimer = null;
+        button.textContent = "Play recording";
+        return;
+      }
+      sampleSlider.value = String(sampleIndex + 1);
+      updateRecordingSample();
+    }, 200);
+  });
+  fullscreenButton.addEventListener("click", async () => {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else if (document.fullscreenEnabled && document.documentElement.requestFullscreen) {
+        await document.documentElement.requestFullscreen();
+      } else {
+        throw new Error("Fullscreen API is unavailable in this browser");
+      }
+    } catch (error) {
+      fullscreenStatus.textContent = `Fullscreen failed: ${error.message}`;
+      console.error(fullscreenStatus.textContent);
+    }
+  });
+  document.addEventListener("fullscreenchange", () => {
+    const isFullscreen = Boolean(document.fullscreenElement);
+    fullscreenButton.textContent = isFullscreen ? "Exit fullscreen" : "Enter fullscreen";
+    fullscreenStatus.textContent = isFullscreen ? "Press Esc to leave fullscreen." : "";
+  });
+  const resizeObserver = new ResizeObserver(resize);
+  [canvas, networkCanvas, traceCanvas].forEach(target => resizeObserver.observe(target));
+  resize();
+  requestAnimationFrame(frame);
+  fetch("/api/model", {cache: "no-store"})
+    .then(response => {
+      if (!response.ok) throw new Error(`model endpoint returned HTTP ${response.status}`);
+      return response.json();
+    })
+    .then(loadModel)
+    .catch(error => {
+      const message = `Connectome/activity bundle unavailable: ${error.message}`;
+      networkStatus.textContent = message;
+      cellStatus.textContent = message;
+      document.getElementById("connectomeSummary").textContent = "Not loaded";
+      document.getElementById("activitySummary").textContent = "Not loaded";
+      console.error(message);
+    });
+})();
+</script>
+</body>
+</html>

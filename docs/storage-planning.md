@@ -30,6 +30,7 @@ Sources and selected assets are recorded in
 | Input selection | Declared size | What it includes / excludes |
 | --- | ---: | --- |
 | Corrected C. elegans workbook | 4.19 MB | Adult hermaphrodite/male connectivity matrices; not every image or physiological parameter |
+| Pinned C. elegans calcium activity Parquet | 669.51 MB | Processed per-neuron GCaMP traces from 12 source datasets; not raw imaging movies or action-potential trains |
 | Published fly-model processed inputs, version 630 | 89.69 MB | Completeness CSV + processed connectivity Parquet used by upstream default configuration |
 | Published fly-model processed inputs, version 783 | 104.13 MB | Alternative public-version CSV + processed connectivity Parquet; changing versions is not reproducing the original network |
 | FlyWire 783 proofread roots + connections | 853.14 MB | Proofread IDs and neuron-pair/neuropil connectivity; add necessary transmitter/cell annotations |
@@ -38,9 +39,10 @@ Sources and selected assets are recorded in
 | MaleCNS seven cataloged flat files | 24.38 GB | Core plus body statistics, synapse points, partners, and presynaptic-site transmitter predictions |
 | Entire listed MaleCNS flat-connectome prefix | 31.32 GB | Eleven objects, including alternate filtered weights/partners; these overlap and need not all be fetched |
 
-The five FlyWire products, seven selected MaleCNS files, and corrected worm
-workbook together occupy **34,978,439,028 bytes (~34.98 GB)** before adding
-other annotations, environments, conversions, results, or backups.
+The five FlyWire products, seven selected MaleCNS files, corrected worm
+workbook, and selected worm activity Parquet together occupy
+**35,647,950,409 bytes (~35.65 GB)** before adding other annotations,
+environments, conversions, results, or backups.
 That is **not** a total for all seven species.
 
 ### MaleCNS inventory

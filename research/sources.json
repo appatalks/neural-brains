@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "reviewed_on": "2026-10-10",
+  "reviewed_on": "2026-10-13",
   "scope": "Cross-species connectomics catalog; original FlyWire-630 model inputs acquired and a bounded 30-trial sugar-to-MN9 computational baseline completed.",
   "species": [
     {"id": "caenorhabditis-elegans", "scientific_name": "Caenorhabditis elegans", "common_name": "nematode worm"},
@@ -45,6 +45,42 @@
       "review_status": "article_reviewed",
       "checked_on": "2026-10-11",
       "notes": "FlyGM preprint selected methods reviewed: connectome graph operator plus trainable input encoder/gating, intrinsic descriptors/shared neural updates and motor decoder to FlyBody; project page describes expert-trajectory comparisons. This is a trained connectome-structured control model, not the preserved unmodified LIF spike model or complete measured VNC/muscle physiology. Official runnable source/checkpoint release not verified by this inspection; similarly named GitHub repositories are not assumed to be the authors' code."
+    },
+    {
+      "id": "S70",
+      "title": "Homogenized C. elegans Neural Activity and Connectivity Data",
+      "url": "https://arxiv.org/abs/2411.12091v3",
+      "kind": "primary_preprint",
+      "review_status": "abstract_reviewed",
+      "checked_on": "2026-10-12",
+      "notes": "Preprint metadata and selected discussion reviewed. Activity is calcium fluorescence, a slow indirect measurement rather than voltage or spike times. The aggregate is assembled from heterogeneous source experiments; do not treat its resampled/normalized traces as raw spikes or as a complete active connectome."
+    },
+    {
+      "id": "S71",
+      "title": "C. elegans neural activity dataset, pinned Hugging Face release",
+      "url": "https://huggingface.co/datasets/qsimeon/celegans_neural_data/tree/a28aacad1a997ac7aee98f1c52993ab8c0599ee8",
+      "kind": "versioned_dataset",
+      "review_status": "metadata_checked",
+      "checked_on": "2026-10-12",
+      "notes": "Public, ungated repository metadata and dataset card report MIT for the processed aggregate. Pinned worm_data_short.parquet is 669511381 bytes with provider LFS SHA-256 17701963149851d37d40955096de181d8c5378c256fe4ede93864380f9363ddc. HF viewer reports 42798 rows/15 columns; per-row source_dataset, raw_data_file, worm, neuron, original/calcium trace and time fields. Card describes 12 source datasets and preprocessing at 0.333 s; source-level provenance must be retained and raw/unpublished source bundles are not included."
+    },
+    {
+      "id": "S72",
+      "title": "Global brain dynamics embed the motor command sequence of Caenorhabditis elegans",
+      "url": "https://doi.org/10.1016/j.cell.2015.09.034",
+      "kind": "primary_paper",
+      "review_status": "abstract_reviewed",
+      "checked_on": "2026-10-12",
+      "notes": "Europe PMC primary abstract verified brain-wide calcium imaging and trialwise associations with run/turn commands. It does not by itself verify the exact sex, stage, or stimulus metadata for the processed WT_Stim.mat rows; establish those before selecting a replay."
+    },
+    {
+      "id": "S73",
+      "title": "The neural circuit for touch sensitivity in Caenorhabditis elegans",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6565008/",
+      "kind": "primary_paper",
+      "review_status": "abstract_reviewed",
+      "checked_on": "2026-10-13",
+      "notes": "Chalfie et al., J Neurosci 1985, 5(4):956-964. Primary abstract reports anterior and posterior touch pathways inferred from serial-section EM and selective laser ablation; anterior touch involves AVD/AVB, and anterior touch cells become gap-junction coupled with maturation. This supports pathway identities/behavioral relevance, not synaptic signs, conductances, transfer timing, or calibrated muscle decoding."
     },
     {
       "id": "S61",
@@ -1008,10 +1044,35 @@
           "url": "https://www.wormwiring.org/si/SI%205%20Connectome%20adjacency%20matrices%2C%20corrected%20July%202020.xlsx",
           "size_bytes": 4188190,
           "http_status_checked": 200,
-          "verification": "anonymous_head_only"
+          "verification": "Downloaded 2026-10-12; no provider checksum; local SHA-256 recorded in external receipt"
         }
       ],
-      "notes": "Extends historical 1986 mapping. XLSX is a workbook with multiple matrices, not a ready-made uniform directed chemical graph. Keep electrical and neuromuscular edges distinct. No upstream checksum established."
+      "notes": "Extends historical 1986 mapping. XLSX is a workbook with multiple matrices, not a ready-made uniform directed chemical graph. Keep electrical and neuromuscular edges distinct. No upstream checksum or explicit asset license established. User approved local-only evaluation on 2026-10-12; do not redistribute the workbook or derived connectivity. Hermaphrodite matrix audit: 473 distinct cell labels across selected sheets, 4879 directed chemical entries, and 1433 undirected off-diagonal gap-junction pairs. The symmetric gap sheet has 17 nonzero diagonal entries, preserved in derived audit metadata but not interpreted as self-gap-junctions."
+    },
+    {
+      "id": "celegans-homogenized-calcium-activity-20250508",
+      "species_id": "caenorhabditis-elegans",
+      "species": "Caenorhabditis elegans",
+      "sex": null,
+      "developmental_stage": null,
+      "scope": "Processed per-neuron calcium-fluorescence time series aggregated from 12 source experiments",
+      "coverage": "selected_recorded_neural_activity",
+      "modality": ["calcium_fluorescence", "time_series"],
+      "catalog_status": "downloadable",
+      "version": "Hugging Face dataset commit a28aacad1a997ac7aee98f1c52993ab8c0599ee8",
+      "source_ids": ["S70", "S71", "S72"],
+      "license": {"spdx_id": "MIT", "status": "Hugging Face processed-dataset card metadata; source experiment terms remain individually attributable", "source_id": "S71"},
+      "access": {"repository": "public, ungated pinned Parquet asset"},
+      "selected_assets": [
+        {
+          "filename": "worm_data_short.parquet",
+          "url": "https://huggingface.co/datasets/qsimeon/celegans_neural_data/resolve/a28aacad1a997ac7aee98f1c52993ab8c0599ee8/worm_data_short.parquet",
+          "size_bytes": 669511381,
+          "checksum": "sha256:17701963149851d37d40955096de181d8c5378c256fe4ede93864380f9363ddc",
+          "verification": "Downloaded 2026-10-12; provider Hugging Face LFS SHA-256 verified"
+        }
+      ],
+      "notes": "This is an observed GCaMP/calcium-fluorescence dataset, not voltage or action-potential data. The compiled table has source_dataset/raw_data_file/worm/neuron metadata plus original and processed traces/time vectors; processed traces are resampled at approximately 0.333 s and normalized. Keep source and specimen metadata attached, map only exact named neurons, and mark unmatched/unrecorded cells as unknown rather than silent. No whole-brain coverage claim. Prepared external view uses only Kato2015 WT_NoStim.mat/worm7 and WT_Stim.mat/worm0; 33 and 40 exact labeled cell IDs respectively match the hermaphrodite matrix, with unmatched/unlabeled rows retained as explicit counts. Exact sex/stage is not encoded per recording; no cohort-match claim."
     },
     {
       "id": "human-h01",

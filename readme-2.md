@@ -20,6 +20,7 @@ coverage does not mean whole-brain completeness.
 | Landing research | Actual DNp10 initiation with an explicitly assumed assisted motor transition | Bounded demonstrations; biological calibration and broad robustness remain open |
 | Environment | 225 mm grassland; 70 fixed objects, 14 materials, three movable seeds/chaff | Rigid stylized vegetation, assumed masses/friction; not physical food consumption |
 | Observatory | Authoritative world, eyes, exact sparse neural counts and connection inspection | Neural map is schematic, not anatomical |
+| C. elegans microscope view | Cook 2019 chemical/electrical cell graph, Kato2015 calcium playback, and opt-in anterior-touch topology relay | Explicit assumed relay gains/decoder; no spike inference, calibrated synapse/body physiology, physical muscles, or cohort-matched sex/stage assertion |
 
 The ongoing objective is to close **sensory -> brain -> descending/VNC ->
 muscle -> physics -> sensory feedback**. The current hybrid contains genuine
@@ -34,6 +35,7 @@ Use Linux and the separately pinned environments; do not combine them:
 - `.venv`: Python 3.10 / Brian2 brain model.
 - `.venv-biomechanics`: walking framework and main browser launcher.
 - `.venv-flight`: FlyBody, MuJoCo and published TensorFlow policies.
+- `.venv-worm`: Python 3.13 worm data conversion with pinned PyArrow/openpyxl.
 
 Follow the existing [neural setup](experiments/flywire-sugar/README.md),
 [walking setup](experiments/fly-walking/README.md) and
@@ -73,6 +75,38 @@ Read [the current puddle/fullscreen guide](docs/puddle-habitat.md) and
 The faster, body-readiness-gated descent revision is still undergoing
 robustness validation; earlier passing trials do not validate every subsequent
 parameter change.
+
+### C. elegans microscope view
+
+The complementary worm microscope overlays the pinned adult hermaphrodite
+chemical/gap-junction matrices and two bounded Kato2015 calcium recordings.
+The graph uses exact cell labels but a schematic layout; fluorescence is an
+observation, not action potentials. Its **Activity map** switches between
+recorded fluorescence and a synthetic touch-relay visualization. The manually
+evoked anterior-touch pulse uses an opt-in, clearly disclosed topology-relay
+surrogate to trigger bounded kinematic reversal; Kato fluorescence does not
+drive that response. The header's fullscreen control expands the same app;
+**Esc** exits fullscreen.
+
+Prepare the external bundle and start the UI only when port 8840 is free:
+
+```bash
+: "${WORM_DATA_DIR:?Set WORM_DATA_DIR to the approved external data directory}"
+.venv-worm/bin/python scripts/worm_data.py \
+  --data-dir "$WORM_DATA_DIR" \
+  --output "$WORM_DATA_DIR/derived/celegans-kato-2015-two-recording-view-v1.json" \
+  --sex hermaphrodite \
+  --recording WT_NoStim.mat=worm7 \
+  --recording WT_Stim.mat=worm0
+python3 scripts/worm_microscope.py \
+  --model "$WORM_DATA_DIR/derived/celegans-kato-2015-two-recording-view-v1.json"
+```
+
+Open **http://127.0.0.1:8840/**. Read the
+[worm connectivity/activity evidence and limits](docs/worm-microscope.md)
+before interpreting the view. The workbook's upstream checksum and license
+are unknown; it is approved for local-only evaluation and must not be
+redistributed.
 
 Optional `--walking-readouts` adds primary-verified walking/stopping neurons
 to the observation panel after acquiring the selected primary ID supplement.

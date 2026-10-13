@@ -9,6 +9,12 @@ walking/flight and live neural inspection in one browser.
 **Research prototype:** learned motor control and assisted transitions are not
 a complete biological fly.
 
+The complementary [C. elegans microscope view](docs/worm-microscope.md) overlays
+pinned chemical/electrical connectome paths and selected recorded calcium
+traces, with a fullscreen microscope and activity map. A manually evoked
+anterior-touch surrogate can trigger a bounded kinematic reversal through
+structural paths; this is not calibrated physiology.
+
 ## Launch the fly model
 
 After [setup](readme-2.md), set `FLY_DATA_DIR` to your verified external data directory:
