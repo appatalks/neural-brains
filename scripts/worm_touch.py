@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import math
+
 
 MAX_RELAY_HOPS = 4
 EDGE_ATTENUATION = 0.5
@@ -40,20 +42,28 @@ def _command_routes(activation: dict[str, float], parents: dict[str, str | None]
     return sorted(routes, key=lambda route: (-route["activation_score"], route["cells"]))
 
 
-def relay_from_cells(connectome: dict, sensory_cells: list[str]) -> dict:
+def _propagate_activity(connectome: dict, sensory_activity: dict[str, float]):
     nodes = connectome["nodes"]
     node_set = set(nodes)
     if (
-        not isinstance(sensory_cells, list)
-        or any(not isinstance(cell, str) or cell not in node_set for cell in sensory_cells)
-        or len(set(sensory_cells)) != len(sensory_cells)
+        not isinstance(sensory_activity, dict)
+        or any(
+            not isinstance(cell, str)
+            or cell not in node_set
+            or isinstance(level, bool)
+            or not isinstance(level, (int, float))
+            or not math.isfinite(level)
+            or level < 0
+            or level > 1
+            for cell, level in sensory_activity.items()
+        )
     ):
-        raise ValueError("Relay input cells must be unique labels present in the connectome")
+        raise ValueError("Relay inputs must be unique, present cells with finite levels from 0 to 1")
 
-    activation = {cell: 1.0 for cell in sensory_cells}
-    hops = {cell: 0 for cell in sensory_cells}
-    parents: dict[str, str | None] = {cell: None for cell in sensory_cells}
-    parent_kinds: dict[str, str | None] = {cell: None for cell in sensory_cells}
+    activation = {cell: float(level) for cell, level in sensory_activity.items() if level > 0}
+    hops = {cell: 0 for cell in activation}
+    parents: dict[str, str | None] = {cell: None for cell in activation}
+    parent_kinds: dict[str, str | None] = {cell: None for cell in activation}
     frontier = dict(activation)
     edges = connectome["edges"]
     for hop in range(1, MAX_RELAY_HOPS + 1):
@@ -86,6 +96,54 @@ def relay_from_cells(connectome: dict, sensory_cells: list[str]) -> dict:
             hops[cell] = hop
             parents[cell] = source
             parent_kinds[cell] = kind
+    return activation, hops, parents, parent_kinds
+
+
+def relay_from_activity(connectome: dict, sensory_activity: dict[str, float]) -> dict:
+    activation, hops, parents, parent_kinds = _propagate_activity(connectome, sensory_activity)
+    return {
+        "stimulus": "modeled_food_cue",
+        "sensory_activity": dict(sensory_activity),
+        "activation": [
+            {"cell": cell, "level": activation[cell], "hop": hops[cell]}
+            for cell in sorted(activation, key=lambda name: (hops[name], name))
+        ],
+        "relay_edges": [
+            {
+                "source": parents[cell],
+                "target": cell,
+                "kind": parent_kinds[cell],
+                "hop": hops[cell],
+                "activation": activation[cell],
+            }
+            for cell in sorted(parents, key=lambda name: (hops[name], name))
+            if parents[cell] is not None
+        ],
+        "max_hop": max(hops.values(), default=0),
+        "assumptions": [
+            f"Structural relay is limited to {MAX_RELAY_HOPS} hops.",
+            f"Every chemical edge is treated as a positive relay with gain {EDGE_ATTENUATION}; workbook counts are not used as conductances.",
+            f"Electrical edges relay bidirectionally with gain {EDGE_ATTENUATION}; measured conductances are unavailable.",
+            "This event relay has no membrane dynamics, synaptic signs, or calibrated biological timing.",
+        ],
+    }
+
+
+def relay_from_cells(connectome: dict, sensory_cells: list[str]) -> dict:
+    if (
+        not isinstance(sensory_cells, list)
+        or any(not isinstance(cell, str) for cell in sensory_cells)
+        or len(set(sensory_cells)) != len(sensory_cells)
+    ):
+        raise ValueError("Relay input cells must be unique labels present in the connectome")
+    activation, hops, parents, parent_kinds = _propagate_activity(
+        connectome, {cell: 1.0 for cell in sensory_cells}
+    )
+    nodes = connectome["nodes"]
+    node_set = set(nodes)
+    if any(cell not in node_set for cell in sensory_cells):
+        raise ValueError("Relay input cells must be unique labels present in the connectome")
+    edges = connectome["edges"]
 
     backward_routes = _command_routes(activation, parents, edges, "AVD", ("VA", "DA"))
     forward_routes = _command_routes(activation, parents, edges, "AVB", ("VB", "DB"))

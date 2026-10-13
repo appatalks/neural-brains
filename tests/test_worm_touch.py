@@ -4,7 +4,9 @@ from pathlib import Path
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from worm_touch import relay_from_cells, simulate_anterior_touch, validate_touch_event
+from worm_touch import (
+    relay_from_activity, relay_from_cells, simulate_anterior_touch, validate_touch_event,
+)
 
 
 class WormTouchTests(unittest.TestCase):
@@ -51,6 +53,16 @@ class WormTouchTests(unittest.TestCase):
     def test_unknown_touch_cell_fails_instead_of_silently_falling_back(self):
         with self.assertRaisesRegex(ValueError, "absent"):
             simulate_anterior_touch({"nodes": ["ALML"], "edges": []})
+
+    def test_weighted_modeled_input_is_bounded_and_relayed(self):
+        result = relay_from_activity(self.connectome, {"ALML": 0.4})
+        levels = {item["cell"]: item["level"] for item in result["activation"]}
+        self.assertEqual(levels["ALML"], 0.4)
+        self.assertEqual(levels["AVDR"], 0.2)
+        self.assertEqual(result["stimulus"], "modeled_food_cue")
+        for invalid in ({"ALML": -0.1}, {"ALML": 1.1}, {"MISSING": 0.5}, {"ALML": float("nan")}):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                relay_from_activity(self.connectome, invalid)
 
     def test_only_the_documented_touch_event_is_accepted(self):
         event = {"kind": "anterior_touch"}

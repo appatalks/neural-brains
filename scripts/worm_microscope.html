@@ -5,64 +5,376 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>C. elegans microscope preview</title>
 <style>
-:root{color-scheme:dark;--bg:#10151a;--panel:#192127;--line:#34434b;--text:#e7eeee;--muted:#9cadb1;--accent:#8bd5c1}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,sans-serif}
-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;border-bottom:1px solid var(--line);background:#151d22}
-h1{margin:0;font-size:18px;font-weight:650}
-.tag{padding:4px 9px;border:1px solid #79643e;border-radius:999px;color:#efd39c;font-size:12px;white-space:nowrap}
-.head-tools{display:flex;align-items:center;gap:10px}
-header button{white-space:nowrap}
-main{display:grid;grid-template-columns:minmax(0,1fr) 330px;grid-template-rows:auto auto;gap:14px;padding:14px;max-width:1600px;margin:auto}
-.stage,.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.stage{grid-column:1;grid-row:1;min-height:540px;display:flex;flex-direction:column}
-.stagebar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);color:var(--muted)}
-canvas{display:block;width:100%;height:min(72vh,760px);min-height:440px;background:#121918;touch-action:none;cursor:grab}
-canvas.dragging{cursor:grabbing}
-.connectome{grid-column:1;grid-row:2}
-#networkGraph{height:min(65vh,650px);min-height:400px;touch-action:manipulation;cursor:crosshair}
-#traceGraph{height:180px;min-height:180px;cursor:default;touch-action:auto}
-.side{grid-column:2;grid-row:1 / span 2;display:flex;flex-direction:column;gap:14px}
-.panel{padding:14px}
-h2{font-size:14px;margin:0 0 12px}
-.network-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.network-heading h2{margin-bottom:4px}
-.controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-button,select,input{font:inherit}
-button,select{color:var(--text);background:#222f35;border:1px solid #40545b;border-radius:6px;padding:7px 10px}
-button{cursor:pointer}
-button:hover{border-color:var(--accent)}
-label{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:12px 0;color:var(--muted)}
-label select{margin-left:auto}
-input[type=range]{width:115px;accent-color:var(--accent)}
-.readout{display:grid;grid-template-columns:1fr auto;gap:7px 12px;color:var(--muted)}
-.readout strong{color:var(--text);font-weight:550}
-.note{margin:0;color:var(--muted);font-size:12px}
-.warning{padding:10px;border-left:3px solid #d5aa5a;background:#29261f;color:#ead9b7;border-radius:3px}
-.instructions{margin:0;padding-left:18px;color:var(--muted)}
-.instructions li+li{margin-top:5px}
-.legend{display:flex;flex-wrap:wrap;gap:12px;margin:9px 2px;color:var(--muted);font-size:12px}
-.legend span{display:inline-flex;align-items:center;gap:5px}
-.swatch{display:inline-block;width:10px;height:10px;border-radius:50%}
-.swatch.chemical{background:#efa05e}
-.swatch.electrical{background:#61c7d7}
-.swatch.activity{background:#f4df74}
-.swatch.unobserved{background:#68777d}
-.swatch.relay{background:#ce8cff}
-.status{min-height:20px;color:var(--muted)}
-:root:fullscreen body{height:100vh;overflow:auto}
-:root:fullscreen main{max-width:none;width:100%;padding:10px;grid-template-columns:minmax(0,1fr) 330px}
-:root:fullscreen .stage{min-height:0}
-:root:fullscreen #field{height:54vh;min-height:300px}
-:root:fullscreen #networkGraph{height:48vh;min-height:300px}
-:root:fullscreen .side{max-height:calc(100vh - 70px);overflow-y:auto}
-@media(max-width:780px){main{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto;padding:8px}.stage,.connectome,.side{grid-column:1;grid-row:auto}.side{display:flex}.stage{min-height:0}#field{height:62vh;min-height:350px}#networkGraph{height:62vh;min-height:350px}header{padding:12px}.tag{white-space:normal;text-align:center}}
-@media(max-width:780px){:root:fullscreen main{grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto auto}:root:fullscreen .side{max-height:none;overflow:visible}}
+:root {
+  color-scheme: dark;
+  --bg: #071117;
+  --surface: #0c1a21;
+  --surface-raised: #10232c;
+  --surface-hover: #17303a;
+  --line: rgba(159, 197, 198, 0.17);
+  --line-bright: rgba(159, 197, 198, 0.29);
+  --text: #e8f2f0;
+  --muted: #9bb0b4;
+  --accent: #8ce2c5;
+  --cyan: #7bd9e5;
+  --amber: #efca83;
+  --violet: #d29bff;
+  --shadow: 0 22px 70px rgba(0, 0, 0, 0.25);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+html { min-width: 320px; background: var(--bg); }
+
+body {
+  min-width: 320px;
+  margin: 0;
+  color: var(--text);
+  background:
+    radial-gradient(ellipse at 18% -24%, rgba(54, 125, 122, 0.18), transparent 50%),
+    radial-gradient(ellipse at 100% 2%, rgba(57, 104, 122, 0.12), transparent 42%),
+    linear-gradient(155deg, #071117 0%, #09171d 48%, #071117 100%);
+  font: 14px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button, select, input { font: inherit; }
+
+header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  padding: 18px clamp(16px, 2.3vw, 38px);
+  border-bottom: 1px solid var(--line);
+  background: rgba(9, 21, 27, 0.86);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(18px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 250px;
+}
+
+.brand-mark {
+  position: relative;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border: 1px solid rgba(140, 226, 197, 0.38);
+  border-radius: 14px;
+  background: radial-gradient(circle at 34% 28%, rgba(140, 226, 197, 0.24), rgba(25, 58, 64, 0.35) 58%, rgba(8, 22, 28, 0.9));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.1), 0 0 24px rgba(95, 208, 178, 0.09);
+}
+
+.brand-mark::before,
+.brand-mark::after {
+  position: absolute;
+  content: "";
+  border: 1px solid rgba(185, 240, 222, 0.68);
+  border-radius: 50%;
+}
+
+.brand-mark::before { width: 19px; height: 19px; }
+.brand-mark::after { width: 5px; height: 5px; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+
+.brand-copy { display: grid; gap: 2px; }
+
+.eyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(18px, 1.3vw, 23px);
+  font-weight: 640;
+  letter-spacing: -0.035em;
+}
+
+.head-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 100%;
+  padding: 7px 12px;
+  border: 1px solid rgba(239, 202, 131, 0.3);
+  border-radius: 999px;
+  color: #e9d5ae;
+  background: rgba(53, 43, 28, 0.36);
+  font-size: 11px;
+  font-weight: 560;
+  letter-spacing: 0.015em;
+}
+
+.tag::before {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--amber);
+  box-shadow: 0 0 12px rgba(239, 202, 131, 0.56);
+  content: "";
+}
+
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
+  grid-template-rows: auto auto;
+  gap: clamp(12px, 1.3vw, 22px);
+  width: 100%;
+  max-width: 2560px;
+  margin: 0 auto;
+  padding: clamp(12px, 1.8vw, 28px);
+}
+
+.stage, .panel {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(17, 36, 44, 0.96), rgba(10, 23, 30, 0.98));
+  box-shadow: var(--shadow), inset 0 1px rgba(255, 255, 255, 0.025);
+}
+
+.stage {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.stagebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  padding: 13px 17px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(90deg, rgba(17, 39, 45, 0.92), rgba(12, 26, 33, 0.8));
+}
+
+.stage-identity { display: grid; gap: 2px; }
+.stage-identity strong { color: #d7e7e3; font-size: 12px; font-weight: 650; }
+.stage-identity span { color: var(--muted); font-size: 11px; }
+.stage-readouts { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.stage-state, .density-pill { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 11px; }
+.stage-state::before { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 9px rgba(140, 226, 197, 0.75); content: ""; }
+.density-pill { padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; background: rgba(5, 15, 20, 0.45); }
+.density-pill strong { color: var(--accent); font-weight: 650; }
+
+.visual-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: 10px;
+  padding: 10px;
+}
+
+.visual-pane {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(151, 191, 192, 0.13);
+  border-radius: 12px;
+  background: #071218;
+}
+
+.visual-pane-bar {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(90deg, rgba(17, 37, 45, 0.96), rgba(9, 22, 28, 0.9));
+}
+
+.visual-pane-bar > span:first-child { display: grid; gap: 2px; }
+.visual-pane-bar strong { color: #dcebe6; font-size: 11px; font-weight: 700; }
+.visual-pane-bar small { color: var(--muted); font-size: 9px; line-height: 1.35; }
+.model-badge, .reference-badge {
+  padding: 4px 7px;
+  border: 1px solid rgba(239, 202, 131, 0.28);
+  border-radius: 999px;
+  color: #e9d5ae;
+  background: rgba(63, 48, 27, 0.32);
+  font-size: 8px;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+}
+.reference-badge { border-color: rgba(123, 217, 229, 0.3); color: #b5e8ed; background: rgba(20, 63, 72, 0.28); }
+
+canvas {
+  display: block;
+  width: 100%;
+  height: clamp(420px, 70vh, 1120px);
+  min-height: 360px;
+  background: #081318;
+  touch-action: none;
+  cursor: grab;
+}
+
+canvas.dragging { cursor: grabbing; }
+.visual-pane canvas { height: clamp(320px, 54vh, 900px); min-height: 280px; }
+#referenceCanvas { background: #070d12; cursor: default; touch-action: auto; }
+.reference-controls {
+  display: grid;
+  grid-template-columns: auto minmax(70px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px 5px;
+  border-top: 1px solid rgba(151, 191, 192, 0.12);
+}
+.reference-controls button { min-height: 31px; padding: 5px 8px; font-size: 10px; }
+.reference-controls input[type=range] { width: 100%; }
+.reference-frame-status { color: var(--muted); font: 9px ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; }
+.reference-status { min-height: 31px; padding: 0 11px 9px; font-size: 9px; }
+.connectome { grid-column: 1; grid-row: 2; }
+#networkGraph { height: clamp(380px, 62vh, 850px); min-height: 340px; touch-action: manipulation; cursor: crosshair; }
+#traceGraph { height: 210px; min-height: 190px; cursor: default; touch-action: auto; }
+
+.side {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.panel { padding: clamp(14px, 1.3vw, 19px); }
+h2 { margin: 0 0 13px; color: #e3f0ec; font-size: 13px; font-weight: 690; letter-spacing: 0.025em; }
+.network-heading { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.network-heading h2 { margin-bottom: 4px; font-size: 14px; }
+.controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.stage-controls { padding: 12px 16px; border-top: 1px solid var(--line); background: rgba(11, 25, 31, 0.75); }
+.stage-caption { color: var(--muted); font-size: 10px; }
+
+button, select {
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid rgba(151, 191, 192, 0.23);
+  border-radius: 9px;
+  color: var(--text);
+  background: linear-gradient(180deg, rgba(30, 54, 62, 0.96), rgba(20, 39, 47, 0.96));
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.04);
+}
+
+button { cursor: pointer; transition: border-color 140ms ease, background 140ms ease, transform 140ms ease; }
+button:hover:not(:disabled) { transform: translateY(-1px); border-color: rgba(140, 226, 197, 0.62); background: var(--surface-hover); }
+button:disabled { cursor: not-allowed; opacity: 0.48; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button#fullscreenToggle { border-color: rgba(140, 226, 197, 0.4); color: #c8f3e2; }
+
+label { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 13px 0; color: var(--muted); font-size: 12px; }
+label select { margin-left: auto; }
+input[type=range] { width: min(150px, 42%); accent-color: var(--accent); }
+input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); }
+.readout { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 13px; color: var(--muted); font-size: 12px; }
+.readout strong { color: var(--text); font-weight: 570; text-align: right; }
+.note { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.55; }
+.warning { padding: 12px; border: 1px solid rgba(239, 202, 131, 0.14); border-left: 3px solid var(--amber); border-radius: 7px; color: #ded0b2; background: linear-gradient(100deg, rgba(66, 51, 29, 0.36), rgba(29, 28, 25, 0.24)); font-size: 11px; line-height: 1.55; }
+.instructions { margin: 0; padding-left: 18px; color: var(--muted); font-size: 12px; }
+.instructions li+li { margin-top: 7px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 15px; margin: 11px 2px; color: var(--muted); font-size: 11px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { display: inline-block; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
+.swatch.chemical { color: #efa05e; background: #efa05e; }
+.swatch.electrical { color: #61c7d7; background: #61c7d7; }
+.swatch.activity { color: #f4df74; background: #f4df74; }
+.swatch.unobserved { color: #68777d; background: #68777d; }
+.swatch.relay { color: #ce8cff; background: #ce8cff; }
+.status { min-height: 18px; }
+
+:root:fullscreen body { min-height: 100vh; overflow: auto; }
+:root:fullscreen main { max-width: none; width: 100%; padding: 12px; grid-template-columns: minmax(0, 1fr) minmax(330px, 390px); }
+:root:fullscreen .stage { min-height: 0; }
+:root:fullscreen #field { height: min(62vh, 1800px); min-height: 300px; }
+:root:fullscreen #networkGraph { height: min(52vh, 1300px); min-height: 300px; }
+:root:fullscreen .side { max-height: calc(100vh - 72px); overflow-y: auto; scrollbar-color: #34505a transparent; }
+
+@media (min-width: 1900px) {
+  main { grid-template-columns: minmax(0, 1fr) minmax(360px, 430px); }
+  .side { gap: 16px; }
+}
+
+@media (min-width: 2800px) {
+  main { max-width: 3600px; grid-template-columns: minmax(0, 1fr) minmax(420px, 480px); }
+  #field { height: min(73vh, 1500px); }
+  #networkGraph { height: min(64vh, 1100px); }
+  .visual-pane canvas { height: min(66vh, 1200px); }
+}
+
+@media (min-width: 4600px) {
+  main { max-width: 5600px; grid-template-columns: minmax(0, 1fr) minmax(480px, 560px); }
+  #field { height: min(76vh, 2200px); }
+  #networkGraph { height: min(65vh, 1650px); }
+  .panel { padding: 24px; }
+}
+
+@media (max-width: 980px) {
+  main { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; }
+  .stage, .connectome, .side { grid-column: 1; grid-row: auto; }
+  .side { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr)); align-items: start; }
+  .stage { min-height: 0; }
+  .visual-grid { grid-template-columns: minmax(0, 1fr); }
+  #field { height: min(68vh, 800px); min-height: 330px; }
+  .visual-pane canvas { height: min(55vh, 640px); min-height: 300px; }
+  #networkGraph { height: min(62vh, 720px); min-height: 330px; }
+  :root:fullscreen main { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto auto; }
+  :root:fullscreen .side { max-height: none; overflow: visible; }
+}
+
+@media (max-width: 600px) {
+  header { align-items: flex-start; padding: 14px; }
+  .brand { min-width: 0; }
+  .brand-mark { width: 36px; height: 36px; flex-basis: 36px; border-radius: 12px; }
+  .head-tools { width: 100%; justify-content: space-between; }
+  .tag { flex: 1; white-space: normal; }
+  main { gap: 11px; padding: 10px; }
+  .stagebar { align-items: flex-start; }
+  .stage-readouts { width: 100%; justify-content: space-between; }
+  #field { height: 58vh; min-height: 300px; }
+  .visual-pane canvas { height: 50vh; min-height: 270px; }
+  #networkGraph { height: 52vh; min-height: 310px; }
+  .stage-controls button { flex: 1 1 auto; }
+  .side { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}
 </style>
 </head>
 <body>
 <header>
-  <h1>C. elegans · microscope environment preview</h1>
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"></span>
+    <div class="brand-copy">
+      <p class="eyebrow">Connectome · activity · illustration</p>
+      <h1>C. elegans · microscope environment preview</h1>
+    </div>
+  </div>
   <div class="head-tools">
     <button id="fullscreenToggle" type="button">Enter fullscreen</button>
     <span id="fullscreenStatus" class="note status" role="status" aria-live="polite"></span>
@@ -72,14 +384,44 @@ input[type=range]{width:115px;accent-color:var(--accent)}
 <main>
   <section class="stage" aria-label="Microscope field">
     <div class="stagebar">
-      <span>Transmitted-light view · illustrative agar plate and kinematic body</span>
-      <span><span id="runState">Running</span> · <strong id="movementState">Kinematic forward</strong></span>
+      <div class="stage-identity">
+        <strong>Illustrative microscope field</strong>
+        <span>Stylized agar plate and kinematic body · not specimen imagery</span>
+      </div>
+      <div class="stage-readouts">
+        <span class="stage-state"><span id="runState">Running</span> · <strong id="movementState">Kinematic forward</strong></span>
+        <span class="density-pill">Display <strong id="renderQuality">adaptive detail</strong></span>
+      </div>
     </div>
-    <canvas id="field" aria-label="Animated illustrative worm in a microscope field"></canvas>
-    <div class="controls" style="padding:10px 14px">
-      <button id="toggle" type="button">Pause</button>
-      <button id="reset" type="button">Reset view and motion</button>
-      <button id="center" type="button">Center specimen</button>
+    <div class="visual-grid">
+      <section class="visual-pane model-pane" aria-label="Synthetic foraging model">
+        <div class="visual-pane-bar">
+          <span><strong>Foraging model</strong><small>Illustrative kinematic body · simulated bacterial lawn</small></span>
+          <span class="model-badge">MODEL · ASSUMED</span>
+        </div>
+        <canvas id="field" aria-label="Synthetic kinematic worm foraging among simulated bacteria"></canvas>
+        <div class="controls stage-controls">
+          <button id="toggle" type="button">Pause</button>
+          <button id="reset" type="button">Reset model</button>
+          <button id="center" type="button">Center model</button>
+        </div>
+      </section>
+      <section class="visual-pane reference-pane" aria-label="Independent recorded worm image reference">
+        <div class="visual-pane-bar">
+          <span><strong>Recorded microscopy reference</strong><small><a href="https://doi.org/10.5281/zenodo.1201382" target="_blank" rel="noopener noreferrer">Open Worm · Zenodo 1201382 · CC BY 4.0</a> · separate from model</small></span>
+          <span class="reference-badge">RECORDED · SEPARATE RUN</span>
+        </div>
+        <canvas id="referenceCanvas" aria-label="Recorded C. elegans brightfield frame with tracked mask overlay"></canvas>
+        <div class="reference-controls">
+          <button id="referenceToggle" type="button" disabled>Play reference</button>
+          <input id="referenceSlider" type="range" min="0" max="0" value="0" step="1" aria-label="Recorded reference frame" disabled>
+          <span id="referenceFrameStatus" class="reference-frame-status">Not loaded</span>
+        </div>
+        <p id="referenceStatus" class="note reference-status" role="status" aria-live="polite">The checksum-verified external recording is not loaded. The source provides 640 × 480 brightfield snapshots and a separate 31.25 Hz tracked mask; no 8K detail is invented.</p>
+      </section>
+    </div>
+    <div class="controls stage-controls">
+      <span class="stage-caption">Reference footage, synthetic activity, and modeled food are independent data layers.</span>
     </div>
   </section>
   <section class="panel connectome" aria-label="Connectome graph">
@@ -100,6 +442,7 @@ input[type=range]{width:115px;accent-color:var(--accent)}
         <select id="activityLayer">
           <option value="calcium">Recorded calcium fluorescence</option>
           <option value="touch">Modeled touch relay · not spikes</option>
+          <option value="foraging">Synthetic foraging relay · assumed</option>
         </select>
       </label>
     </div>
@@ -109,6 +452,7 @@ input[type=range]{width:115px;accent-color:var(--accent)}
       <span><i class="swatch electrical"></i>Electrical · undirected</span>
       <span><i class="swatch activity"></i>Recorded calcium trace</span>
       <span><i class="swatch relay"></i>Assumed touch relay</span>
+      <span><i class="swatch relay"></i>Synthetic foraging rate</span>
       <span><i class="swatch unobserved"></i>No matched trace</span>
     </div>
     <p class="note">Default view isolates edges touching the selected cell. Edge width reflects EM serial-section counts, not conductance. Node tint is normalized within each cell only; use the trace plot for source values.</p>
@@ -138,6 +482,21 @@ input[type=range]{width:115px;accent-color:var(--accent)}
         <span>Connectome</span><strong id="connectomeSummary">Loading</strong>
         <span>Recorded activity</span><strong id="activitySummary">Loading</strong>
       </div>
+    </section>
+    <section class="panel">
+      <h2>Experimental foraging loop · assumed</h2>
+      <div class="controls">
+        <button id="startForaging" type="button" disabled>Start modeled foraging</button>
+        <button id="resetForaging" type="button" disabled>Reset foraging</button>
+      </div>
+      <div class="readout">
+        <span>Modeled food cue · L/R</span><strong id="foodCueReadout">Not running</strong>
+        <span>Model activity</span><strong id="modeledActivityReadout">Silent</strong>
+        <span>Feeding proxy</span><strong id="feedingReadout">Inactive</strong>
+        <span>Bacterial food</span><strong id="bacteriaReadout">Not loaded</strong>
+      </div>
+      <p id="foragingStatus" class="note status" role="status" aria-live="polite">Start the experiment to send assumed food cues into the synthetic rate/spike proxy.</p>
+      <p class="warning">AWA/AWC food encoding, unsigned positive graph relay, AVB forward decoder, and MC/M3/NSM feeding output are model assumptions. A geometric edge clamp keeps the illustrative body in a 35 mm-diameter dish; it is not neural avoidance. These are not recorded spikes, measured synaptic signs, or a validated worm controller.</p>
     </section>
     <section class="panel">
       <h2>Evoked anterior touch</h2>
@@ -198,6 +557,15 @@ input[type=range]{width:115px;accent-color:var(--accent)}
   const networkCtx = networkCanvas.getContext("2d");
   const traceCanvas = document.getElementById("traceGraph");
   const traceCtx = traceCanvas.getContext("2d");
+  const referenceCanvas = document.getElementById("referenceCanvas");
+  const referenceCtx = referenceCanvas.getContext("2d");
+  const referenceToggle = document.getElementById("referenceToggle");
+  const referenceSlider = document.getElementById("referenceSlider");
+  const referenceFrameStatus = document.getElementById("referenceFrameStatus");
+  const referenceStatus = document.getElementById("referenceStatus");
+  const foragingStartButton = document.getElementById("startForaging");
+  const foragingResetButton = document.getElementById("resetForaging");
+  const foragingStatus = document.getElementById("foragingStatus");
   const runningLabel = document.getElementById("runState");
   const timeLabel = document.getElementById("time");
   const objective = document.getElementById("objective");
@@ -216,10 +584,17 @@ input[type=range]{width:115px;accent-color:var(--accent)}
   const relayStatus = document.getElementById("relayStatus");
   const fullscreenButton = document.getElementById("fullscreenToggle");
   const fullscreenStatus = document.getElementById("fullscreenStatus");
-  const plateRadius = 3;
+  const renderQuality = document.getElementById("renderQuality");
+  const plateRadius = 17.5;
   const assumedReverseSeconds = 1.5;
   const relayHopUiSeconds = 0.12;
-  let paused = false;
+  const maxCanvasDpr = 3;
+  const maxCanvasPixels = 20000000;
+  let paused = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (paused) {
+    toggle.textContent = "Resume";
+    runningLabel.textContent = "Paused";
+  }
   let simTime = 0;
   let headPhase = 0;
   let bodyWavePhase = 0;
@@ -236,32 +611,195 @@ input[type=range]{width:115px;accent-color:var(--accent)}
   let activityTimer = null;
   let touchRelay = null;
   let touchRelayStartSimTime = null;
+  let foragingState = null;
+  let foragingActive = false;
+  let foragingModelAvailable = false;
+  let foragingTimer = null;
+  let foragingRequestPending = false;
+  let foragingRunToken = 0;
+  let referenceManifest = null;
+  let referenceBitmap = null;
+  let referenceTimer = null;
+  let referenceFrameIndex = 0;
+  let referenceFrameLoading = false;
+  let queuedReferenceIndex = null;
   let reverseStartSimTime = Infinity;
   let reverseUntilSimTime = -Infinity;
 
   function resizeCanvas(target) {
     const rect = target.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    if (!rect.width || !rect.height) return;
+    const pixelBudgetDpr = Math.sqrt(maxCanvasPixels / (rect.width * rect.height));
+    const dpr = Math.min(window.devicePixelRatio || 1, maxCanvasDpr, pixelBudgetDpr);
     target.width = Math.max(1, Math.round(rect.width * dpr));
     target.height = Math.max(1, Math.round(rect.height * dpr));
+  }
+
+  function canvasPixelRatio(target) {
+    return target.width / Math.max(1, target.getBoundingClientRect().width);
   }
 
   function resize() {
     resizeCanvas(canvas);
     resizeCanvas(networkCanvas);
     resizeCanvas(traceCanvas);
+    resizeCanvas(referenceCanvas);
+    renderQuality.textContent = `${canvasPixelRatio(canvas).toFixed(2)}× pixel density`;
     drawNetwork();
     drawTrace();
+    drawReference();
+  }
+
+  function drawReference() {
+    const dpr = canvasPixelRatio(referenceCanvas);
+    const width = referenceCanvas.width / dpr;
+    const height = referenceCanvas.height / dpr;
+    referenceCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    referenceCtx.fillStyle = "#070d12";
+    referenceCtx.fillRect(0, 0, width, height);
+    if (!referenceBitmap) {
+      referenceCtx.fillStyle = "#9bb3b6";
+      referenceCtx.font = "12px system-ui";
+      referenceCtx.textAlign = "center";
+      referenceCtx.fillText("Verified recording frames load on demand", width / 2, height / 2);
+      referenceCtx.textAlign = "left";
+      return;
+    }
+    const scale = Math.min(width / referenceBitmap.width, height / referenceBitmap.height);
+    const imageWidth = referenceBitmap.width * scale;
+    const imageHeight = referenceBitmap.height * scale;
+    referenceCtx.drawImage(
+      referenceBitmap,
+      (width - imageWidth) / 2,
+      (height - imageHeight) / 2,
+      imageWidth,
+      imageHeight
+    );
+  }
+
+  async function loadReferenceFrame(index) {
+    if (!referenceManifest) return;
+    queuedReferenceIndex = index;
+    if (referenceFrameLoading) return;
+    referenceFrameLoading = true;
+    try {
+      while (queuedReferenceIndex !== null) {
+        const requestedIndex = queuedReferenceIndex;
+        queuedReferenceIndex = null;
+        const response = await fetch(`/api/reference/frame/${requestedIndex}.png`, {cache: "no-store"});
+        if (!response.ok) {
+          const detail = await response.text();
+          throw new Error(`reference image returned HTTP ${response.status}: ${detail.slice(0, 240)}`);
+        }
+        const bitmap = await createImageBitmap(await response.blob());
+        if (queuedReferenceIndex !== null) {
+          bitmap.close();
+          continue;
+        }
+        referenceBitmap?.close();
+        referenceBitmap = bitmap;
+        referenceFrameIndex = requestedIndex;
+        referenceSlider.value = String(requestedIndex);
+        const sourceTime = Number(response.headers.get("X-Source-Time"));
+        const rawIndex = Number(response.headers.get("X-Raw-Snapshot"));
+        const rawTime = Number(response.headers.get("X-Raw-Snapshot-Time"));
+        referenceFrameStatus.textContent =
+          `mask ${requestedIndex + 1}/${referenceManifest.mask_frame_count} · ${sourceTime.toFixed(2)} s · ` +
+          `raw image ${rawIndex + 1}/${referenceManifest.raw_image_snapshot_count} · ${rawTime.toFixed(2)} s`;
+        drawReference();
+      }
+    } catch (error) {
+      referenceStatus.textContent = `Recorded reference failed: ${error.message}`;
+      console.error(referenceStatus.textContent);
+      stopReferencePlayback();
+    } finally {
+      referenceFrameLoading = false;
+    }
+  }
+
+  function stopReferencePlayback() {
+    if (referenceTimer !== null) {
+      window.clearInterval(referenceTimer);
+      referenceTimer = null;
+    }
+    referenceToggle.textContent = "Play reference";
+  }
+
+  async function loadReference() {
+    try {
+      const response = await fetch("/api/reference/manifest", {cache: "no-store"});
+      if (!response.ok) throw new Error(`reference manifest returned HTTP ${response.status}`);
+      const manifest = await response.json();
+      if (!manifest.available) {
+        referenceStatus.textContent = manifest.message;
+        return;
+      }
+      referenceManifest = manifest;
+      referenceSlider.max = String(manifest.mask_frame_count - 1);
+      referenceSlider.disabled = false;
+      referenceToggle.disabled = false;
+      referenceStatus.textContent =
+        `${manifest.attribution}. ${manifest.worm} · ${manifest.food} · ${manifest.resolution_px[0]} × ${manifest.resolution_px[1]} source pixels. ` +
+        `Mask FPS metadata reports ${manifest.source_fps} (expected ${manifest.expected_fps}); timestamps have ` +
+        `${manifest.timestamp_duplicate_steps} duplicate and ${manifest.timestamp_nonuniform_steps} nonuniform intervals. ` +
+        `The cyan outline is a tracked mask; the real brightfield image updates every ${manifest.raw_image_snapshot_stride_frames} ` +
+        "source frames and is held between snapshots. Review playback is display-paced at about 10 frames/s without interpolation; " +
+        "original source timestamps are shown. This recording is not paired with the synthetic model or Kato traces.";
+      await loadReferenceFrame(0);
+    } catch (error) {
+      referenceStatus.textContent = `Recorded reference unavailable: ${error.message}`;
+      console.error(referenceStatus.textContent);
+    }
   }
 
   function worldPoint(x, y, scale, cx, cy) {
     return [cx + (x - panX) * scale, cy - (y - panY) * scale];
   }
 
+  function drawBacteria(scale, cx, cy) {
+    if (!foragingState) return;
+    for (const [patchIndex, patch] of foragingState.food_patches.entries()) {
+      if (patch.biomass <= 0) continue;
+      const [centerX, centerY] = worldPoint(patch.x, patch.y, scale, cx, cy);
+      const radius = 0.34 * scale;
+      const biomass = Math.max(0, Math.min(1, patch.biomass));
+      const colony = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+      colony.addColorStop(0, `rgba(157, 210, 132, ${0.2 * biomass})`);
+      colony.addColorStop(0.7, `rgba(114, 164, 98, ${0.11 * biomass})`);
+      colony.addColorStop(1, "rgba(91, 135, 81, 0)");
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.fillStyle = colony;
+      ctx.fill();
+      const count = Math.round(58 * biomass);
+      for (let i = 0; i < count; i++) {
+        const angle = (i * 2.399963 + patchIndex * 1.71) % (Math.PI * 2);
+        const radial = radius * 0.76 * Math.sqrt(((i * 37 + patchIndex * 19) % 101) / 101);
+        const [x, y] = worldPoint(
+          patch.x + Math.cos(angle) * radial / scale,
+          patch.y + Math.sin(angle) * radial / scale,
+          scale,
+          cx,
+          cy
+        );
+        const cellLength = Math.max(1.4, scale * 0.018);
+        const cellWidth = Math.max(0.7, scale * 0.007);
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle + (i % 3) * 0.4);
+        ctx.fillStyle = `rgba(194, 222, 148, ${0.36 + 0.48 * biomass})`;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, cellLength, cellWidth, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+
   function drawWorm(scale, cx, cy) {
-    const {headX, headY, angle, direction} = wormPose();
+    const {headX, headY, angle} = wormPose();
     const points = [];
-    const count = 100;
+    const count = Math.max(160, Math.min(480, Math.ceil(scale * 1.5)));
     for (let i = 0; i <= count; i++) {
       const u = i / count;
       const wave = 0.13 * Math.sin(2 * Math.PI * (1.45 * u) + bodyWavePhase - 1.3 * u)
@@ -286,32 +824,96 @@ input[type=range]{width:115px;accent-color:var(--accent)}
       left.push(worldPoint(point.x + normalX * point.width, point.y + normalY * point.width, scale, cx, cy));
       right.push(worldPoint(point.x - normalX * point.width, point.y - normalY * point.width, scale, cx, cy));
     }
+    const head = worldPoint(headX, headY, scale, cx, cy);
+    const tail = worldPoint(points[points.length - 1].x, points[points.length - 1].y, scale, cx, cy);
     ctx.beginPath();
     ctx.moveTo(...left[0]);
     for (const point of left.slice(1)) ctx.lineTo(...point);
     for (const point of right.reverse()) ctx.lineTo(...point);
     ctx.closePath();
-    ctx.fillStyle = "rgba(233, 180, 163, 0.92)";
-    ctx.strokeStyle = "rgba(104, 59, 58, 0.85)";
-    ctx.lineWidth = Math.max(1, scale * 0.009);
+    const bodyGradient = ctx.createLinearGradient(head[0], head[1], tail[0], tail[1]);
+    bodyGradient.addColorStop(0, "#f2c7ad");
+    bodyGradient.addColorStop(0.2, "#e5aa98");
+    bodyGradient.addColorStop(0.52, "#cf8e88");
+    bodyGradient.addColorStop(0.84, "#a96f74");
+    bodyGradient.addColorStop(1, "#795766");
+    ctx.save();
+    ctx.shadowColor = "rgba(232, 161, 144, 0.3)";
+    ctx.shadowBlur = Math.max(4, Math.min(18, scale * 0.06));
+    ctx.fillStyle = bodyGradient;
+    ctx.strokeStyle = "rgba(89, 52, 59, 0.88)";
+    ctx.lineWidth = Math.max(0.8, Math.min(2.2, scale * 0.009));
     ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.stroke();
+    ctx.restore();
+
+    const highlightPath = [];
+    for (let i = 0; i < points.length; i += 2) {
+      const before = points[Math.max(0, i - 1)];
+      const after = points[Math.min(points.length - 1, i + 1)];
+      const dx = after.x - before.x;
+      const dy = after.y - before.y;
+      const length = Math.hypot(dx, dy) || 1;
+      const normalX = dy / length;
+      const normalY = -dx / length;
+      const point = points[i];
+      highlightPath.push(worldPoint(
+        point.x + normalX * point.width * 0.48,
+        point.y + normalY * point.width * 0.48,
+        scale, cx, cy
+      ));
+    }
+    ctx.beginPath();
+    ctx.moveTo(...highlightPath[0]);
+    for (const point of highlightPath.slice(1)) ctx.lineTo(...point);
+    ctx.strokeStyle = "rgba(255, 229, 207, 0.3)";
+    ctx.lineWidth = Math.max(0.65, Math.min(3, scale * 0.009));
+    ctx.lineCap = "round";
     ctx.stroke();
 
-    const head = worldPoint(headX, headY, scale, cx, cy);
+    const capRadius = Math.max(3, scale * 0.027);
+    const headCap = ctx.createRadialGradient(
+      head[0] - capRadius * 0.3, head[1] - capRadius * 0.35, capRadius * 0.08,
+      head[0], head[1], capRadius
+    );
+    headCap.addColorStop(0, "#fff1dc");
+    headCap.addColorStop(0.42, "#f3c7ae");
+    headCap.addColorStop(1, "rgba(193, 119, 119, 0.25)");
     ctx.beginPath();
-    ctx.arc(head[0], head[1], Math.max(2, scale * 0.025), 0, Math.PI * 2);
-    ctx.fillStyle = "#fff0dc";
+    ctx.arc(head[0], head[1], capRadius, 0, Math.PI * 2);
+    ctx.fillStyle = headCap;
     ctx.fill();
     if (landmarks.checked) {
-      ctx.font = `${Math.max(11, Math.min(15, scale * 0.055))}px system-ui`;
-      ctx.fillStyle = "#f1ddd2";
-      ctx.fillText("head", head[0] + 10, head[1] - 18);
-      const tail = worldPoint(points[points.length - 1].x, points[points.length - 1].y, scale, cx, cy);
-      ctx.fillText("tail", tail[0] - 28, tail[1] + 28);
+      const label = (text, x, y) => {
+        ctx.font = "700 9px system-ui";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        const textWidth = ctx.measureText(text).width;
+        const boxWidth = textWidth + 14;
+        const boxHeight = 20;
+        ctx.fillStyle = "rgba(8, 20, 25, 0.82)";
+        ctx.fillRect(x, y - boxHeight / 2, boxWidth, boxHeight);
+        ctx.strokeStyle = "rgba(201, 229, 216, 0.3)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + 0.5, y - boxHeight / 2 + 0.5, boxWidth - 1, boxHeight - 1);
+        ctx.fillStyle = "#e5f0e9";
+        ctx.fillText(text, x + 7, y);
+      };
+      label("HEAD", head[0] + 12, head[1] - 15);
+      label("TAIL", tail[0] - 48, tail[1] + 15);
     }
   }
 
   function wormPose() {
+    if (foragingActive && foragingState) {
+      return {
+        headX: foragingState.pose.head_x,
+        headY: foragingState.pose.head_y,
+        angle: foragingState.pose.heading_rad,
+        direction: 1,
+      };
+    }
     const direction = simTime >= reverseStartSimTime && simTime < reverseUntilSimTime ? -1 : 1;
     const headAngle = headPhase;
     return {
@@ -323,7 +925,7 @@ input[type=range]{width:115px;accent-color:var(--accent)}
   }
 
   function draw() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = canvasPixelRatio(canvas);
     const width = canvas.width / dpr;
     const height = canvas.height / dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -335,39 +937,52 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     const [dishX, dishY] = worldPoint(0, 0, scale, cx, cy);
     const dishPx = plateRadius * scale;
 
-    ctx.fillStyle = "#101918";
+    const backdrop = ctx.createRadialGradient(cx, cy, Math.min(width, height) * 0.05, cx, cy, Math.max(width, height) * 0.72);
+    backdrop.addColorStop(0, "#102126");
+    backdrop.addColorStop(0.62, "#0a171c");
+    backdrop.addColorStop(1, "#060e13");
+    ctx.fillStyle = backdrop;
     ctx.fillRect(0, 0, width, height);
     const gradient = ctx.createRadialGradient(dishX, dishY, dishPx * 0.05, dishX, dishY, dishPx);
     const light = Number(illumination.value) / 100;
-    gradient.addColorStop(0, `rgba(157, 181, 154, ${0.20 * light})`);
-    gradient.addColorStop(0.78, `rgba(104, 133, 111, ${0.23 * light})`);
-    gradient.addColorStop(1, "rgba(45, 62, 57, 0.92)");
+    gradient.addColorStop(0, `rgba(184, 208, 180, ${0.24 * light})`);
+    gradient.addColorStop(0.48, `rgba(126, 158, 139, ${0.26 * light})`);
+    gradient.addColorStop(0.82, `rgba(77, 109, 99, ${0.28 * light})`);
+    gradient.addColorStop(1, "rgba(30, 47, 47, 0.96)");
     ctx.beginPath();
     ctx.arc(dishX, dishY, dishPx, 0, Math.PI * 2);
     ctx.fillStyle = gradient;
     ctx.fill();
-    ctx.strokeStyle = "rgba(201, 222, 208, 0.55)";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "rgba(207, 231, 215, 0.58)";
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(dishX, dishY, dishPx * 0.985, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(201, 220, 209, 0.12)";
+    ctx.lineWidth = 5;
     ctx.stroke();
 
     ctx.save();
     ctx.beginPath();
     ctx.arc(dishX, dishY, dishPx - 2, 0, Math.PI * 2);
     ctx.clip();
-    for (let i = 0; i < 180; i++) {
+    for (let i = 0; i < 300; i++) {
       const a = i * 2.399963;
       const r = plateRadius * Math.sqrt(((i * 37) % 181) / 181);
       const [x, y] = worldPoint(r * Math.cos(a), r * Math.sin(a), scale, cx, cy);
-      ctx.fillStyle = `rgba(215, 226, 196, ${0.025 + (i % 4) * 0.009})`;
-      ctx.fillRect(x, y, 2, 2);
+      ctx.fillStyle = `rgba(226, 236, 212, ${0.018 + (i % 5) * 0.008})`;
+      const particle = 0.5 + (i % 3) * 0.3;
+      ctx.fillRect(x, y, particle, particle);
     }
+    drawBacteria(scale, cx, cy);
     drawWorm(scale, cx, cy);
     ctx.restore();
 
     const barLengthMm = Math.min(1, width * 0.34 / scale);
     const barLength = barLengthMm * scale;
-    ctx.strokeStyle = "#f0f3e8";
-    ctx.lineWidth = 3;
+    ctx.strokeStyle = "rgba(238, 246, 228, 0.9)";
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
     ctx.beginPath();
     ctx.moveTo(22, height - 26);
     ctx.lineTo(22 + barLength, height - 26);
@@ -376,9 +991,14 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     ctx.moveTo(22 + barLength, height - 31);
     ctx.lineTo(22 + barLength, height - 21);
     ctx.stroke();
-    ctx.fillStyle = "#f0f3e8";
-    ctx.font = "12px system-ui";
-    ctx.fillText(`${barLengthMm.toPrecision(2)} mm (illustrative)`, 22, height - 38);
+    ctx.fillStyle = "#e9f1e5";
+    ctx.font = "600 11px system-ui";
+    ctx.fillText(`${barLengthMm.toPrecision(2)} mm · illustrative`, 22, height - 38);
+    ctx.font = "700 9px system-ui";
+    ctx.fillStyle = "rgba(194, 215, 207, 0.7)";
+    ctx.textAlign = "right";
+    ctx.fillText("SCHEMATIC FIELD · NO SPECIMEN IMAGE", width - 20, 22);
+    ctx.textAlign = "left";
   }
 
   function activeTraces() {
@@ -408,6 +1028,26 @@ input[type=range]{width:115px;accent-color:var(--accent)}
         : "Measured calcium traces are not loaded.";
       return;
     }
+    if (activityLayer.value === "foraging") {
+      if (!foragingState) {
+        relayStatus.textContent = "The synthetic foraging model is idle. No modeled sensory input or activity is generated until started.";
+        return;
+      }
+      if (!foragingActive && foragingState.time_s > 0) {
+        relayStatus.textContent =
+          `Stopped at model time ${foragingState.time_s.toFixed(2)} s; the last synthetic relay/rate state remains visible as history.`;
+        return;
+      }
+      if (!foragingActive) {
+        relayStatus.textContent = "The synthetic foraging model is prepared but idle. No sensory input or activity has been generated.";
+        return;
+      }
+      const activeCount = Object.keys(foragingState.neuron_rates_hz).length;
+      relayStatus.textContent =
+        `Synthetic model time ${foragingState.time_s.toFixed(2)} s · ${activeCount} cells with modeled rates · ` +
+        `${foragingState.spike_events.length} synthetic events in the last step. Rates/events are assumptions, not recorded spikes.`;
+      return;
+    }
     if (!touchRelay) {
       relayStatus.textContent = "No relay event yet. The modeled network generates no spontaneous activity.";
       return;
@@ -420,13 +1060,33 @@ input[type=range]{width:115px;accent-color:var(--accent)}
   }
 
   function drawNetwork() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = canvasPixelRatio(networkCanvas);
     const width = networkCanvas.width / dpr;
     const height = networkCanvas.height / dpr;
     networkCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     networkCtx.clearRect(0, 0, width, height);
-    networkCtx.fillStyle = "#11191d";
+    const backdrop = networkCtx.createLinearGradient(0, 0, width, height);
+    backdrop.addColorStop(0, "#0d1a21");
+    backdrop.addColorStop(0.55, "#09151b");
+    backdrop.addColorStop(1, "#0d1a20");
+    networkCtx.fillStyle = backdrop;
     networkCtx.fillRect(0, 0, width, height);
+    networkCtx.save();
+    networkCtx.strokeStyle = "rgba(143, 187, 190, 0.045)";
+    networkCtx.lineWidth = 1;
+    for (let x = 32; x < width; x += 48) {
+      networkCtx.beginPath();
+      networkCtx.moveTo(x, 0);
+      networkCtx.lineTo(x, height);
+      networkCtx.stroke();
+    }
+    for (let y = 28; y < height; y += 48) {
+      networkCtx.beginPath();
+      networkCtx.moveTo(0, y);
+      networkCtx.lineTo(width, y);
+      networkCtx.stroke();
+    }
+    networkCtx.restore();
     if (!model) {
       networkCtx.fillStyle = "#a9b8bc";
       networkCtx.font = "14px system-ui";
@@ -447,12 +1107,22 @@ input[type=range]{width:115px;accent-color:var(--accent)}
 
     const traces = activeTraces();
     const touchMode = activityLayer.value === "touch";
-    const currentHop = touchMode ? currentRelayHop() : -1;
-    const relayActivation = new Map((touchRelay?.activation || []).map(item => [item.cell, item]));
+    const foragingMode = activityLayer.value === "foraging";
+    const relayMode = touchMode || foragingMode;
+    const activeModel = foragingMode ? foragingState : touchRelay;
+    const currentHop = touchMode
+      ? currentRelayHop()
+      : (foragingMode ? (foragingState?.max_hop ?? -1) : -1);
+    const relayActivation = new Map((activeModel?.activation || []).map(item => [item.cell, item]));
     const activeRelayCells = new Set(
-      (touchRelay?.activation || []).filter(item => item.hop <= currentHop).map(item => item.cell)
+      (activeModel?.activation || []).filter(item => item.hop <= currentHop).map(item => item.cell)
     );
-    const relayEdges = new Map((touchRelay?.relay_edges || []).map(edge => [
+    if (foragingMode && foragingState) {
+      for (const [cell, rate] of Object.entries(foragingState.neuron_rates_hz)) {
+        if (rate > 0) activeRelayCells.add(cell);
+      }
+    }
+    const relayEdges = new Map((activeModel?.relay_edges || []).map(edge => [
       JSON.stringify([edge.kind, edge.source, edge.target]), edge,
     ]));
     const selectedTouchEdges = new Set((touchRelay?.highlight_edges || []).map(
@@ -463,7 +1133,7 @@ input[type=range]{width:115px;accent-color:var(--accent)}
       const edgeKey = JSON.stringify([edge.kind, edge.source, edge.target]);
       const selectedEdge = selectedCell && (edge.source === selectedCell || edge.target === selectedCell);
       const relayEdge = relayEdges.get(edgeKey);
-      if (touchMode) {
+      if (relayMode) {
         if (!relayEdge || relayEdge.hop > currentHop) continue;
         if (edgeFilter !== "focus" && edgeFilter !== "all" && edge.kind !== edgeFilter) continue;
       } else {
@@ -474,15 +1144,17 @@ input[type=range]{width:115px;accent-color:var(--accent)}
       const end = graphPositions.get(edge.target);
       if (!start || !end) continue;
       const selectedTouchEdge = touchMode && selectedTouchEdges.has(edgeKey);
-      const muted = !touchMode && edgeFilter !== "focus" && selectedCell && !selectedEdge;
-      networkCtx.globalAlpha = touchMode
+      const muted = !relayMode && edgeFilter !== "focus" && selectedCell && !selectedEdge;
+      networkCtx.globalAlpha = relayMode
         ? (selectedTouchEdge ? 1 : (relayEdge.hop === currentHop ? 0.95 : 0.45))
         : (muted ? 0.08 : (edge.kind === "chemical" ? 0.48 : 0.72));
-      networkCtx.strokeStyle = touchMode
-        ? (selectedTouchEdge ? "#f1c9ff" : (edge.kind === "chemical" ? "#ce8cff" : "#74d9e9"))
+      networkCtx.strokeStyle = relayMode
+        ? (touchMode
+          ? (selectedTouchEdge ? "#f1c9ff" : (edge.kind === "chemical" ? "#ce8cff" : "#74d9e9"))
+          : (edge.kind === "chemical" ? "#a5df8d" : "#72d5c6"))
         : (edge.kind === "chemical" ? "#efa05e" : "#61c7d7");
       networkCtx.fillStyle = networkCtx.strokeStyle;
-      networkCtx.lineWidth = touchMode
+      networkCtx.lineWidth = relayMode
         ? (selectedTouchEdge ? 2.7 : 1.8)
         : Math.min(1.8, 0.45 + Math.log1p(edge.weight_sections) * 0.16);
       networkCtx.beginPath();
@@ -517,11 +1189,18 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     for (const [cell, point] of graphPositions) {
       const trace = traces.get(cell);
       const relay = relayActivation.get(cell);
+      const modeledRate = foragingMode ? (foragingState?.neuron_rates_hz[cell] || 0) : 0;
       let fill = "#68777d";
       if (touchMode && relay && relay.hop <= currentHop) {
         const lightness = Math.round(34 + relay.level * 46);
         fill = `hsl(275 82% ${lightness}%)`;
-      } else if (!touchMode && trace) {
+      } else if (foragingMode && modeledRate > 0) {
+        const rateFraction = Math.min(1, modeledRate / 20);
+        fill = `hsl(158 66% ${Math.round(34 + rateFraction * 36)}%)`;
+      } else if (foragingMode && relay && relay.hop <= currentHop) {
+        const rateFraction = Math.min(1, relay.level);
+        fill = `hsl(158 66% ${Math.round(34 + rateFraction * 36)}%)`;
+      } else if (!relayMode && trace) {
         const [min, max] = traceRange(trace.calcium);
         const value = trace.calcium[sampleIndex] ?? min;
         const fraction = max > min ? (value - min) / (max - min) : 0.5;
@@ -531,16 +1210,29 @@ input[type=range]{width:115px;accent-color:var(--accent)}
         fill = `rgb(${red},${green},${blue})`;
       }
       networkCtx.beginPath();
-      networkCtx.arc(point[0], point[1], cell === selectedCell ? 5.7 : (trace ? 4.2 : 3), 0, 2 * Math.PI);
+      networkCtx.arc(
+        point[0],
+        point[1],
+        cell === selectedCell ? 5.7 : (activeRelayCells.has(cell) ? 4.5 : (trace ? 4.2 : 3)),
+        0,
+        2 * Math.PI
+      );
+      if (cell === selectedCell || (relayMode && activeRelayCells.has(cell))) {
+        networkCtx.shadowColor = cell === selectedCell
+          ? "rgba(255, 226, 151, 0.82)"
+          : (touchMode ? "rgba(210, 155, 255, 0.75)" : "rgba(129, 230, 170, 0.75)");
+        networkCtx.shadowBlur = cell === selectedCell ? 13 : 9;
+      }
       networkCtx.fillStyle = fill;
       networkCtx.fill();
+      networkCtx.shadowBlur = 0;
       networkCtx.lineWidth = cell === selectedCell ? 2 : 0.6;
       networkCtx.strokeStyle = cell === selectedCell ? "#fff0a8" : "#0c1114";
       networkCtx.stroke();
-      if (touchMode && activeRelayCells.has(cell)) {
+      if (relayMode && activeRelayCells.has(cell)) {
         networkCtx.beginPath();
         networkCtx.arc(point[0], point[1], 8.2, 0, 2 * Math.PI);
-        networkCtx.strokeStyle = "#ce8cff";
+        networkCtx.strokeStyle = touchMode ? "#ce8cff" : "#91e3a6";
         networkCtx.lineWidth = 1.8;
         networkCtx.stroke();
       }
@@ -554,12 +1246,15 @@ input[type=range]{width:115px;accent-color:var(--accent)}
   }
 
   function drawTrace() {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = canvasPixelRatio(traceCanvas);
     const width = traceCanvas.width / dpr;
     const height = traceCanvas.height / dpr;
     traceCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
     traceCtx.clearRect(0, 0, width, height);
-    traceCtx.fillStyle = "#11191d";
+    const backdrop = traceCtx.createLinearGradient(0, 0, 0, height);
+    backdrop.addColorStop(0, "#0d1a20");
+    backdrop.addColorStop(1, "#091319");
+    traceCtx.fillStyle = backdrop;
     traceCtx.fillRect(0, 0, width, height);
     const trace = recording?.traces.find(item => item.cell === selectedCell);
     if (!trace) {
@@ -574,8 +1269,36 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     const right = Math.max(left + 1, width - 10);
     const top = 12;
     const bottom = height - 24;
-    traceCtx.strokeStyle = "#8bd5c1";
-    traceCtx.lineWidth = 1.5;
+    traceCtx.strokeStyle = "rgba(151, 188, 190, 0.12)";
+    traceCtx.lineWidth = 1;
+    for (let row = 0; row <= 3; row++) {
+      const y = top + (bottom - top) * row / 3;
+      traceCtx.beginPath();
+      traceCtx.moveTo(left, y);
+      traceCtx.lineTo(right, y);
+      traceCtx.stroke();
+    }
+    traceCtx.beginPath();
+    traceCtx.moveTo(left, bottom);
+    for (let i = 0; i < values.length; i++) {
+      const x = left + (right - left) * i / Math.max(1, values.length - 1);
+      const y = bottom - (max > min ? (values[i] - min) / (max - min) : 0.5) * (bottom - top);
+      traceCtx.lineTo(x, y);
+    }
+    traceCtx.lineTo(right, bottom);
+    traceCtx.closePath();
+    const fill = traceCtx.createLinearGradient(0, top, 0, bottom);
+    fill.addColorStop(0, "rgba(140, 226, 197, 0.23)");
+    fill.addColorStop(1, "rgba(90, 163, 155, 0.015)");
+    traceCtx.fillStyle = fill;
+    traceCtx.fill();
+
+    traceCtx.strokeStyle = "#8ce2c5";
+    traceCtx.lineWidth = 1.8;
+    traceCtx.lineJoin = "round";
+    traceCtx.lineCap = "round";
+    traceCtx.shadowColor = "rgba(140, 226, 197, 0.35)";
+    traceCtx.shadowBlur = 8;
     traceCtx.beginPath();
     for (let i = 0; i < values.length; i++) {
       const x = left + (right - left) * i / Math.max(1, values.length - 1);
@@ -584,14 +1307,16 @@ input[type=range]{width:115px;accent-color:var(--accent)}
       else traceCtx.lineTo(x, y);
     }
     traceCtx.stroke();
+    traceCtx.shadowBlur = 0;
     const markerX = left + (right - left) * sampleIndex / Math.max(1, values.length - 1);
     traceCtx.strokeStyle = "#f4df74";
+    traceCtx.lineWidth = 1.2;
     traceCtx.beginPath();
     traceCtx.moveTo(markerX, top);
     traceCtx.lineTo(markerX, bottom);
     traceCtx.stroke();
     traceCtx.fillStyle = "#a9b8bc";
-    traceCtx.font = "10px system-ui";
+    traceCtx.font = "10px ui-monospace, SFMono-Regular, Menlo, monospace";
     traceCtx.fillText(max.toPrecision(3), 3, top + 4);
     traceCtx.fillText(min.toPrecision(3), 3, bottom);
     traceCtx.fillText("source fluorescence · sample order", left, height - 6);
@@ -610,7 +1335,12 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     const activityText = trace
       ? `matched calcium value ${Number(value).toPrecision(5)} at sample ${sampleIndex + 1}`
       : "no matched trace in this recording";
-    cellStatus.textContent = `${selectedCell} · chemical in ${chemicalIn}, out ${chemicalOut} · electrical neighbors ${electrical} · ${activityText}`;
+    const modeledRate = foragingState?.neuron_rates_hz[selectedCell];
+    const modelText = modeledRate
+      ? ` · synthetic model rate ${modeledRate.toFixed(2)} Hz`
+      : (foragingState ? " · no synthetic rate in current step" : "");
+    cellStatus.textContent =
+      `${selectedCell} · chemical in ${chemicalIn}, out ${chemicalOut} · electrical neighbors ${electrical} · ${activityText}${modelText}`;
   }
 
   function selectCell(cell) {
@@ -675,7 +1405,170 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     updateRelayStatus();
   }
 
-  function loadModel(data) {
+  async function postForaging(path, body = null) {
+    const options = {method: "POST"};
+    if (body !== null) {
+      options.headers = {"Content-Type": "application/json"};
+      options.body = JSON.stringify(body);
+    }
+    const response = await fetch(path, options);
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(`foraging endpoint returned HTTP ${response.status}: ${detail.slice(0, 240)}`);
+    }
+    return response.json();
+  }
+
+  function updateForagingReadouts() {
+    if (!foragingState) {
+      document.getElementById("foodCueReadout").textContent = "Not started";
+      document.getElementById("modeledActivityReadout").textContent = "Idle · no input";
+      document.getElementById("feedingReadout").textContent = "Inactive";
+      document.getElementById("bacteriaReadout").textContent = "Not loaded";
+      return;
+    }
+    const cues = foragingState.food_cues;
+    const rates = Object.keys(foragingState.neuron_rates_hz);
+    const biomass = foragingState.food_patches.reduce((total, patch) => total + patch.biomass, 0);
+    document.getElementById("foodCueReadout").textContent =
+      `${(cues.left * 100).toFixed(1)}% / ${(cues.right * 100).toFixed(1)}%`;
+    document.getElementById("modeledActivityReadout").textContent = foragingActive
+      ? `${rates.length} rate-active cells · ${foragingState.spike_events.length} synthetic events`
+      : (foragingState.time_s > 0 ? "Stopped · last step retained" : "Idle · no sensory input");
+    document.getElementById("feedingReadout").textContent = foragingState.food_contact
+      ? `${foragingState.feeding_rate_proxy_hz.toFixed(1)} Hz ${foragingActive ? "assumed proxy" : "last-step proxy"}`
+      : (foragingActive ? "No modeled food contact" : "No contact in last step");
+    document.getElementById("bacteriaReadout").textContent = `${biomass.toFixed(2)} model biomass units`;
+  }
+
+  function startForagingTimer() {
+    if (foragingTimer !== null || paused || !foragingActive) return;
+    const runToken = foragingRunToken;
+    foragingTimer = window.setInterval(async () => {
+      if (foragingRequestPending || !foragingActive || paused) return;
+      foragingRequestPending = true;
+      foragingResetButton.disabled = true;
+      try {
+        const previousTime = foragingState?.time_s || 0;
+        const next = await postForaging("/api/foraging/step", {dt_s: 0.1});
+        if (runToken !== foragingRunToken || !foragingActive) return;
+        foragingState = next;
+        simTime = next.time_s;
+        const modelStep = Math.max(0, next.time_s - previousTime);
+        bodyWavePhase += modelStep * 4.2 * Math.min(1, next.pose.speed_mm_s / 0.28);
+        updateForagingReadouts();
+        updateRelayStatus();
+        updateCellStatus();
+        drawNetwork();
+      } catch (error) {
+        if (runToken === foragingRunToken) {
+          foragingStatus.textContent = `Synthetic foraging model failed: ${error.message}`;
+          console.error(foragingStatus.textContent);
+          stopForagingModel();
+        }
+      } finally {
+        foragingRequestPending = false;
+        foragingResetButton.disabled = !foragingModelAvailable;
+      }
+    }, 100);
+  }
+
+  function stopForagingModel() {
+    if (foragingTimer !== null) {
+      window.clearInterval(foragingTimer);
+      foragingTimer = null;
+    }
+    foragingRunToken++;
+    foragingActive = false;
+    foragingStartButton.textContent = "Start modeled foraging";
+    foragingStartButton.disabled = !foragingModelAvailable;
+    foragingResetButton.disabled = !foragingModelAvailable || foragingRequestPending;
+    touchButton.disabled = !model;
+    updateForagingReadouts();
+    updateRelayStatus();
+    drawNetwork();
+  }
+
+  async function startForagingModel() {
+    if (foragingActive) {
+      stopForagingModel();
+      foragingStatus.textContent = "Model stopped by user. The last synthetic state remains visible; no further input is generated.";
+      return;
+    }
+    if (!foragingModelAvailable || foragingRequestPending) return;
+    foragingRequestPending = true;
+    foragingStartButton.disabled = true;
+    foragingResetButton.disabled = true;
+    const runToken = ++foragingRunToken;
+    try {
+      foragingState = await postForaging("/api/foraging/reset");
+      if (runToken !== foragingRunToken) return;
+      foragingActive = true;
+      touchRelay = null;
+      touchRelayStartSimTime = null;
+      reverseStartSimTime = Infinity;
+      reverseUntilSimTime = -Infinity;
+      simTime = 0;
+      bodyWavePhase = 0;
+      activityLayer.value = "foraging";
+      paused = false;
+      toggle.textContent = "Pause";
+      runningLabel.textContent = "Running";
+      touchButton.disabled = true;
+      foragingStartButton.textContent = "Stop foraging model";
+      foragingStatus.textContent =
+        "Explicitly started: assumed left/right food cues enter the connectome-topology rate proxy. " +
+        "Displayed events are synthetic, the body is kinematic, and the dish-edge clamp is geometric rather than neural.";
+      updateForagingReadouts();
+      updateRelayStatus();
+      drawNetwork();
+      startForagingTimer();
+    } catch (error) {
+      foragingStatus.textContent = `Could not start the synthetic foraging model: ${error.message}`;
+      console.error(foragingStatus.textContent);
+    } finally {
+      foragingRequestPending = false;
+      foragingStartButton.disabled = !foragingModelAvailable;
+      foragingResetButton.disabled = !foragingModelAvailable;
+    }
+  }
+
+  async function resetForagingModel() {
+    if (!foragingModelAvailable || foragingRequestPending) return;
+    const wasActive = foragingActive;
+    if (foragingTimer !== null) {
+      window.clearInterval(foragingTimer);
+      foragingTimer = null;
+    }
+    const runToken = ++foragingRunToken;
+    foragingRequestPending = true;
+    foragingStartButton.disabled = true;
+    foragingResetButton.disabled = true;
+    try {
+      const next = await postForaging("/api/foraging/reset");
+      if (runToken !== foragingRunToken) return;
+      foragingState = next;
+      simTime = 0;
+      bodyWavePhase = 0;
+      foragingStatus.textContent = wasActive
+        ? "Synthetic model reset to its seeded initial state; the explicitly started run continues."
+        : "Synthetic model reset. It remains idle until explicitly started.";
+      updateForagingReadouts();
+      updateRelayStatus();
+      drawNetwork();
+      if (wasActive) startForagingTimer();
+    } catch (error) {
+      foragingStatus.textContent = `Could not reset the synthetic foraging model: ${error.message}`;
+      console.error(foragingStatus.textContent);
+      if (wasActive) stopForagingModel();
+    } finally {
+      foragingRequestPending = false;
+      foragingStartButton.disabled = !foragingModelAvailable;
+      foragingResetButton.disabled = !foragingModelAvailable;
+    }
+  }
+
+  async function loadModel(data) {
     model = data;
     document.getElementById("connectomeSummary").textContent =
       `${data.connectome.sex} · ${data.connectome.nodes.length} cells`;
@@ -690,14 +1583,38 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     }
     recordingPicker.disabled = false;
     touchButton.disabled = false;
+    const foragingSupported = data.connectome.sex === "hermaphrodite";
+    foragingModelAvailable = false;
+    foragingStartButton.disabled = true;
+    foragingResetButton.disabled = true;
+    if (!foragingSupported) {
+      foragingStatus.textContent = "The synthetic foraging proxy is only defined for the selected hermaphrodite connectome.";
+    } else {
+      try {
+        foragingState = await postForaging("/api/foraging/reset");
+        foragingModelAvailable = true;
+        foragingStartButton.disabled = false;
+        foragingResetButton.disabled = false;
+        foragingStatus.textContent =
+          "Seeded bacterial environment prepared. The model is silent and idle until explicitly started.";
+      } catch (error) {
+        foragingModelAvailable = false;
+        foragingStartButton.disabled = true;
+        foragingResetButton.disabled = true;
+        foragingStatus.textContent = `Could not prepare the synthetic foraging environment: ${error.message}`;
+        console.error(foragingStatus.textContent);
+      }
+    }
+    updateForagingReadouts();
     setRecording(data.activity.recordings[0].recording_id);
+    updateForagingReadouts();
     updateRelayStatus();
   }
 
   function frame(now) {
     const elapsed = Math.min((now - lastFrame) / 1000, 0.1);
     lastFrame = now;
-    if (!paused) {
+    if (!paused && !foragingActive) {
       simTime += elapsed;
       const direction = simTime >= reverseStartSimTime && simTime < reverseUntilSimTime ? -1 : 1;
       headPhase += elapsed * 0.11 * direction;
@@ -707,9 +1624,17 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     timeLabel.textContent = `${simTime.toFixed(2)} s`;
     const reverseActive = simTime >= reverseStartSimTime && simTime < reverseUntilSimTime;
     const reverseRemaining = reverseUntilSimTime - simTime;
-    if (reverseActive) movementStateLabel.textContent = `Assumed reverse · ${reverseRemaining.toFixed(1)} s`;
+    if (foragingActive && foragingState?.boundary_guard_active) {
+      movementStateLabel.textContent = "Geometric boundary clamp · not neural";
+    } else if (foragingActive && foragingState?.food_contact) {
+      movementStateLabel.textContent = "Synthetic feeding proxy · assumed";
+    } else if (foragingActive) {
+      movementStateLabel.textContent = "Synthetic foraging motion · assumed";
+    } else if (reverseActive) movementStateLabel.textContent = `Assumed reverse · ${reverseRemaining.toFixed(1)} s`;
     else if (touchRelay && touchRelay.movement_command === "backward" && simTime < reverseStartSimTime) {
       movementStateLabel.textContent = `Relay pending · ${Math.max(0, reverseStartSimTime - simTime).toFixed(1)} s`;
+    } else if (foragingState) {
+      movementStateLabel.textContent = "Kinematic preview · foraging model idle";
     } else {
       movementStateLabel.textContent = "Kinematic forward";
     }
@@ -728,8 +1653,16 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     paused = !paused;
     toggle.textContent = paused ? "Resume" : "Pause";
     runningLabel.textContent = paused ? "Paused" : "Running";
+    if (paused && foragingTimer !== null) {
+      window.clearInterval(foragingTimer);
+      foragingTimer = null;
+    } else if (!paused && foragingActive) {
+      startForagingTimer();
+    }
   });
   document.getElementById("reset").addEventListener("click", () => {
+    if (foragingActive) stopForagingModel();
+    foragingState = null;
     simTime = 0;
     headPhase = 0;
     bodyWavePhase = 0;
@@ -740,6 +1673,8 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     activityLayer.value = "calcium";
     touchStatus.textContent = "No stimulus applied. There is no automatic or spontaneous neural drive.";
     movementStateLabel.textContent = "Kinematic forward";
+    foragingStatus.textContent = "Model view reset. Start the experiment to generate synthetic foraging input.";
+    updateForagingReadouts();
     objective.value = "1";
     zoom = 1;
     panX = 0;
@@ -753,8 +1688,36 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     panY = headY;
   });
   objective.addEventListener("change", () => { zoom = Number(objective.value); });
+  foragingStartButton.addEventListener("click", startForagingModel);
+  foragingResetButton.addEventListener("click", resetForagingModel);
+  referenceSlider.addEventListener("input", () => loadReferenceFrame(Number(referenceSlider.value)));
+  referenceToggle.addEventListener("click", () => {
+    if (referenceTimer !== null) {
+      stopReferencePlayback();
+      return;
+    }
+    if (!referenceManifest) return;
+    if (referenceFrameIndex >= referenceManifest.mask_frame_count - 1) {
+      loadReferenceFrame(0);
+    }
+    referenceToggle.textContent = "Pause reference";
+    referenceTimer = window.setInterval(() => {
+      if (referenceFrameLoading) return;
+      const increment = Math.max(1, Math.round(referenceManifest.source_fps / 10));
+      const next = referenceFrameIndex + increment;
+      if (next >= referenceManifest.mask_frame_count) {
+        stopReferencePlayback();
+        return;
+      }
+      loadReferenceFrame(next);
+    }, 100);
+  });
   touchButton.addEventListener("click", async () => {
+    if (foragingActive) return;
     touchButton.disabled = true;
+    foragingStartButton.disabled = true;
+    foragingState = null;
+    updateForagingReadouts();
     touchStatus.textContent = "Relaying explicit ALML/ALMR touch pulse through the structural graph…";
     try {
       const response = await fetch("/api/stimulus", {
@@ -789,7 +1752,12 @@ input[type=range]{width:115px;accent-color:var(--accent)}
       console.error(touchStatus.textContent);
     } finally {
       touchButton.disabled = false;
+      foragingStartButton.disabled = !foragingModelAvailable;
     }
+  });
+  activityLayer.addEventListener("change", () => {
+    updateRelayStatus();
+    drawNetwork();
   });
   canvas.addEventListener("pointerdown", event => {
     drag = {x: event.clientX, y: event.clientY, panX, panY};
@@ -830,10 +1798,6 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     if (nearest) selectCell(nearest);
   });
   document.getElementById("edgeFilter").addEventListener("change", drawNetwork);
-  activityLayer.addEventListener("change", () => {
-    updateRelayStatus();
-    drawNetwork();
-  });
   cellPicker.addEventListener("change", () => selectCell(cellPicker.value));
   recordingPicker.addEventListener("change", () => {
     if (activityTimer !== null) window.clearInterval(activityTimer);
@@ -890,9 +1854,10 @@ input[type=range]{width:115px;accent-color:var(--accent)}
     fullscreenStatus.textContent = isFullscreen ? "Press Esc to leave fullscreen." : "";
   });
   const resizeObserver = new ResizeObserver(resize);
-  [canvas, networkCanvas, traceCanvas].forEach(target => resizeObserver.observe(target));
+  [canvas, networkCanvas, traceCanvas, referenceCanvas].forEach(target => resizeObserver.observe(target));
   resize();
   requestAnimationFrame(frame);
+  loadReference();
   fetch("/api/model", {cache: "no-store"})
     .then(response => {
       if (!response.ok) throw new Error(`model endpoint returned HTTP ${response.status}`);

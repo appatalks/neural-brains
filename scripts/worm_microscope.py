@@ -7,9 +7,12 @@ import json
 import math
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+import threading
 from urllib.parse import urlsplit
 
 from worm_touch import simulate_anterior_touch, validate_touch_event
+from worm_foraging import MAX_STEP_S, WormForagingModel
+from worm_reference import OpenWormReference
 
 
 DEFAULT_PORT = 8840
@@ -177,10 +180,18 @@ def validate_model(model: dict) -> dict:
     return model
 
 
-def create_server(port: int = DEFAULT_PORT, model: dict | None = None) -> ThreadingHTTPServer:
+def create_server(
+    port: int = DEFAULT_PORT,
+    model: dict | None = None,
+    reference_data_dir: Path | None = None,
+) -> ThreadingHTTPServer:
     host, port = server_address(port)
     html = HTML_PATH.read_bytes()
     model_payload = None
+    reference_manifest = None
+    reference = None
+    foraging_model = None
+    foraging_lock = threading.Lock()
     health = {
         "status": "running",
         "model": "illustrative kinematic preview",
@@ -188,6 +199,8 @@ def create_server(port: int = DEFAULT_PORT, model: dict | None = None) -> Thread
         "connectome_available": False,
         "recorded_activity_available": False,
         "touch_reversal_surrogate_available": False,
+        "synthetic_foraging_available": False,
+        "reference_images_available": False,
     }
     if model is not None:
         validate_model(model)
@@ -207,6 +220,13 @@ def create_server(port: int = DEFAULT_PORT, model: dict | None = None) -> Thread
             "electrical_edges": model["connectome"]["edge_counts"]["electrical_gap_undirected"],
             "recordings": len(model["activity"]["recordings"]),
         }
+        if model["connectome"]["sex"] == "hermaphrodite":
+            foraging_model = WormForagingModel(model["connectome"])
+            health["synthetic_foraging_available"] = True
+    if reference_data_dir is not None:
+        reference = OpenWormReference(reference_data_dir)
+        reference_manifest = reference.manifest
+    health["reference_images_available"] = reference_manifest is not None
     expected_host = f"127.0.0.1:{port}"
 
     class Handler(BaseHTTPRequestHandler):
@@ -215,7 +235,13 @@ def create_server(port: int = DEFAULT_PORT, model: dict | None = None) -> Thread
         def log_message(self, *_args):
             pass
 
-        def respond(self, code: int, body: bytes, content_type: str) -> None:
+        def respond(
+            self,
+            code: int,
+            body: bytes,
+            content_type: str,
+            extra_headers: dict[str, str] | None = None,
+        ) -> None:
             self.send_response(code)
             self.send_header("Content-Type", content_type)
             self.send_header("Content-Length", str(len(body)))
@@ -227,6 +253,8 @@ def create_server(port: int = DEFAULT_PORT, model: dict | None = None) -> Thread
                 "style-src 'unsafe-inline'; connect-src 'self'; img-src data:; "
                 "base-uri 'none'; frame-ancestors 'none'"
             ))
+            for name, value in (extra_headers or {}).items():
+                self.send_header(name, value)
             self.end_headers()
             if self.command != "HEAD":
                 self.wfile.write(body)
@@ -265,13 +293,116 @@ def create_server(port: int = DEFAULT_PORT, model: dict | None = None) -> Thread
                     self.respond(503, b'{"error":"connectome/activity model not loaded"}', "application/json")
                 else:
                     self.respond(200, model_payload, "application/json; charset=utf-8")
+            elif path == "/api/reference/manifest":
+                if reference_manifest is None:
+                    payload = {
+                        "available": False,
+                        "message": "No verified real-image reference is configured; the kinematic field remains illustrative.",
+                    }
+                    self.respond(
+                        200, json.dumps(payload, separators=(",", ":")).encode("utf-8"),
+                        "application/json; charset=utf-8",
+                    )
+                else:
+                    self.respond(
+                        200,
+                        json.dumps(reference_manifest, separators=(",", ":")).encode("utf-8"),
+                        "application/json; charset=utf-8",
+                    )
+            elif path.startswith("/api/reference/frame/") and path.endswith(".png"):
+                if reference is None:
+                    self.respond(503, b'{"error":"reference recording not configured"}', "application/json")
+                else:
+                    frame_text = path.removeprefix("/api/reference/frame/").removesuffix(".png")
+                    if not frame_text.isdecimal():
+                        self.respond(400, b'{"error":"reference frame index must be a nonnegative integer"}', "application/json")
+                        return
+                    try:
+                        image, metadata = reference.render_frame(int(frame_text))
+                    except ValueError as error:
+                        self.respond(
+                            416,
+                            json.dumps({"error": str(error)}, separators=(",", ":")).encode("utf-8"),
+                            "application/json",
+                        )
+                        return
+                    self.respond(
+                        200,
+                        image,
+                        "image/png",
+                        {
+                            "X-Source-Frame": str(metadata["mask_frame"]),
+                            "X-Source-Time": f'{metadata["source_time_s"]:.6f}',
+                            "X-Raw-Snapshot": str(metadata["raw_snapshot"]),
+                            "X-Raw-Snapshot-Time": f'{metadata["raw_snapshot_time_s"]:.6f}',
+                        },
+                    )
             else:
                 self.respond(404, b'{"error":"not found"}', "application/json")
 
         def do_POST(self) -> None:
             if not self.check_local_request():
                 return
-            if urlsplit(self.path).path != "/api/stimulus":
+            path = urlsplit(self.path).path
+            if path == "/api/foraging/reset":
+                if foraging_model is None:
+                    self.respond(503, b'{"error":"synthetic foraging proxy unavailable for this model"}', "application/json")
+                    return
+                try:
+                    content_length = int(self.headers.get("Content-Length", "0"))
+                except ValueError:
+                    self.respond(411, b'{"error":"valid Content-Length required"}', "application/json")
+                    return
+                if content_length != 0:
+                    self.respond(400, b'{"error":"foraging reset takes no request body"}', "application/json")
+                    return
+                with foraging_lock:
+                    result = foraging_model.reset()
+                self.respond(
+                    200,
+                    json.dumps(result, allow_nan=False, separators=(",", ":")).encode("utf-8"),
+                    "application/json; charset=utf-8",
+                )
+                return
+            if path == "/api/foraging/step":
+                if foraging_model is None:
+                    self.respond(503, b'{"error":"synthetic foraging proxy unavailable for this model"}', "application/json")
+                    return
+                if self.headers.get("Content-Type", "").split(";")[0].strip().lower() != "application/json":
+                    self.respond(415, b'{"error":"application/json required"}', "application/json")
+                    return
+                try:
+                    content_length = int(self.headers.get("Content-Length", ""))
+                except ValueError:
+                    self.respond(411, b'{"error":"valid Content-Length required"}', "application/json")
+                    return
+                if content_length < 1 or content_length > MAX_STIMULUS_BYTES:
+                    self.respond(413, b'{"error":"foraging request exceeds size limit"}', "application/json")
+                    return
+                try:
+                    event = json.loads(self.rfile.read(content_length))
+                    if not isinstance(event, dict) or set(event) != {"dt_s"}:
+                        raise ValueError("Foraging step requires only dt_s")
+                    if (
+                        isinstance(event["dt_s"], bool)
+                        or not isinstance(event["dt_s"], (int, float))
+                        or not math.isfinite(event["dt_s"])
+                        or event["dt_s"] <= 0
+                        or event["dt_s"] > MAX_STEP_S
+                    ):
+                        raise ValueError(f"dt_s must be finite and between 0 and {MAX_STEP_S}")
+                except (json.JSONDecodeError, UnicodeDecodeError, ValueError) as error:
+                    self.respond(400, json.dumps({"error": str(error)}).encode("utf-8"), "application/json")
+                    return
+                with foraging_lock:
+                    result = foraging_model.step(event["dt_s"])
+                self.respond(
+                    200,
+                    json.dumps(result, allow_nan=False, separators=(",", ":")).encode("utf-8"),
+                    "application/json; charset=utf-8",
+                )
+                return
+            if path != "/api/stimulus":
                 self.respond(404, b'{"error":"not found"}', "application/json")
                 return
             if model is None:
@@ -306,18 +437,30 @@ def create_server(port: int = DEFAULT_PORT, model: dict | None = None) -> Thread
         def do_HEAD(self) -> None:
             self.do_GET()
 
-    return ThreadingHTTPServer((host, port), Handler)
+    try:
+        server = ThreadingHTTPServer((host, port), Handler)
+    except OSError:
+        if reference is not None:
+            reference.close()
+        raise
+    server.reference_source = reference
+    return server
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=DEFAULT_PORT)
     parser.add_argument("--model", type=Path, help="Prepared external JSON bundle from scripts/worm_data.py")
+    parser.add_argument(
+        "--reference-data-dir",
+        type=Path,
+        help="External data root containing the checksum-verified Open Worm recording",
+    )
     args = parser.parse_args()
     model = None
     if args.model is not None:
         model = json.loads(args.model.expanduser().read_text(encoding="utf-8"))
-    server = create_server(args.port, model)
+    server = create_server(args.port, model, args.reference_data_dir)
     print(f"Worm microscope preview: http://127.0.0.1:{args.port}/")
     try:
         server.serve_forever()
@@ -325,6 +468,8 @@ def main() -> None:
         pass
     finally:
         server.server_close()
+        if server.reference_source is not None:
+            server.reference_source.close()
 
 
 if __name__ == "__main__":

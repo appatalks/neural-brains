@@ -247,6 +247,53 @@ class DatasetTests(unittest.TestCase):
             for entry in dataset.get("selected_assets", []):
                 if "url" in entry:
                     datasets.select_asset(dataset, entry["filename"])
+            tree_ids = [entry["id"] for entry in dataset.get("selected_git_trees", [])]
+            self.assertEqual(len(tree_ids), len(set(tree_ids)))
+            for tree_id in tree_ids:
+                datasets.select_git_tree(dataset, tree_id)
+
+    def test_git_tree_selection_is_pinned_and_requires_local_only_opt_in(self):
+        tree = datasets.GitTreeAsset(
+            "sample-frames",
+            "https://github.com/iteal/wormpose_data.git",
+            "3667721534fc3062b85f165826c0ae944bceeedc",
+            "datasets/sample_data",
+            "f94d4ae67f0d526ec9f41c94b77b358c8d9fc8bc",
+            1,
+            10,
+        )
+        dataset = {**self.dataset, "license": {"spdx_id": None}}
+        with patch.object(datasets.subprocess, "run") as network:
+            with self.assertRaisesRegex(ValueError, "local-only"):
+                datasets.download_git_tree(
+                    tree, dataset, self.storage, 100, repository=self.repository
+                )
+            with self.assertRaisesRegex(ValueError, "exceeding limit"):
+                datasets.download_git_tree(
+                    tree, dataset, self.storage, 5, allow_local_only=True,
+                    repository=self.repository,
+                )
+            network.assert_not_called()
+
+    def test_git_tree_rejects_unpinned_or_unsafe_paths(self):
+        arguments = [
+            "sample-frames",
+            "https://github.com/iteal/wormpose_data.git",
+            "3667721534fc3062b85f165826c0ae944bceeedc",
+            "datasets/sample_data",
+            "f94d4ae67f0d526ec9f41c94b77b358c8d9fc8bc",
+            1,
+            10,
+        ]
+        for keyword, value, error in [
+            ("commit", "main", "commit SHA-1"),
+            ("path", "../sample_data", "safe repository-relative"),
+        ]:
+            updated = list(arguments)
+            index = {"commit": 2, "path": 3}[keyword]
+            updated[index] = value
+            with self.subTest(keyword=keyword), self.assertRaisesRegex(ValueError, error):
+                datasets.GitTreeAsset(*updated)
 
 
 if __name__ == "__main__":

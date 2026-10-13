@@ -2,7 +2,7 @@
 
 This local microscope UI overlays a pinned adult hermaphrodite Cook et al.
 connectome with two bounded Kato2015 recorded calcium traces. Start it from
-the repository root after setting `WORM_DATA_DIR` to the approved external
+the repository root after setting `FLY_DATA_DIR` to the approved shared external
 data root:
 
 ```bash
@@ -13,21 +13,40 @@ Install once in the separate Python 3.13 worm environment. Prepare the external
 view bundle and launch it with:
 
 ```bash
-: "${WORM_DATA_DIR:?Set WORM_DATA_DIR to the approved external data directory}"
+: "${FLY_DATA_DIR:?Set FLY_DATA_DIR to the approved shared external data directory}"
+.venv-worm/bin/python scripts/datasets.py fetch openworm-movement-aq2947-20140301 \
+  --asset 51_R_1_N2_1_day8_CCW_2014_03_01__19_46_55___7___13.hdf5 \
+  --data-dir "$FLY_DATA_DIR" --max-bytes 300000000
 .venv-worm/bin/python scripts/worm_data.py \
-  --data-dir "$WORM_DATA_DIR" \
-  --output "$WORM_DATA_DIR/derived/celegans-kato-2015-two-recording-view-v1.json" \
+  --data-dir "$FLY_DATA_DIR" \
+  --output "$FLY_DATA_DIR/derived/celegans-kato-2015-two-recording-view-v1.json" \
   --sex hermaphrodite \
   --recording WT_NoStim.mat=worm7 \
   --recording WT_Stim.mat=worm0
-python3 scripts/worm_microscope.py \
-  --model "$WORM_DATA_DIR/derived/celegans-kato-2015-two-recording-view-v1.json"
+.venv-worm/bin/python scripts/worm_microscope.py \
+  --model "$FLY_DATA_DIR/derived/celegans-kato-2015-two-recording-view-v1.json" \
+  --reference-data-dir "$FLY_DATA_DIR"
 ```
 
+The fetch command is needed only if the pinned asset is not already acquired;
+do not rerun it when the `.download` bundle exists. The viewer verifies the
+catalog size, provider MD5 and receipt SHA-256 before opening it.
 Open **http://127.0.0.1:8840/**. This is the project's sole interactive port:
 the server binds only to loopback, rejects alternate/ephemeral ports, and
 fails if 8840 is occupied. Use **Enter fullscreen** in the header; press
 **Esc** or use **Exit fullscreen** to return. Close the server with `Ctrl+C`.
+
+## Graphics and display fidelity
+
+The browser renderer adapts the microscope, connectome and trace canvases to
+the display pixel ratio (up to 3×, with a per-canvas pixel budget) and expands
+the layout on large displays. Lighting, glass falloff, shading and trace
+contrast are presentation effects only. The model pane remains a kinematic
+illustration on a stylized agar plate; graph positions remain schematic, with
+no anatomical coordinates. A separate reference pane shows the pinned
+640 × 480-pixel brightfield snapshots and recorded mask outline. No fixed 8K
+export or invented image detail is produced; display upscaling does not add
+resolution.
 
 ## What is wired
 
@@ -52,6 +71,56 @@ fails if 8840 is occupied. Use **Enter fullscreen** in the header; press
   Playback advances by sample order and shows the stored timestamp; duplicate
   timestamps are preserved, with no interpolation. Values are calcium
   fluorescence, not membrane voltage or action-potential times.
+
+## Recorded imagery and synthetic foraging experiment
+
+The optional reference pane loads the selected CC-BY-4.0 Open Worm recording
+from the external data root. Startup rechecks its catalog-pinned size, Zenodo
+MD5, and local SHA-256 receipt. In the HDF5 asset, `full_data` contains 106
+actual 640 × 480 brightfield snapshots, saved every 200 mask frames; `mask`
+contains 21,163 segmented frames and a recorded source timestamp per frame.
+Its FPS metadata reports 31.25 (expected FPS is 30), but timestamps are
+nonuniform and include one duplicate; the recording clock spans 898.464 s. The
+viewer highlights the tracked-mask outline on the most recent raw snapshot.
+That background is held between sparse snapshots: this is not a continuous
+raw camera movie, missing pixels are not reconstructed, and motion is not
+interpolated. The slider scrubs source frames; review playback is display-paced
+at about 10 frames/s, while the original timestamp remains visible. The
+recorded animal is AQ2947/N2, an adult day-8 hermaphrodite on OP50/NGM agar in
+a 35 mm arena. Zenodo creator metadata lists Celine N. Martineau and Ellen
+A. A. Nollen; the embedded description's `who` field also lists Bora
+Baskaner. The images are independent of the Kato calcium recordings and are
+never used as neural input to the model.
+
+**Start modeled foraging** explicitly enables a separate, assumed loop on the
+selected hermaphrodite Cook graph. It renders simulated bacterial patches on
+agar—not algae or free-floating organisms, since the selected recording is an
+OP50 agar-plate experiment. The assumed odor field encodes left/right cues at
+AWA/AWC labels; unsigned chemical and bidirectional gap paths use a fixed
+0.5 attenuation for at most four hops; AVB activity is decoded as forward
+drive; and close food contact directly produces an MC/M3/NSM feeding-rate
+proxy while depleting simulated patch biomass. The rate readouts and
+probabilistic event pulses are synthetic, not measured neural activity.
+Measured Cook topology is kept distinct from all these assumed signs,
+dynamics, sensory encoding, decoding and feeding rules. The visible worm body
+is 2D kinematic, not a muscle, proprioception, fluid or organism simulation.
+The synthetic field uses a 35 mm-diameter plate matching the source record's
+arena metadata; this geometry match does not make the behavioral protocols
+equivalent. An explicit 16.3 mm head-position clamp keeps the illustrative
+1.05 mm body inside the plate without inventing a neural edge-avoidance
+response. Body length and motion remain uncalibrated.
+
+The recorded mask playback, Kato calcium traces and synthetic foraging loop
+are three separate data layers. Neither reference recording is synchronized
+to the assumed model; calcium fluorescence is not converted to spikes.
+
+A bounded software smoke run on the pinned hermaphrodite graph (seed 420,
+0.1 s steps for 60 simulated seconds) reached one simulated patch at 19.4 s,
+reported food contact on 31 of 600 steps, and emitted 61,202 synthetic event
+pulses. The maximum head radius was 3.14 mm in the 17.5 mm-radius dish, so the
+geometric clamp did not activate in this run. These checks confirm the
+assumed code path and bounded state only; they are not a measured foraging,
+feeding, neural-activity or behavior result.
 
 ## Anterior touch → reversal surrogate
 
@@ -119,5 +188,5 @@ Both raw assets and generated bundle remain outside Git. See the
 Focused contracts are tested with:
 
 ```bash
-python3 -m unittest discover -s tests -p 'test_worm*.py'
+.venv-worm/bin/python -m unittest discover -s tests -p 'test_worm*.py'
 ```

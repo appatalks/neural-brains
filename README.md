@@ -11,9 +11,11 @@ a complete biological fly.
 
 The complementary [C. elegans microscope view](docs/worm-microscope.md) overlays
 pinned chemical/electrical connectome paths and selected recorded calcium
-traces, with a fullscreen microscope and activity map. A manually evoked
-anterior-touch surrogate can trigger a bounded kinematic reversal through
-structural paths; this is not calibrated physiology.
+traces, with a separate real-image/mask reference and an explicitly started,
+assumption-labeled foraging experiment. The reference movement, calcium traces
+and synthetic model are independent, not synchronized evidence. A manually
+evoked anterior-touch surrogate can trigger a bounded kinematic reversal
+through structural paths; none of these are calibrated physiology.
 
 ## Launch the fly model
 

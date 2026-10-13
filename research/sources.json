@@ -83,6 +83,24 @@
       "notes": "Chalfie et al., J Neurosci 1985, 5(4):956-964. Primary abstract reports anterior and posterior touch pathways inferred from serial-section EM and selective laser ablation; anterior touch involves AVD/AVB, and anterior touch cells become gap-junction coupled with maturation. This supports pathway identities/behavioral relevance, not synaptic signs, conductances, transfer timing, or calibrated muscle decoding."
     },
     {
+      "id": "S74",
+      "title": "WormPose sample-frame data and source provenance",
+      "url": "https://github.com/iteal/wormpose_data/tree/3667721534fc3062b85f165826c0ae944bceeedc/datasets/sample_data",
+      "kind": "versioned_visual_data",
+      "review_status": "documentation_reviewed",
+      "checked_on": "2026-10-13",
+      "notes": "Pinned wormpose_data commit/tree contains 1,000 PNG frames totaling 2,738,999 bytes plus an unrelated 1,250,048-byte features.h5 file, which is excluded. Parent Git tree SHA-1 f94d4ae67f0d526ec9f41c94b77b358c8d9fc8bc. The data repository describes this as a small tutorial video segment with coils. The WormPose code README attributes its result videos to Open Worm Movement Database under CC BY 4.0, while GitHub reports BSD-3-Clause for the repository code; a sample-frame-specific license statement was not found. User approved local-only PNG evaluation with a 5,000,000-byte cap on 2026-10-13. Do not redistribute; do not associate these images with Kato traces or the synthetic foraging model."
+    },
+    {
+      "id": "S75",
+      "title": "Open Worm Movement Database record 1201382, AQ2947 CGC N2",
+      "url": "https://zenodo.org/records/1201382",
+      "kind": "versioned_visual_data",
+      "review_status": "metadata_checked",
+      "checked_on": "2026-10-13",
+      "notes": "Official Zenodo API metadata checked: CC-BY-4.0; adult hermaphrodite AQ2947/N2, day 8, NGM agar low peptone with OP50 food, 35 mm petri arena, 31.25 fps, 898.464 seconds. The selected 258,164,149-byte HDF5 asset has provider MD5 e8ae3e3b0dbe3082e4b03e18d3994b52, verified against the 2026-10-13 download receipt. It stores 106 raw 640x480 brightfield snapshots at a 200-frame interval and 21,163 per-frame tracked masks/timestamps; it is not a continuous full-rate raw camera movie. HDF5 mask attributes report fps=31.25 but expected_fps=30; source timestamps are nonuniform (median step 0.032 s, 4,335 of 21,162 intervals differ from 1/31.25 s) and include one duplicate. Zenodo creator metadata lists Celine N. Martineau and Ellen A. A. Nollen, while the embedded description's `who` field lists Celine N. Martineau and Bora Baskaner; retain this attribution discrepancy. This behavior/image recording is not paired with the Kato neural traces."
+    },
+    {
       "id": "S61",
       "title": "TwoLumps Ascending Neurons Mediate Touch-Evoked Reversal of Walking Direction in Drosophila",
       "url": "https://doi.org/10.1016/j.cub.2019.11.004",
@@ -1073,6 +1091,66 @@
         }
       ],
       "notes": "This is an observed GCaMP/calcium-fluorescence dataset, not voltage or action-potential data. The compiled table has source_dataset/raw_data_file/worm/neuron metadata plus original and processed traces/time vectors; processed traces are resampled at approximately 0.333 s and normalized. Keep source and specimen metadata attached, map only exact named neurons, and mark unmatched/unrecorded cells as unknown rather than silent. No whole-brain coverage claim. Prepared external view uses only Kato2015 WT_NoStim.mat/worm7 and WT_Stim.mat/worm0; 33 and 40 exact labeled cell IDs respectively match the hermaphrodite matrix, with unmatched/unlabeled rows retained as explicit counts. Exact sex/stage is not encoded per recording; no cohort-match claim."
+    },
+    {
+      "id": "wormpose-reference-frames-v1",
+      "species_id": "caenorhabditis-elegans",
+      "species": "Caenorhabditis elegans",
+      "sex": null,
+      "developmental_stage": null,
+      "scope": "Independent tutorial microscopy frame sequence for visual reference",
+      "coverage": "whole_animal_brightfield_frames",
+      "modality": ["brightfield_microscopy", "image_sequence"],
+      "catalog_status": "local_only",
+      "version": "wormpose_data commit 3667721534fc3062b85f165826c0ae944bceeedc",
+      "source_ids": ["S74"],
+      "license": {
+        "spdx_id": null,
+        "status": "sample-specific license not explicit; user approved local-only evaluation; do not redistribute",
+        "source_id": "S74"
+      },
+      "access": {
+        "repository": "https://github.com/iteal/wormpose_data",
+        "pinned_commit": "3667721534fc3062b85f165826c0ae944bceeedc"
+      },
+      "selected_git_trees": [
+        {
+          "id": "sample-frames",
+          "repository_url": "https://github.com/iteal/wormpose_data.git",
+          "commit": "3667721534fc3062b85f165826c0ae944bceeedc",
+          "path": "datasets/sample_data",
+          "tree_sha1": "f94d4ae67f0d526ec9f41c94b77b358c8d9fc8bc",
+          "include_suffixes": [".png"],
+          "file_count": 1000,
+          "size_bytes": 2738999
+        }
+      ],
+      "notes": "Frames are shown only as an independent recorded reference. Their experimental stimulus/timing is not synchronized to the Kato2015 calcium data or the assumed synthetic foraging model. The displayed model and simulated microbes must retain separate labels."
+    },
+    {
+      "id": "openworm-movement-aq2947-20140301",
+      "species_id": "caenorhabditis-elegans",
+      "species": "Caenorhabditis elegans",
+      "sex": "adult hermaphrodite",
+      "developmental_stage": "day 8 of adulthood",
+      "scope": "Single-worm movement record with sparse raw brightfield snapshots and full-rate tracked masks on bacterial food",
+      "coverage": "single_animal_behavior",
+      "modality": ["brightfield_microscopy_snapshots", "segmented_body_masks", "worm_tracking", "behavioral_metrics"],
+      "catalog_status": "downloadable",
+      "version": "Zenodo record 1201382",
+      "source_ids": ["S75"],
+      "license": {"spdx_id": "CC-BY-4.0", "status": "verified in official Zenodo record metadata", "source_id": "S75"},
+      "access": {"repository": "Zenodo", "doi": "10.5281/zenodo.1201382"},
+      "selected_assets": [
+        {
+          "filename": "51_R_1_N2_1_day8_CCW_2014_03_01__19_46_55___7___13.hdf5",
+          "url": "https://zenodo.org/api/records/1201382/files/51_R_1_N2_1_day8_CCW_2014_03_01__19_46_55___7___13.hdf5/content",
+          "size_bytes": 258164149,
+          "checksum": "md5:e8ae3e3b0dbe3082e4b03e18d3994b52",
+          "verification": "Official Zenodo API size/MD5 verified in the 2026-10-13 receipt; fetched under the approved 300,000,000-byte cap"
+        }
+      ],
+      "notes": "Zenodo metadata reports NGM agar low-peptone medium, OP50 food, 35 mm petri arena, 31.25 fps, 898.464 s total time, and a 4.52876 µm/pixel scale. In the selected HDF5, full_data contains 106 raw 640x480 brightfield snapshots saved every 200 mask frames; mask contains 21,163 segmented tracked frames with source timestamps. HDF5 mask metadata has fps=31.25 and expected_fps=30; recorded timestamps are nonuniform and one timestamp step is duplicated. The viewer overlays the exact per-frame mask outline on the most recent raw snapshot, held between snapshot updates; it does not reconstruct missing raw pixels or interpolate motion. This record is independent of Kato2015 calcium traces and the synthetic foraging model."
     },
     {
       "id": "human-h01",

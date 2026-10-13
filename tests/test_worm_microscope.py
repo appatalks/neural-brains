@@ -73,7 +73,27 @@ class WormMicroscopeTests(unittest.TestCase):
             "Apply anterior touch pulse",
             "All electrical gap junctions",
             "never drives movement",
-            "Center specimen",
+            "Center model",
+            "Open Worm · Zenodo 1201382",
+            "Start modeled foraging",
+            "Synthetic foraging relay",
+            "not paired with the synthetic model or Kato traces",
+        ):
+            with self.subTest(text=text):
+                self.assertIn(text, html)
+
+    def test_microscope_rendering_is_high_density_but_stays_illustrative(self):
+        html = HTML_PATH.read_text(encoding="utf-8")
+        for text in (
+            "not specimen imagery",
+            "Schematic graph of measured cell connections",
+            "maxCanvasDpr = 3",
+            "maxCanvasPixels = 20000000",
+            "prefers-reduced-motion",
+            "Display",
+            "/api/reference/frame/",
+            "X-Source-Time",
+            "geometric rather than neural",
         ):
             with self.subTest(text=text):
                 self.assertIn(text, html)
