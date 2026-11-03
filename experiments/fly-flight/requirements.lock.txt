@@ -16,7 +16,7 @@ astunparse==1.6.3
     # via tensorflow-cpu
 attrs==26.1.0
     # via dm-tree
-certifi==2026.7.22
+certifi==2026.10.18
     # via requests
 charset-normalizer==3.5.2
     # via requests
